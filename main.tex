@@ -1,0 +1,780 @@
+\documentclass[letterpaper,12pt]{article}
+
+% --- PAQUETES DE IDIOMA
+\usepackage[spanish,mexico]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+
+% --- PAQUETES MATEMÁTICOS --
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cancel}
+\usepackage{mathrsfs}
+
+% --- PAQUETES GRÁFICOS Y DE DISEÑO ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usetikzlibrary{shapes.geometric, shapes.multipart, shapes.symbols, positioning, arrows.meta, calc, shadows, decorations.pathreplacing,babel}
+
+% --- LISTAS ---
+\usepackage{enumitem}
+
+% --- PAQUETES DE CÓDIGO ---
+\usepackage{listings}
+% Configuración del estilo de listings
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}   
+\definecolor{keyword}{rgb}{0.0,0.2,0.6}     
+\definecolor{comment}{rgb}{0.25,0.5,0.35}   
+\definecolor{string}{rgb}{0.6,0.0,0.0}      
+\definecolor{number}{rgb}{0.5,0.0,0.5}      
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+\lstset{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{codepurple},
+  commentstyle=\color{codegray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  frame=single,
+  rulecolor=\color{black},
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false,
+  literate={á}{{\'a}}1
+           {é}{{\'e}}1
+           {í}{{\'i}}1
+           {ó}{{\'o}}1
+           {ú}{{\'u}}1
+           {Á}{{\'A}}1
+           {É}{{\'E}}1
+           {Í}{{\'I}}1
+           {Ó}{{\'O}}1
+           {Ú}{{\'U}}1
+           {ñ}{{\~n}}1
+           {Ñ}{{\~N}}1
+           {¿}{{\textquestiondown}}1
+           {¡}{{\textexclamdown}}1
+}
+
+% Definición del lenguaje Python para listings
+\lstdefinelanguage[LAB]{Python}{
+    morekeywords={False, None, True, and, as, assert, async, await, break,
+                                class, continue, def, del, elif, else, except, finally,
+                                for, from, global, if, import, in, is, lambda, nonlocal,
+                                not, or, pass, raise, return, try, while, with, yield,
+                                machine, Pin, PWM, ADC, Timer, sleep_ms, sleep_us},
+    morecomment=[l]{\#},
+    morestring=[b]",
+    morestring=[b]',
+    sensitive=true
+}
+
+% --- ESTILOS PARA DIAGRAMAS DE FLUJO (TIKZ) ---
+\tikzset{
+  startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
+  process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
+  decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
+  arrow/.style={thick,->,>=stealth}
+}
+
+% Macro para dibujar la Raspberry Pi Pico y sus nodos
+\newcommand{\picoboard}{
+    \draw[thick] (0,0.5) rectangle (4,-9.5);
+    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico};
+
+    % Pines Superiores
+    \draw[red, thick] (0.8, 0.5) -- (0.8, 0.8) coordinate (P41); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P41) {41};
+    \draw[red, thick] (2.0, 0.5) -- (2.0, 0.8) coordinate (P42); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P42) {42};
+    \draw[red, thick] (3.2, 0.5) -- (3.2, 0.8) coordinate (P43); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P43) {43};
+    \node[below, font=\tiny\sffamily] at (0.8, 0.5) {SW CLK};
+    \node[below, font=\tiny\sffamily] at (2.0, 0.5) {SW GND};
+    \node[below, font=\tiny\sffamily] at (3.2, 0.5) {SW DIO};
+
+    % GND Inferior
+    \draw[red, thick] (2, -9.5) -- (2, -10.2) coordinate (PGND);
+    \node[above, font=\tiny\sffamily] at (2, -9.5) {GND};
+    \node[below, font=\tiny\sffamily] at (2, -10.2) {3,8,13,18 \quad 23,28,38};
+
+    % Pines del lado Izquierdo
+    \foreach \i/\pin/\num in {
+        1/GP0/1, 2/GP1/2, 
+        4/GP2/4, 5/GP3/5, 6/GP4/6, 7/GP5/7, 
+        9/GP6/9, 10/GP7/10, 11/GP8/11, 12/GP9/12, 
+        14/GP10/14, 15/GP11/15, 16/GP12/16, 17/GP13/17, 
+        19/GP14/19, 20/GP15/20
+    } {
+        \draw[red, thick] (0, -\i*0.45) -- (-0.4, -\i*0.45) coordinate (P\num);
+        \node[right, font=\tiny\sffamily] at (0, -\i*0.45) {\pin};
+        \node[above left, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+
+    % Pines del lado Derecho
+    \foreach \i/\pin/\num in {
+        1/VBUS/40, 2/VSS/39, 
+        4/3V3\_EN/37, 5/3V3/36, 6/ADC\_VREF/35, 7/GP28\_A2/34, 8/AGND/33, 
+        9/GP27\_A1/32, 10/GP26\_A0/31, 11/RUN/30, 12/GP22/29, 
+        14/GP21/27, 15/GP20/26, 16/GP19/25, 17/GP18/24, 
+        19/GP17/22, 20/GP16/21
+    } {
+        \draw[red, thick] (4, -\i*0.45) -- (4.4, -\i*0.45) coordinate (P\num);
+        \node[left, font=\tiny\sffamily] at (4, -\i*0.45) {\pin};
+        \node[above right, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+}
+
+
+
+\definecolor{azulresultado}{HTML}{0072C6}
+\definecolor{rojoacarreo}{HTML}{FF0000}
+
+% Colores para la tabla
+\definecolor{headblue}{HTML}{4F81BD}
+\definecolor{subheadblue}{HTML}{B8CCE4}
+\definecolor{datablockblue}{HTML}{DCE6F1}
+
+% --- RUTAS DE IMÁGENES ---
+\graphicspath{{img/}{portada_img/}}
+
+\definecolor{armblue}{RGB}{0, 113, 188}
+
+% --- CONFIGURACIÓN DE PÁGINA (GEOMETRÍA) ---
+\usepackage[
+    left=25mm, 
+    right=25mm,
+    top=35mm,
+    bottom=30mm,
+    headheight=77pt, 
+    papersize={21.59cm,27.94cm}
+]{geometry}
+
+% --- FORMATO DE TEXTO ---
+\renewcommand{\baselinestretch}{1.25} 
+\usepackage{parskip} 
+\usepackage{lipsum}  
+
+% --- VARIABLES GLOBALES ---
+\newcommand{\materia}{}
+
+% --- ENCABEZADOS Y PIES DE PÁGINA ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} 
+\fancyhead[L]{\includegraphics[height=1.5cm]{portada_img/der.png}}
+\fancyhead[R]{\includegraphics[height=1.5cm]{portada_img/izq.png}}
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.4pt} 
+\renewcommand{\footrulewidth}{0pt}  
+
+% --- BIBLIOGRAFÍA ---
+\usepackage[backend=biber, style=apa, sortcites, url=true]{biblatex}
+\addbibresource{referencias.bib}
+
+% --- HIPERVÍNCULOS ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan
+}
+
+\begin{document}
+
+    \input{portada.tex}
+
+    \newpage
+    \setcounter{page}{1}
+
+    \section{Objetivo:}
+
+    Mediante la creacion de codigo en MicroPython, dar solución a una ecuación cuadrática de segundo y tercer orden utilizando la Raspberry Pi Pico, donde los coeficientes de la ecuación se ingresarán a través de la terminal, y el resultado se mostrará en la misma terminal.
+    
+    \section{Desarrollo:}
+
+    Para la implementacion de este proyecto se utiliza la Raspberry Pi Pico, cuyo diagrama de pines se muestra a continuacion:
+
+    \begin{center}
+    \begin{circuitikz}[american, thick, scale=0.85, transform shape]
+        \picoboard
+    \end{circuitikz}
+    \end{center}
+
+    \subsection{Explicacion ecuacion 2 orden:}
+
+    %Los codigos estan en la carpeta code
+    Para resolver una ecuacion cuadratica de segundo orden, tenemos la siguiente formula general:
+    
+    \begin{equation}
+        ax^2 + bx + c = 0
+    \end{equation}
+
+    Donde $a$, $b$ y $c$ son los coeficientes de la ecuacion, y $x$ es la variable que queremos encontrar. Para resolver esta ecuacion, utilizamos la formula cuadratica: 
+    \begin{equation}
+        x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+    \end{equation}
+
+    Esta ecuacion es vista en la funcion \texttt{resolver\_cuadratica}, donde se reciben los coeficientes $a$, $b$ y $c$ como argumentos, y se devuelve una tupla con las dos soluciones de la ecuacion.
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para resolver ecuaciones cuadráticas}, label={lst:cuadratica}]
+    def resolver_cuadratica(coef_a, coef_b, coef_c, mostrar_pasos=False):
+        if coef_a == 0:
+            return None, "Error: No es una ecuacion de segundo grado (a=0)."
+
+        discriminante = coef_b ** 2 - 4 * coef_a * coef_c
+        raiz_discriminante = cmath.sqrt(discriminante)
+
+        raiz_1 = (-coef_b + raiz_discriminante) / (2 * coef_a)
+        raiz_2 = (-coef_b - raiz_discriminante) / (2 * coef_a)
+
+        if mostrar_pasos:
+            mostrar_proceso_cuadratica(coef_a, coef_b, coef_c, discriminante, raiz_discriminante, raiz_1, raiz_2)
+
+        return (raiz_1, raiz_2), None
+    \end{lstlisting}
+
+    Es que la funcion recibe los coeficientes de la ecuacion cuadratica, y primero verifica si $a$ es igual a cero, lo cual indicaria que no es una ecuacion de segundo grado. 
+    Despues de esto se calcula el discriminante $b^2 - 4ac$, y su raiz cuadrada utilizando 
+    la libreria \texttt{cmath} para manejar numeros complejos, la razon de utilizar esa libreria en la pico es por que el discriminante puede ser negativo, lo que resultaria en soluciones complejas, y la pico no tiene una funcion de raiz cuadrada que maneje numeros complejos,
+    por lo que se utiliza \texttt{cmath.sqrt} para asegurar que se puedan calcular las raices incluso cuando el discriminante es negativo. 
+    
+    Por ultimo se calcula las dos soluciones utilizando la formula cuadratica, tanto la raiz positiva como la negativa, este resultado se devolvera como una tupla,
+    no obstante, tambien tenemos el caso de si el usuario quiere ver los pasos detallados y no simplemente la solucion, para eso, si el usuario quiere ver los pasos, entonces se entra en la funcion \texttt{mostrar\_proceso\_cuadratica}, la cual recibe los argumentos de todos los coeficientes y las raices resultantes.
+
+    La funcion \texttt{mostrar\_proceso\_cuadratica} se encarga de imprimir en la terminal el proceso de como se llego a la solucion, donde el bloque de codigo es el siguiente:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para mostrar el proceso de resolución de la ecuación cuadrática}, label={lst:proceso_cuadratica}]
+    def mostrar_proceso_cuadratica(coef_a, coef_b, coef_c, discriminante, raiz_discriminante, raiz_1, raiz_2):
+        ecuacion = construir_ecuacion_cuadratica(coef_a, coef_b, coef_c)
+        print()
+        imprimir_separador()
+        print("  PROCESO DE CALCULO")
+        imprimir_separador()
+        print("  Ecuacion: {}".format(ecuacion))
+
+        print()
+        print("  Paso 1: Calcular discriminante")
+        print("    D = b^2 - 4ac")
+        valor_b2 = coef_b ** 2
+        valor_4ac = 4 * coef_a * coef_c
+        print("    D = ({})^2 - 4({})({})".format(coef_b, coef_a, coef_c))
+        print("    D = {} - {} = {}".format(valor_b2, valor_4ac, discriminante))
+
+        if discriminante > 0:
+            print("    D > 0 => Dos raices reales distintas")
+        elif discriminante == 0:
+            print("    D = 0 => Dos raices reales iguales")
+        else:
+            print("    D < 0 => Dos raices complejas conjugadas")
+
+        print()
+        print("  Paso 2: Aplicar formula general")
+        print("    x = (-b +/- sqrt(D)) / (2a)")
+        denominador = 2 * coef_a
+        print("    x = (-({}) +/- sqrt({})) / (2*{})".format(coef_b, discriminante, coef_a))
+        print("    x = ({} +/- {}) / {}".format(-coef_b, formatear_raiz(raiz_discriminante), denominador))
+
+        print()
+        print("  Paso 3: Obtener raices")
+        print("    x1 = {}".format(formatear_raiz(raiz_1)))
+        print("    x2 = {}".format(formatear_raiz(raiz_2)))
+
+    \end{lstlisting}
+    Donde para esto, al momento de entrar en la funcion, se contruye la ecuacion cuadratica en formato de texto utilizando la funcion \texttt{construir\_ecuacion\_cuadratica},
+
+    donde en los primeros print, se imprime la ecuacion con el uso de la funcion \texttt{.format}, la cual nos permite insertar el texto de la ecuacion, despues se imprime el paso 1,
+    el cual tiene como objetivo imprimir el discriminante, para esto se calcula el valor de $b^2$ y $4ac$ para mostrarlo en la terminal, y despues se muestra el resultado del discriminante, y se hace una pequeña interpretacion de lo que significa el valor del discriminante, si es mayor a cero, igual a cero o menor a cero.
+    Despues de esto se muestra el paso 2, el cual es aplicar la formula general, donde esta misma hace uso de los valores pasados en la cabezera de la funcion, y tambien se vuelve a usar \texttt{.format} 
+    el cual en este caso nos permite mostrar la formula con los valores de los coeficientes, y el resultado del discriminante, y por ultimo se muestra el paso 3, donde se muestran las raices obtenidas, utilizando la funcion \texttt{formatear\_raiz} para mostrar las raices de una forma mas legible.
+    
+    La funcion \texttt{formatear\_raiz} recibe como parametro \texttt{raiz\_compleja}, que es el valor de una raiz que puede ser real o compleja. En la primera linea dentro de la funcion se evalua la condicion \texttt{if abs(raiz\_compleja.imag) < 1e-9:}, donde se toma el valor absoluto de la parte imaginaria para verificar si es practicamente cero. Si esta condicion se cumple, entonces la siguiente linea \lstinline|return "{:.4f}".format(raiz_compleja.real)| devuelve unicamente la parte real con formato de 4 decimales, lo cual permite que una raiz que no tiene imaginario este en elf oramto correpsondiente para imprimirla en la terminal correctamente.
+
+    Despues, si la condicion no se cumple, entonces se pasa al else, lo que significa que la raiz si tiene parte imaginaria significativa. 
+    En la linea \lstinline|signo = "+" if raiz_compleja.imag >= 0 else "-"| se determina el signo que se va a mostrar entre la parte real y la parte imaginaria, usando un operador ternario para elegir \lstinline|"+"| cuando la parte imaginaria es positiva o cero, y \lstinline|"-"| cuando es negativa. Finalmente, en la ultima linea del return, se construye el formato de numero complejo, mostrando la parte real con 4 decimales, despues el signo calculado, y al final el resultado se ponga en formato $a + bi$ o $a - bi$ a la salida.
+
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Funciones para formatear matrices y raíces}, label={lst:formatear}]
+    def formatear_raiz(raiz_compleja):
+        if abs(raiz_compleja.imag) < 1e-9:
+            return "{:.4f}".format(raiz_compleja.real)
+        else:
+            signo = "+" if raiz_compleja.imag >= 0 else "-"
+            return "{:.4f} {} {:.4f}i".format(raiz_compleja.real, signo, abs(raiz_compleja.imag))
+    \end{lstlisting}
+
+    \subsection{Explicacion ecuacion 3er orden:}
+
+    Ahora bien, para resolver una ecuacion cubica de tercer orden, tenemos la siguiente formula general:
+
+    \begin{equation}
+        ax^3 + bx^2 + cx + d = 0
+    \end{equation}
+
+    donde $a$, $b$, $c$ y $d$ son los coeficientes de la ecuacion, y para este caso se utiliza el metodo de Cardano, el cual transforma la ecuacion original a una forma mas facil de ver la ecuacion, tanto para el programa como para nosotros. 
+    
+    Antes de pasar al codigo, es importante explicar como funciona el metodo de cardano, con un ejemplo:
+
+    \textbf{Supongamos que tenemos lo siguiente:}
+
+    \begin{equation}
+        2x^3 - 4x^2 + 3x - 6 = 0
+    \end{equation}
+    Se hacen uso de las siguientes ecuacion auxiliares:
+    \begin{equation}
+        t^3 + pt + q = 0
+    \end{equation}  
+    Donde $p$ y $q$ son nuevos parametros que se calculan a partir de los coeficientes originales, y esta forma de la ecuacion es mucho mas facil de resolver utilizando el metodo de Cardano, el cual se basa en encontrar dos valores $u$ y $v$ que satisfacen las siguientes condiciones:
+    \begin{equation}
+        u^3 + v^3 = -q
+    \end{equation}
+    \begin{equation}
+        uv = -\frac{p}{3}
+    \end{equation}
+        Con estos valores, se pueden obtener las raices de la ecuacion original utilizando la siguiente formula:
+    \begin{equation}
+        t = u + v
+    \end{equation}
+
+    \begin{equation}
+            x = t - \frac{b}{3a}
+    \end{equation}
+
+    Calculamos los parametros $p$ y $q$ usando los coeficientes originales $a=2$, $b=-4$, $c=3$, $d=-6$:
+    \begin{equation}
+        p = \frac{3ac - b^2}{3a^2} = \frac{3(2)(3) - (-4)^2}{3(2)^2} = \frac{18 - 16}{12} = \frac{2}{12} = \frac{1}{6}
+    \end{equation}
+    \begin{equation}
+        q = \frac{2b^3 - 9abc + 27a^2d}{27a^3} = \frac{2(-4)^3 - 9(2)(-4)(3) + 27(4)(-6)}{27(8)} = 
+    \end{equation}
+    \begin{equation}
+        \frac{-128 + 216 - 648}{216} = \frac{-560}{216} = -\frac{70}{27}
+    \end{equation}
+
+    Con estos valores, la ecuacion simplificada o deprimida queda:
+    \begin{equation}
+        t^3 + \frac{1}{6}t - \frac{70}{27} = 0
+    \end{equation}
+
+    Ahora calculamos el discriminante de Cardano:
+    \begin{equation}
+        \Delta = \left(\frac{q}{2}\right)^2 + \left(\frac{p}{3}\right)^3 = \left(-\frac{35}{27}\right)^2 + \left(\frac{1}{18}\right)^3 = \frac{1225}{729} + \frac{1}{5832} = \frac{9800 + 1}{5832} = \frac{9801}{5832} = \frac{121}{72}
+    \end{equation}
+
+    Como $\Delta > 0$, la ecuacion tiene una raiz real y dos raices complejas conjugadas. Calculamos $u$ y $v$:
+    
+    En caso de que $\Delta < 0$, se tendria que calcular las raices cubicas de numeros complejos, lo cual es mas complicado, pero en este caso, como $\Delta > 0$, se pueden calcular las raices cubicas de numeros reales, lo cual es mas sencillo.
+    
+    \begin{equation}
+        u = \sqrt[3]{-\frac{q}{2} + \sqrt{\Delta}} = \sqrt[3]{\frac{35}{27} + \frac{11\sqrt{2}}{12}} \approx 1.3738
+    \end{equation}
+    \begin{equation}
+        v = \sqrt[3]{-\frac{q}{2} - \sqrt{\Delta}} = \sqrt[3]{\frac{35}{27} - \frac{11\sqrt{2}}{12}} \approx -0.0404
+    \end{equation}
+
+    La primera raiz se obtiene directamente:
+    \begin{equation}
+        t_1 = u + v \approx 1.3738 + (-0.0404) \approx 1.3333
+    \end{equation}
+    \begin{equation}
+        x_1 = t_1 - \frac{b}{3a} = 1.3333 - \frac{-4}{6} = 1.3333 + 0.6667 = 2.0000
+    \end{equation}
+
+    Para obtener las otras dos raices, se utilizan las raices cubicas de la unidad. Estas son las tres soluciones de $z^3 = 1$, que se obtienen con la formula $\omega_k = e^{2\pi i k/3}$ para $k = 0, 1, 2$. La primera ($k=0$) es simplemente $1$ (que ya usamos para $t_1$), y las otras dos son:
+    \begin{equation}
+        \omega = e^{2\pi i/3} = \cos\left(\frac{2\pi}{3}\right) + i\sin\left(\frac{2\pi}{3}\right) = -\frac{1}{2} + \frac{\sqrt{3}}{2}i \approx -0.5 + 0.8660i
+    \end{equation}
+    \begin{equation}
+        \omega^2 = e^{4\pi i/3} = \cos\left(\frac{4\pi}{3}\right) + i\sin\left(\frac{4\pi}{3}\right) = -\frac{1}{2} - \frac{\sqrt{3}}{2}i \approx -0.5 - 0.8660i
+    \end{equation}
+
+    Estas raices de la unidad permiten generar las tres soluciones de la cubica a partir de $u$ y $v$. Para la segunda raiz, calculamos cada producto:
+    \begin{equation}
+        \omega \cdot u = \left(-0.5 + 0.8660i\right)(1.3738) = -0.6869 + 1.1897i
+    \end{equation}
+    \begin{equation}
+        \omega^2 \cdot v = \left(-0.5 - 0.8660i\right)(-0.0404) = 0.0202 + 0.0350i
+    \end{equation}
+    \begin{equation}
+        t_2 = \omega u + \omega^2 v = (-0.6869 + 1.1897i) + (0.0202 + 0.0350i) = -0.6667 + 1.2247i
+    \end{equation}
+    \begin{equation}
+        x_2 = t_2 - \frac{b}{3a} = (-0.6667 + 1.2247i) - (-0.6667) = 0 + 1.2247i \approx 1.2247i
+    \end{equation}
+
+    Ahora para la tercera raiz, se intercambian $\omega$ y $\omega^2$:
+    \begin{equation}
+        \omega^2 \cdot u = \left(-0.5 - 0.8660i\right)(1.3738) = -0.6869 - 1.1897i
+    \end{equation}
+    \begin{equation}
+        \omega \cdot v = \left(-0.5 + 0.8660i\right)(-0.0404) = 0.0202 - 0.0350i
+    \end{equation}
+    \begin{equation}
+        t_3 = \omega^2 u + \omega v = (-0.6869 - 1.1897i) + (0.0202 - 0.0350i) = -0.6667 - 1.2247i
+    \end{equation}
+    \begin{equation}
+        x_3 = t_3 - \frac{b}{3a} = (-0.6667 - 1.2247i) - (-0.6667) = 0 - 1.2247i \approx -1.2247i
+    \end{equation}
+
+    \textbf{Resultado final:} Las tres raices de $2x^3 - 4x^2 + 3x - 6 = 0$ son:
+    \begin{equation}
+        x_1 = 2, \quad x_2 = i\sqrt{\frac{3}{2}} \approx 1.2247i, \quad x_3 = -i\sqrt{\frac{3}{2}} \approx -1.2247i
+    \end{equation}
+
+    \textbf{Caso $\Delta < 0$ (tres raices reales):}
+
+    Cuando el discriminante de Cardano es negativo, la ecuacion tiene tres raices reales distintas. En este caso, los valores dentro de las raices cubicas de $u$ y $v$ son numeros complejos (aunque el resultado final sea real), lo cual se conoce como \textit{casus irreducibilis}. Para evitar trabajar con aritmetica compleja innecesaria, se utiliza el \textbf{metodo trigonometrico}, que calcula las raices directamente con funciones trigonometricas:
+    \begin{equation}
+        t_k = 2\sqrt{-\frac{p}{3}} \cdot \cos\left(\frac{1}{3}\arccos\left(\frac{-q/2}{\sqrt{(-p/3)^3}}\right) - \frac{2\pi k}{3}\right), \quad k = 0, 1, 2
+    \end{equation}
+
+    \textbf{Ejemplo:} Consideremos la ecuacion $x^3 - 5x^2 + 2x + 8 = 0$ con $a=1$, $b=-5$, $c=2$, $d=8$.
+
+    Calculamos $p$ y $q$:
+    \begin{equation}
+        p = \frac{3(1)(2) - (-5)^2}{3(1)^2} = \frac{6 - 25}{3} = -\frac{19}{3}
+    \end{equation}
+    \begin{equation}
+        q = \frac{2(-5)^3 - 9(1)(-5)(2) + 27(1)^2(8)}{27(1)^3} = \frac{-250 + 90 + 216}{27} = \frac{56}{27}
+    \end{equation}
+
+    El discriminante de Cardano es:
+    \begin{equation}
+        \Delta = \left(\frac{28}{27}\right)^2 + \left(-\frac{19}{9}\right)^3 = \frac{784}{729} - \frac{6859}{729} = -\frac{6075}{729} = -\frac{25}{3} \approx -8.3333
+    \end{equation}
+
+    Como $\Delta < 0$, aplicamos el metodo trigonometrico. Primero calculamos los valores necesarios:
+    \begin{equation}
+        r = 2\sqrt{-\frac{p}{3}} = 2\sqrt{\frac{19}{9}} \approx 2.9059
+    \end{equation}
+    \begin{equation}
+        \theta = \arccos\left(\frac{-q/2}{\sqrt{(-p/3)^3}}\right) = \arccos\left(\frac{-28/27}{\sqrt{6859/729}}\right) = \arccos(-0.3381) \approx 109.76^\circ
+    \end{equation}
+
+    Ahora obtenemos las tres raices:
+    \begin{equation}
+        t_1 = 2.9059 \cdot \cos\left(\frac{109.76^\circ}{3}\right) = 2.9059 \cdot \cos(36.59^\circ) \approx 2.3333
+    \end{equation}
+    \begin{equation}
+        x_1 = t_1 - \frac{b}{3a} = 2.3333 - (-1.6667) = 4
+    \end{equation}
+    \begin{equation}
+        t_2 = 2.9059 \cdot \cos\left(\frac{109.76^\circ - 360^\circ}{3}\right) = 2.9059 \cdot \cos(-83.41^\circ) \approx 0.3333
+    \end{equation}
+    \begin{equation}
+        x_2 = t_2 - \frac{b}{3a} = 0.3333 - (-1.6667) = 2
+    \end{equation}
+    \begin{equation}
+        t_3 = 2.9059 \cdot \cos\left(\frac{109.76^\circ - 720^\circ}{3}\right) = 2.9059 \cdot \cos(-203.41^\circ) \approx -2.6667
+    \end{equation}
+    \begin{equation}
+        x_3 = t_3 - \frac{b}{3a} = -2.6667 - (-1.6667) = -1
+    \end{equation}
+
+    \textbf{Resultado:} Las tres raices reales de $x^3 - 5x^2 + 2x + 8 = 0$ son $x_1 = 4$, $x_2 = 2$ y $x_3 = -1$.
+
+    \subsubsection{Explicacion del codigo para la resolucion de ecuacion de 3 orden: }
+    La primera funcion que se define es \texttt{raiz\_cubica\_compleja}, el cual fragmento de codigo es el sigueinte:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para calcular la raíz cúbica de un número complejo}, label={lst:raiz_cubica}]
+def raiz_cubica_compleja(numero_complejo):
+    modulo, angulo = cmath.polar(numero_complejo)
+    return cmath.rect(modulo ** (1 / 3), angulo / 3)
+    \end{lstlisting}
+
+    Esta funcion recibe un numero complejo como argumento. En la primera linea \texttt{modulo, angulo = cmath.polar(numero\_complejo)} se convierte el numero complejo a su representacion en coordenadas polares, obteniendo su modulo y su angulo de fase. Despues, en la segunda linea, se utiliza \texttt{cmath.rect(modulo ** (1 / 3), angulo / 3)} para reconstruir la raiz cubica en forma rectangular, donde el modulo se eleva a la potencia $1/3$ y el angulo se divide entre 3, lo cual corresponde matematicamente a la operacion de raiz cubica en el plano complejo y permite obtener el resultado correcto incluso cuando el argumento es un numero negativo o complejo.
+
+    \newpage
+    La funcion principal del archivo es \texttt{resolver\_cubica}, cuyo codigo es el siguiente:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función principal para resolver la ecuación cúbica}, label={lst:resolver_cubica}]
+def resolver_cubica(coef_a, coef_b, coef_c, coef_d, mostrar_pasos=False):
+    if coef_a == 0:
+        return resolver_cuadratica(coef_b, coef_c, coef_d, mostrar_pasos)
+
+    parametro_p = (3 * coef_a * coef_c - coef_b ** 2) / (3 * coef_a ** 2)
+    parametro_q = (2 * coef_b ** 3 - 9 * coef_a * coef_b * coef_c + 27 * coef_a ** 2 * coef_d) / (27 * coef_a ** 3)
+
+    discriminante_cardano = (parametro_q / 2) ** 2 + (parametro_p / 3) ** 3
+
+    valor_u = raiz_cubica_compleja(-parametro_q / 2 + cmath.sqrt(discriminante_cardano))
+    valor_v = raiz_cubica_compleja(-parametro_q / 2 - cmath.sqrt(discriminante_cardano))
+
+    raiz_unidad_1 = complex(-0.5, math.sqrt(3) / 2)
+    raiz_unidad_2 = complex(-0.5, -math.sqrt(3) / 2)
+
+    solucion_t1 = valor_u + valor_v
+    solucion_t2 = raiz_unidad_1 * valor_u + raiz_unidad_2 * valor_v
+    solucion_t3 = raiz_unidad_2 * valor_u + raiz_unidad_1 * valor_v
+
+    offset_cardano = coef_b / (3 * coef_a)
+    raiz_1 = solucion_t1 - offset_cardano
+    raiz_2 = solucion_t2 - offset_cardano
+    raiz_3 = solucion_t3 - offset_cardano
+
+    raices = (raiz_1, raiz_2, raiz_3)
+
+    if mostrar_pasos:
+        mostrar_proceso_cubica(coef_a, coef_b, coef_c, coef_d,
+                               parametro_p, parametro_q, discriminante_cardano,
+                               valor_u, valor_v, raices)
+
+    return raices, None
+    \end{lstlisting}
+
+    La funcion recibe los cuatro coeficientes de la ecuacion cubica y el parametro opcional \texttt{mostrar\_pasos}. En la primera linea se verifica si \texttt{coef\_a == 0}, lo cual indicaria que la ecuacion en realidad no es cubica sino cuadratica, y en ese caso se delega directamente a \texttt{resolver\_cuadratica(coef\_b, coef\_c, coef\_d, mostrar\_pasos)} devolviendo su resultado sin continuar.
+
+    Si la ecuacion si es cubica, entonces se calculan los parametros \texttt{parametro\_p} y \texttt{parametro\_q} usando las formulas del metodo de Cardano para la forma deprimida. Despues se calcula \texttt{discriminante\_cardano = (parametro\_q / 2) ** 2 + (parametro\_p / 3) ** 3}, y con ese valor se obtienen \texttt{valor\_u} y \texttt{valor\_v} usando \texttt{cmath.sqrt} para la raiz cuadrada compleja y la funcion \texttt{raiz\_cubica\_compleja} que se definio antes.
+
+    A continuacion se definen \texttt{raiz\_unidad\_1 = complex(-0.5, math.sqrt(3) / 2)} y \texttt{raiz\_unidad\_2 = complex(-0.5, -math.sqrt(3) / 2)}, que son las dos raices cubicas complejas de la unidad y permiten construir las tres soluciones de la forma deprimida: \texttt{solucion\_t1}, \texttt{solucion\_t2} y \texttt{solucion\_t3}. Despues se calcula \texttt{offset\_cardano = coef\_b / (3 * coef\_a)} y se resta a cada solucion para regresar de la variable auxiliar $t$ a la variable original $x$, obteniendo \texttt{raiz\_1}, \texttt{raiz\_2} y \texttt{raiz\_3}. Estas tres raices se agrupan en la tupla \texttt{raices}, y si \texttt{mostrar\_pasos} es verdadero, se llama a \texttt{mostrar\_proceso\_cubica} con todos los valores calculados para imprimir el procedimiento completo; finalmente la funcion retorna \texttt{raices, None}.
+
+    La funcion \texttt{mostrar\_proceso\_cubica} se encarga de imprimir en la terminal el desarrollo paso a paso del metodo de Cardano:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para mostrar el proceso de resolución de la ecuación cúbica}, label={lst:proceso_cubica}]
+def mostrar_proceso_cubica(coef_a, coef_b, coef_c, coef_d,
+                           parametro_p, parametro_q, discriminante_cardano,
+                           valor_u, valor_v, raices):
+    ecuacion = construir_ecuacion_cubica(coef_a, coef_b, coef_c, coef_d)
+    print()
+    imprimir_separador()
+    print("  PROCESO DE CALCULO (Metodo de Cardano)")
+    imprimir_separador()
+    print("  Ecuacion: {}".format(ecuacion))
+
+    print()
+    print("  Paso 1: Reducir a forma deprimida  t^3 + pt + q = 0")
+    print("    p = (3ac - b^2) / (3a^2)")
+    print("    p = (3*{}*{} - ({})^2) / (3*({})^2)".format(coef_a, coef_c, coef_b, coef_a))
+    print("    p = {}".format(parametro_p))
+    print()
+    print("    q = (2b^3 - 9abc + 27a^2*d) / (27a^3)")
+    print("    q = {}".format(parametro_q))
+
+    print()
+    print("  Paso 2: Calcular discriminante de Cardano")
+    print("    D = (q/2)^2 + (p/3)^3")
+    print("    D = ({})^2 + ({})^3".format(parametro_q / 2, parametro_p / 3))
+    print("    D = {}".format(discriminante_cardano))
+
+    print()
+    print("  Paso 3: Calcular u y v")
+    print("    u = cbrt(-q/2 + sqrt(D))")
+    print("    u = {}".format(formatear_raiz(valor_u)))
+    print("    v = cbrt(-q/2 - sqrt(D))")
+    print("    v = {}".format(formatear_raiz(valor_v)))
+
+    print()
+    print("  Paso 4: Revertir sustitucion (x = t - b/(3a))")
+    offset = coef_b / (3 * coef_a)
+    print("    Offset = b/(3a) = {}/(3*{}) = {:.4f}".format(coef_b, coef_a, offset))
+
+    print()
+    print("  Paso 5: Raices obtenidas")
+    for indice, raiz in enumerate(raices):
+        print("    x{} = {}".format(indice + 1, formatear_raiz(raiz)))
+    \end{lstlisting}
+
+    La funcion recibe como parametros todos los coeficientes originales, los valores intermedios del metodo de Cardano y las raices ya calculadas. En la primera linea se construye la ecuacion en formato de texto usando \texttt{construir\_ecuacion\_cubica}, y despues se imprime el encabezado del procedimiento utilizando \texttt{imprimir\_separador()} para darle formato visual a la salida en terminal.
+
+    En el paso 1 se muestran las formulas y los valores numericos de los parametros $p$ y $q$, que son los que permiten transformar la ecuacion cubica original a la forma deprimida $t^3 + pt + q = 0$, lo cual es una simplificacion necesaria para poder aplicar el metodo de Cardano. Las lineas de \texttt{print} usan \texttt{.format} para sustituir los coeficientes en la formula y mostrar tanto la expresion simbolica como el valor calculado. En el paso 2 se imprime el discriminante de Cardano $D = (q/2)^2 + (p/3)^3$, mostrando tambien la sustitucion numerica con los valores de \texttt{parametro\_q} y \texttt{parametro\_p} antes de presentar el resultado. En el paso 3 se imprime el valor de $u$ y $v$ usando \texttt{formatear\_raiz} para presentarlos correctamente. En el paso 4 se calcula localmente el \texttt{offset = coef\_b / (3 * coef\_a)}, que es la correccion que se aplica para revertir la sustitucion y regresar de la variable auxiliar $t$ a la variable original $x$. Finalmente, en el paso 5 se recorren las raices con \texttt{enumerate} para imprimirlas numeradas, tambien usando \texttt{formatear\_raiz}.
+
+    \subsection{Explicacion de las llamadas a funciones main.py:}
+
+    La primera funcion que se define en el archivo principal es \texttt{preguntar\_mostrar\_proceso}, cuyo codigo es el siguiente:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para preguntar si se muestra el proceso}, label={lst:preguntar_proceso}]
+def preguntar_mostrar_proceso():
+    respuesta = input("  Mostrar proceso? (s/n): ")
+    return respuesta.lower() == 's'
+    \end{lstlisting}
+
+    Esta funcion se encarga de preguntarle al usuario si quiere ver el proceso de como se resolvio la ecuacion. En la primera linea se usa \texttt{input} para mostrar el mensaje y guardar lo que el usuario escriba en la variable \texttt{respuesta}. Despues, en el return, se convierte la respuesta a minusculas con \texttt{.lower()} y se compara con la letra \texttt{'s'}, de tal forma que si el usuario escribe \texttt{'s'} o \texttt{'S'}, la funcion regresa \texttt{True}, y en cualquier otro caso regresa \texttt{False}.
+
+    La siguiente funcion es \texttt{leer\_coeficientes}, que se encarga de pedirle al usuario los coeficientes de la ecuacion:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para leer los coeficientes}, label={lst:leer_coefs}]
+def leer_coeficientes(nombres):
+    print()
+    imprimir_separador()
+    print("  Ingresa los coeficientes:")
+    imprimir_separador()
+    coeficientes = []
+    for nombre in nombres:
+        valor = float(input("  {} = ".format(nombre)))
+        coeficientes.append(valor)
+    return coeficientes
+    \end{lstlisting}
+
+    Esta funcion recibe como parametro \texttt{nombres}, que es una lista con los nombres de los coeficientes que se van a pedir, por ejemplo \texttt{["a", "b", "c"]} para una ecuacion cuadratica o \texttt{["a", "b", "c", "d"]} para una cubica. Primero se imprime un separador y un mensaje indicando que se van a pedir los coeficientes. Despues se crea una lista vacia llamada \texttt{coeficientes}, y con un ciclo \texttt{for} se recorre cada nombre de la lista, donde en cada vuelta se le pide al usuario que ingrese el valor de ese coeficiente usando \texttt{input} con \texttt{.format} para mostrar el nombre correspondiente, se convierte a numero decimal con \texttt{float} y se agrega a la lista con \texttt{.append}. Al final se regresa la lista con todos los coeficientes ingresados.
+
+    Despues se define la funcion \texttt{manejar\_ecuacion\_cuadratica}, que es la encargada de juntar todo lo necesario para resolver una ecuacion de segundo grado:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para manejar la ecuación cuadrática}, label={lst:manejar_cuad}]
+def manejar_ecuacion_cuadratica():
+    try:
+        coeficientes = leer_coeficientes(["a", "b", "c"])
+        coef_a, coef_b, coef_c = coeficientes
+
+        mostrar_pasos = preguntar_mostrar_proceso()
+
+        raices, error = resolver_cuadratica(coef_a, coef_b, coef_c, mostrar_pasos)
+
+        if error:
+            print(error)
+        else:
+            imprimir_resultados(raices)
+    except ValueError:
+        print("  Error: Ingresa unicamente valores numericos.")
+    \end{lstlisting}
+
+    En esta funcion, lo primero que se hace es llamar a \texttt{leer\_coeficientes} pasandole la lista \texttt{["a", "b", "c"]}, para que le pida al usuario los tres coeficientes de la ecuacion cuadratica. Estos valores se desempaquetan en las variables \texttt{coef\_a}, \texttt{coef\_b} y \texttt{coef\_c}. Despues se llama a \texttt{preguntar\_mostrar\_proceso} para saber si el usuario quiere ver el procedimiento paso a paso, y el resultado se guarda en \texttt{mostrar\_pasos}. Con estos datos se llama a \texttt{resolver\_cuadratica}, que regresa dos cosas: las raices y un posible error. Si hubo error (por ejemplo que $a = 0$), se imprime el mensaje de error, y si no, se imprimen las raices con \texttt{imprimir\_resultados}. Todo esto esta dentro de un bloque \texttt{try-except} para que si el usuario ingresa algo que no sea un numero, se atrape el error de tipo \texttt{ValueError} y se muestre un mensaje indicando que solo se aceptan valores numericos.
+
+    De forma muy similar, se tiene la funcion \texttt{manejar\_ecuacion\_cubica}:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función para manejar la ecuación cúbica}, label={lst:manejar_cub}]
+def manejar_ecuacion_cubica():
+    try:
+        coeficientes = leer_coeficientes(["a", "b", "c", "d"])
+        coef_a, coef_b, coef_c, coef_d = coeficientes
+
+        mostrar_pasos = preguntar_mostrar_proceso()
+
+        raices, error = resolver_cubica(coef_a, coef_b, coef_c, coef_d, mostrar_pasos)
+
+        if error:
+            print(error)
+        else:
+            imprimir_resultados(raices)
+    except ValueError:
+        print("  Error: Ingresa unicamente valores numericos.")
+    \end{lstlisting}
+
+    Esta funcion sigue la misma logica que la anterior, con la diferencia de que ahora se piden cuatro coeficientes \texttt{["a", "b", "c", "d"]} en lugar de tres, ya que una ecuacion cubica tiene un termino mas. Los coeficientes se desempaquetan en \texttt{coef\_a}, \texttt{coef\_b}, \texttt{coef\_c} y \texttt{coef\_d}, y despues se llama a \texttt{resolver\_cubica} en lugar de \texttt{resolver\_cuadratica}. El manejo de errores y la impresion de resultados funcionan exactamente igual que en el caso cuadratico.
+
+    Por ultimo, se tiene la funcion \texttt{main}, que es el punto de entrada del programa y se encarga de mostrar el menu y dirigir al usuario a la opcion que elija:
+
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\scriptsize, caption={Función principal main}, label={lst:main}]
+def main():
+    while True:
+        imprimir_menu()
+
+        opcion = input("\n  Opcion: ")
+
+        if opcion == '0':
+            print()
+            imprimir_separador()
+            print("  Saliendo del programa...")
+            imprimir_separador()
+            break
+        elif opcion == '2':
+            manejar_ecuacion_cuadratica()
+        elif opcion == '3':
+            manejar_ecuacion_cubica()
+        else:
+            print("  Opcion no valida. Intenta de nuevo.")
+
+
+main()
+    \end{lstlisting}
+
+    La funcion \texttt{main} utiliza un ciclo \texttt{while True} para que el programa se mantenga corriendo hasta que el usuario decida salir. En cada vuelta del ciclo, primero se imprime el menu con \texttt{imprimir\_menu()} y despues se le pide al usuario que ingrese una opcion con \texttt{input}. Si el usuario escribe \texttt{'0'}, se imprime un mensaje de despedida y se usa \texttt{break} para salir del ciclo y terminar el programa. Si escribe \texttt{'2'}, se llama a \texttt{manejar\_ecuacion\_cuadratica}, y si escribe \texttt{'3'}, se llama a \texttt{manejar\_ecuacion\_cubica}. En caso de que el usuario escriba cualquier otra cosa, se le muestra un mensaje indicando que la opcion no es valida y el ciclo vuelve a empezar mostrando el menu de nuevo. Al final del archivo, la linea \texttt{main()} es la que ejecuta todo el programa al momento de correr el archivo.
+    
+    \newpage
+    
+    \section{Resultados:}
+
+    A continuacion se presentan 3 ecuaciones de segundo orden y 3 ecuaciones de tercer orden como pruebas del programa, junto con los resultados esperados.
+
+    \subsection{Ecuaciones de segundo orden:}
+
+    \textbf{Problema 1:} Discriminante positivo ($D > 0$), dos raices reales distintas.
+    \begin{equation}
+        x^2 - 5x + 6 = 0
+    \end{equation}
+    Coeficientes: $a = 1$, $b = -5$, $c = 6$. El discriminante es $D = (-5)^2 - 4(1)(6) = 25 - 24 = 1 > 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 2$
+    \end{center}
+
+    \textbf{Problema 2:} Discriminante igual a cero ($D = 0$), raiz doble.
+    \begin{equation}
+        2x^2 + 4x + 2 = 0
+    \end{equation}
+    Coeficientes: $a = 2$, $b = 4$, $c = 2$. El discriminante es $D = (4)^2 - 4(2)(2) = 16 - 16 = 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = -1$
+    \end{center}
+
+    \textbf{Problema 3:} Discriminante negativo ($D < 0$), dos raices complejas conjugadas.
+    \begin{equation}
+        x^2 + 2x + 5 = 0
+    \end{equation}
+    Coeficientes: $a = 1$, $b = 2$, $c = 5$. El discriminante es $D = (2)^2 - 4(1)(5) = 4 - 20 = -16 < 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = -1 + 2i$, \quad $x_2 = -1 - 2i$
+    \end{center}
+
+    \subsection{Ecuaciones de tercer orden:}
+
+    \textbf{Problema 1:} Discriminante de Cardano negativo ($\Delta < 0$), tres raices reales distintas.
+    \begin{equation}
+        x^3 - 6x^2 + 11x - 6 = 0
+    \end{equation}
+    Coeficientes: $a = 1$, $b = -6$, $c = 11$, $d = -6$. Se puede factorizar como $(x-1)(x-2)(x-3) = 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 1$, \quad $x_3 = 2$
+    \end{center}
+
+    \textbf{Problema 2:} Discriminante de Cardano positivo ($\Delta > 0$), una raiz real y dos complejas conjugadas.
+    \begin{equation}
+        x^3 + x^2 + x + 1 = 0
+    \end{equation}
+    Coeficientes: $a = 1$, $b = 1$, $c = 1$, $d = 1$. Se puede factorizar como $(x+1)(x^2+1) = 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = i$, \quad $x_3 = -i$
+    \end{center}
+
+    \textbf{Problema 3:} Discriminante de Cardano igual a cero ($\Delta = 0$), raiz repetida.
+    \begin{equation}
+        x^3 - 3x^2 + 4 = 0
+    \end{equation}
+    Coeficientes: $a = 1$, $b = -3$, $c = 0$, $d = 4$. Se puede factorizar como $(x+1)(x-2)^2 = 0$.
+    \begin{center}
+        \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = 2$, \quad $x_3 = 2$
+    \end{center}
+
+    \newpage
+    \section{Conclusiones:}
+
+    \begin{itemize}
+        \item \textbf{Espinoza Matamoros Percival Ulises:} 
+        
+        \item \textbf{Flores Colin Victor Jaziel:}
+
+        \item \textbf{Garcia Cortes Adolfo de Jesus:}
+
+        \item \textbf{Lara Hernandez Angel Husiel:}
+
+        \item \textbf{Lugo Manzano Rodrigo:}
+        
+    \end{itemize}
+
+    \newpage
+
+    % Impresión Referencias
+    \nocite{*}
+    \printbibliography[heading=bibintoc, title={Referencias}]
+\end{document}

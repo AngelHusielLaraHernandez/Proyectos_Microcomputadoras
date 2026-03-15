@@ -1,0 +1,246 @@
+Connected to MicroPython at COM5
+Use Ctrl-] or Ctrl-x to exit this shell
+run main.py
+  Opcion no valida. Intenta de nuevo.
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 3
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 2
+  b = -4
+  c = 3
+  d = -6
+  Mostrar proceso? (s/n): s
+
+--------------------------------------------
+  PROCESO DE CALCULO (Metodo de Cardano)
+--------------------------------------------
+  Ecuacion: 2x^3 - 4x^2 + 3x - 6 = 0
+
+  Paso 1: Reducir a forma deprimida  t^3 + pt + q = 0
+    p = (3ac - b^2) / (3a^2)
+    p = (3*2.0*3.0 - (-4.0)^2) / (3*(2.0)^2)
+    p = 0.16666667
+
+    q = (2b^3 - 9abc + 27a^2*d) / (27a^3)
+    q = -2.5925924
+
+  Paso 2: Calcular discriminante de Cardano
+    D = (q/2)^2 + (p/3)^3
+    D = (-1.2962962)^2 + (0.055555556)^3
+    D = 1.6805554
+
+  Paso 3: Calcular u y v
+    u = cbrt(-q/2 + sqrt(D))
+    u = 1.3738
+    v = cbrt(-q/2 - sqrt(D))
+    v = -0.0404
+
+  Paso 4: Revertir sustitucion (x = t - b/(3a))
+    Offset = b/(3a) = -4.0/(3*2.0) = -0.6667
+
+  Paso 5: Raices obtenidas
+    x1 = 2.0000
+    x2 = 0.0000 + 1.2247i
+    x3 = 0.0000 - 1.2247i
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = 2.0000
+  x2 = 0.0000 + 1.2247i
+  x3 = 0.0000 - 1.2247i
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 2
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 1
+  b = -5
+  c = 6
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = 3.0000
+  x2 = 2.0000
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 2
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 2
+  b = 4
+  c = 2
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = -1.0000
+  x2 = -1.0000
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 2
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 1
+  b = 2
+  c = 5
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = -1.0000 + 2.0000i
+  x2 = -1.0000 - 2.0000i
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 3
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 1
+  b = -6
+  c = 11
+  d = -6
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = 3.0000 + 0.0000i
+  x2 = 1.0000
+  x3 = 2.0000
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 1
+  Opcion no valida. Intenta de nuevo.
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 3
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 1
+  b = 1
+  c = 1
+  d = 1
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = -1.0000
+  x2 = 0.0000 + 1.0000i
+  x3 = 0.0000 - 1.0000i
+
+
+|                                          |
+|  [2] Ecuacion de segundo grado           |
+|      ax^2 + bx + c = 0                   |
+|                                          |
+|  [3] Ecuacion de tercer grado            |
+|      ax^3 + bx^2 + cx + d = 0            |
+|                                          |
+|  [0] Salir                               |
+|                                          |
++------------------------------------------+
+
+  Opcion: 3
+
+--------------------------------------------
+  Ingresa los coeficientes:
+--------------------------------------------
+  a = 1
+  b = -3
+  c = 0
+  d = 4
+  Mostrar proceso? (s/n): n
+
++------------------------------------------+
+|  RESULTADOS                              |
++------------------------------------------+
+  x1 = -1.0000
+  x2 = 2.0000
+  x3 = 2.0000
