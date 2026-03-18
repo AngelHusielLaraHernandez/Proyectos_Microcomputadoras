@@ -709,7 +709,33 @@ main()
         \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 2$
     \end{center}
 
-    \textbf{Problema 2:} Discriminante igual a cero ($D = 0$), raiz doble.
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.7\textwidth]{img/image1.png}
+        \caption{Solución de la ecuación $x^2 - 5x + 6 = 0$ mostrando las raíces reales en $x=2$ y $x=3$.}
+        \label{fig:cuadratica_ejemplo}
+    \end{figure}
+    
+    Como se puede observar el programa nos muestra paso a paso el proceso de resolución de la ecuación cuadrática, calculando el discriminante, aplicando la fórmula general y obteniendo las raíces reales distintas $x_1 = 3$ y $x_2 = 2$.
+
+    Para mostrar que el resultado anterior es correcto, se hizo uso de \textbf{Desmos}, como se nos muestra a continuación:
+
+      \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.9\textwidth]{img/Problema1segundorden.png}
+        \caption{Se nos muestra la gráfica de la ecuación $x^2 - 5x + 6 = 0$ con esto, de igual forma se observan las raíces reales en $x=2$ y $x=3$.}
+        \label{fig:cuadratica_ejemplo}
+    \end{figure}
+    
+
+    Entonces, al graficar la función $f(x) = x^2 - 5x + 6$ en Desmos, se puede ver que la curva cruza el eje $x$ en los puntos $x=2$ y $x=3$, lo cual confirma que las raíces reales de la ecuación son efectivamente $x_1 = 3$ y $x_2 = 2$, tal como lo calculó el programa.
+
+ 
+
+
+
+
+    \textbf{Problema 2:} Discriminante igual a cero ($D = 0$), raíz doble.
     \begin{equation}
         2x^2 + 4x + 2 = 0
     \end{equation}
@@ -738,6 +764,28 @@ main()
         \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 1$, \quad $x_3 = 2$
     \end{center}
 
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.5\textwidth]{img/image5.png}
+        \caption{Solución de la ecuación $x^3 - 6x^2 + 11x - 6 = 0$ mostrando las raíces reales en $x=1$, $x=2$ y $x=3$.}
+        \label{fig:cubica_ejemplo}
+    \end{figure}
+
+
+    Como se puede observar el programa nos muestra paso a paso el proceso para resolver la ecuación cúbica, calculando los parámetros $p$ y $q$, el discriminante de Cardano, aplicando el método de Cardano y obteniendo las raíces reales distintas $x_1 = 3$, $x_2 = 1$ y $x_3 = 2$.
+
+     Para mostrar que el resultado anterior es correcto, se hizo uso de \textbf{Desmos}, como se nos muestra a continuación:
+
+      \begin{figure}[h]
+        \centering
+        \includegraphics[width=0.9\textwidth]{img/Problema1tercerorden.png}
+        \caption{Se nos muestra la gráfica de la ecuación $x^3 - 6x^2 + 11x - 6 = 0$ con esto, de igual forma se observan las raíces reales en $x=1$, $x=2$ y $x=3$.}
+        \label{fig:cubica_ejemplo}
+    \end{figure}
+
+    Al graficar la función $f(x) = x^3 - 6x^2 + 11x - 6$ en Desmos, se puede ver que la curva cruza el eje $x$ en los puntos $x=1$, $x=2$ y $x=3$, lo cual confirma que las raíces reales de la ecuación son efectivamente $x_1 = 3$, $x_2 = 1$ y $x_3 = 2$, tal como lo calculó el programa.
+
+
     \textbf{Problema 2:} Discriminante de Cardano positivo ($\Delta > 0$), una raiz real y dos complejas conjugadas.
     \begin{equation}
         x^3 + x^2 + x + 1 = 0
@@ -765,8 +813,9 @@ main()
         \item \textbf{Flores Colin Victor Jaziel:}
 
         \item \textbf{Garcia Cortes Adolfo de Jesus:}
-
-        \item \textbf{Lara Hernandez Angel Husiel:}
+        
+        En conclusión gracias al programa realizado pudimos tener un acercamiento al uso de micropython, para hacer uso de la tarjeta Raspberry pico 2w, todo esto al realizar nuestro programa para resolver ecuaciones de segundo y tercer orden, ya que tuvimos que hacer uso de bibliotecas como \texttt{cmath} para poder trabajar con numeros complejos, lo cual es necesario para resolver ecuaciones cuadraticas con discriminante negativo y ecuaciones cubicas con discriminante de Cardano positivo. Ademas, el programa nos permite mostrar 
+        el proceso de resolucion paso a paso, lo cual es muy util para entender como se aplican las formulas y los metodos matematicos involucrados en la solucion de estas ecuaciones. Sin olvidar que también nos permitió hacer uso de Tony para poder llevarlo a la tarjeta, con esto pudimos comprobar que el programa funciona correctamente en el entorno de la Raspberry Pico 2W, lo cual nos permitió aprender a programar en un microcontrolador y a manejar las limitaciones de recursos que esto implica.
 
         \item \textbf{Lugo Manzano Rodrigo:}
         
