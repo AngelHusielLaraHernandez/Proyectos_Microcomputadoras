@@ -753,6 +753,42 @@ main()
         \textbf{Resultado esperado:} $x_1 = -1 + 2i$, \quad $x_2 = -1 - 2i$
     \end{center}
 
+    Al ejecutar el programa con estos coeficientes, la consola nos arroja las raíces complejas esperadas, demostrando que se maneja correctamente el discriminante negativo.
+    
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\textwidth]{image3.png}
+        \caption{Salida en consola para la ecuación cuadrática con raíces complejas.}
+        \label{fig:consola_cuadratica_3}
+    \end{figure}
+
+    Para validar este resultado gráficamente, podemos ver que la parábola descrita por la función no intersecta el eje $x$ en ningún punto, lo que indica que no hay de raíces reales. Por otro lado, al graficar las raíces en el plano complejo, vemos la posición de las soluciones conjugadas. Además, se refuerza la exactitud de nuestro programa comparando el resultado con el software Wolfram Alpha.
+
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}[b]{0.55\textwidth}
+            \centering
+            \includegraphics[width=1\textwidth]{2_3_1.png}
+            \caption{Gráfica de la parábola en el plano real.}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.35\textwidth}
+            \centering
+            \includegraphics[width=0.8\textwidth]{2_3_2.png}
+            \caption{Raíces en el plano complejo.}
+        \end{subfigure}
+        \caption{Análisis gráfico del Problema 3 (Segundo orden).}
+        \label{fig:graficas_cuadratica_3}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.44\textwidth]{Wolfram_3_3.png}
+        \caption{Comprobación de las raíces complejas mediante Wolfram Alpha.}
+        \label{fig:wolfram_cuadratica_3}
+    \end{figure}
+
+
     \subsection{Ecuaciones de tercer orden:}
 
     \textbf{Problema 1:} Discriminante de Cardano negativo ($\Delta < 0$), tres raices reales distintas.
@@ -803,6 +839,31 @@ main()
     \begin{center}
         \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = 2$, \quad $x_3 = 2$
     \end{center}
+
+    Para esta prueba, usamos la opción de mostrar el proceso paso a paso en el programa cuando se nos pregunta en consola. La salida en esta nos confirma el cálculo exacto del discriminante de Cardano ($\Delta = 0$), obteniendo las raíces reales.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\textwidth]{image7.png}
+        \caption{Salida en consola del proceso completo por el método de Cardano.}
+        \label{fig:consola_cubica_3}
+    \end{figure}
+
+    Igualmente confirmamos la solución de esta ecuación graficamente y por medio del software Wolfram Alpha, esto nos muestra un comportamiento en el que la curva cruza el eje $x$ en $x_1 = -1$ y es tangente al eje $x$ en $x_{2,3} = 2$, lo cual es la representación gráfica de una raíz repetida. Este comportamiento coincide exactamente con lo evaluado por Wolfram Alpha, confirmando que nuestro desarrollo en MicroPython es correcto.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.65\textwidth]{3_2.png}
+        \caption{Gráfica de la función cúbica señalando la raíz repetida.}
+        \label{fig:grafica_cubica_3_raiz}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.4\textwidth]{Wolfram_2_3.png}
+        \caption{Comprobación matemática de la función cúbica en Wolfram Alpha.}
+        \label{fig:wolfram_cubica_3_comprobacion}
+    \end{figure}
 
     \newpage
     \section{Conclusiones:}
