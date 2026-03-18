@@ -878,6 +878,18 @@ main()
         En conclusión gracias al programa realizado pudimos tener un acercamiento al uso de micropython, para hacer uso de la tarjeta Raspberry pico 2w, todo esto al realizar nuestro programa para resolver ecuaciones de segundo y tercer orden, ya que tuvimos que hacer uso de bibliotecas como \texttt{cmath} para poder trabajar con numeros complejos, lo cual es necesario para resolver ecuaciones cuadraticas con discriminante negativo y ecuaciones cubicas con discriminante de Cardano positivo. Ademas, el programa nos permite mostrar 
         el proceso de resolucion paso a paso, lo cual es muy util para entender como se aplican las formulas y los metodos matematicos involucrados en la solucion de estas ecuaciones. Sin olvidar que también nos permitió hacer uso de Tony para poder llevarlo a la tarjeta, con esto pudimos comprobar que el programa funciona correctamente en el entorno de la Raspberry Pico 2W, lo cual nos permitió aprender a programar en un microcontrolador y a manejar las limitaciones de recursos que esto implica.
 
+        \item \textbf{Lara Hernandez Angel Husiel:} 
+        
+        Para el desarrollo del proyecto fue de gran ayuda, para saber las limitaciones de la raspberry pico 2W, en cuestion de carga de librerias para micropython, donde se tuvo que hacer uso de la libreria cmath, la cual a diferencia de math, numpy, etc, si es compatible con micropython y mas importante
+        es compatible y es eficiente para la placa pico 2W, esta liberia cmath, fue la mas importante, ya que esta fue la que ma snos ayudo en el calculo de las raices complejas, tanto para la ecuacion cuadratica como para la cubica, ya que el metodo de Cardano,
+        en algunos casos, requiere trabajar con numeros complejos aunque el resultado final sea real, y gracias a esta libreria se pudo implementar el metodo de Cardano sin problemas, no obstante, no puedo dejar de lado que gracias al metodo cardano, pude corregir errores de logica de codigo 
+        debido que en algunos casos los numeros de acarreo llevaban decimales muy pequeños que se iban arrastrando y generaban resultados erroneos, minimos errores de redonde, pero eso hacia que el programa ya no se viera de la forma indicada para tener la respuesta correcta,
+        ademas de esto la implementacion de este metodo me ayudo a entender de mejor manera el funcionamiento de micropython para la raspberry. Por ultimo, tenemos que el codigo fue divivido en diferentes archivos para que su comprension fuera mas sencilla, 
+        esto hizo que practicas de programacion que tenemos como es el caso de C en serparar funciones en archivos propios, las volvimos a usar para este proyecto, lo cual me ayuda de mejor manera tanto a programar, como tener una mejor organizacion del codigo mismo.
+        Este proyecto fue de gran ayuda por todo lo nuevo de micropython y conocer las limitaciones de la placa en cuestion de librerias, asi como anteriormente dije para corregir errores de acarreo de decimales que por muy pequeños en el caso de la placa 
+        si afectaron de gran forma resultados, por lo que varias veces se tuvo que reestructurar el codigo para el correcto funcionamiento del mismo.
+
+
         \item \textbf{Lugo Manzano Rodrigo:}
         
     \end{itemize}
