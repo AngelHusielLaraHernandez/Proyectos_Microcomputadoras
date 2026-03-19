@@ -709,7 +709,7 @@ main()
         \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 2$
     \end{center}
 
-    \begin{figure}[h]
+    \begin{figure}[H]
         \centering
         \includegraphics[width=0.7\textwidth]{img/image1.png}
         \caption{Solución de la ecuación $x^2 - 5x + 6 = 0$ mostrando las raíces reales en $x=2$ y $x=3$.}
@@ -720,7 +720,7 @@ main()
 
     Para mostrar que el resultado anterior es correcto, se hizo uso de \textbf{Desmos}, como se nos muestra a continuación:
 
-      \begin{figure}[h]
+      \begin{figure}[H]
         \centering
         \includegraphics[width=0.9\textwidth]{img/Problema1segundorden.png}
         \caption{Se nos muestra la gráfica de la ecuación $x^2 - 5x + 6 = 0$ con esto, de igual forma se observan las raíces reales en $x=2$ y $x=3$.}
@@ -743,6 +743,23 @@ main()
     \begin{center}
         \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = -1$
     \end{center}
+
+    Como se puede observar en la siguiente imagen nuestro programa logró resolver una ecuación de segundo grado con discriminante 0, por lo que queda demostrado que puede manejar raices duplicadas.
+        \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{img/image2.png}
+        \caption{Solución de la ecuación $2x^2 + 4x + 2 = 0$ mostrando las raíces reales en $x= -1$ y $x=-1$}
+        \label{fig:cubica_ejemplo2}
+    \end{figure}
+
+    Para corroborar que nuestra solución fuese correcta, se recurrió nuevamente a la herramienta desmos donde se metió la ecuación $2x^2 + 4x + 2 = 0$ mostrando graficamente la única solución en $x=-1$ para ambas raices.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.9\textwidth]{img/ESO.png}
+        \caption{Se nos muestra la gráfica de la ecuación $2x^2 + 4x + 2 = 0$ y sus raíces reales en $x= -1$ y $x=-1$.}
+        \label{fig:cuadratica_ejemplo2}
+    \end{figure}
 
     \textbf{Problema 3:} Discriminante negativo ($D < 0$), dos raices complejas conjugadas.
     \begin{equation}
@@ -800,7 +817,7 @@ main()
         \textbf{Resultado esperado:} $x_1 = 3$, \quad $x_2 = 1$, \quad $x_3 = 2$
     \end{center}
 
-    \begin{figure}[h]
+    \begin{figure}[H]
         \centering
         \includegraphics[width=0.5\textwidth]{img/image5.png}
         \caption{Solución de la ecuación $x^3 - 6x^2 + 11x - 6 = 0$ mostrando las raíces reales en $x=1$, $x=2$ y $x=3$.}
@@ -812,7 +829,7 @@ main()
 
      Para mostrar que el resultado anterior es correcto, se hizo uso de \textbf{Desmos}, como se nos muestra a continuación:
 
-      \begin{figure}[h]
+      \begin{figure}[H]
         \centering
         \includegraphics[width=0.9\textwidth]{img/Problema1tercerorden.png}
         \caption{Se nos muestra la gráfica de la ecuación $x^3 - 6x^2 + 11x - 6 = 0$ con esto, de igual forma se observan las raíces reales en $x=1$, $x=2$ y $x=3$.}
@@ -830,6 +847,41 @@ main()
     \begin{center}
         \textbf{Resultado esperado:} $x_1 = -1$, \quad $x_2 = i$, \quad $x_3 = -i$
     \end{center}
+
+    A continuación al introducir los coeficientes, se muestra como el programa es capaz de resolver problemas con raices imaginarias y al igual que en los casos pasados se calculó internamente los parámetros $p$ y $q$ para su solución, dandonos como resultado la raiz real $x_1 = -1$ y las raices imaginarias \quad $x_2 = i$, \quad $x_3 = -i$
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\textwidth]{image6.png}
+        \caption{Resultado en consola de la ecuación $x^3 + x^2 + x + 1 = 0$ }
+        \label{fig:consola_cubica_2}
+    \end{figure}
+
+    A continuación con ayuda de Wolfram Alpha se validó que las raices obtenidas por el programa son correctas, ya que también se observan sus reprentaciones gráficas tanto en el plano real como en el complejo y finalmente el valor de las raices.
+    \begin{figure}[H]
+        \centering
+        \begin{subfigure}[a]{0.45\textwidth}
+            \centering
+            \includegraphics[width=1\textwidth]{G1.png}
+            \caption{Gráfica de la parábola en el plano real.}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.55\textwidth}
+            \centering
+            \includegraphics[width=0.8\textwidth]{G2.png}
+            \caption{Gráfica de la parábola en el plano complejo}
+        \end{subfigure}
+        \caption{Análisis gráfico del Problema 2 (Segundo orden).}
+        \label{fig:graficas_cuadratica_3}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\textwidth]{G3.png}
+        \caption{Raices de la ecuación $x^3 + x^2 + x + 1 = 0$ }
+        \label{fig:consola_cubica_2}
+    \end{figure}
+
+
 
     \textbf{Problema 3:} Discriminante de Cardano igual a cero ($\Delta = 0$), raiz repetida.
     \begin{equation}
@@ -872,6 +924,9 @@ main()
         \item \textbf{Espinoza Matamoros Percival Ulises:} 
         
         \item \textbf{Flores Colin Victor Jaziel:}
+        Puedo concluir que el desarrollo de este proyecto me permitió consolidar conocimientos sobre la programación en MicroPython, así como recordar métodos matemáticos para la resolución de ecuaciones polinómicas de segundo y tercer orden respectivamente. La implementación en \textit{MicroPython} sobre la tarjeta Raspberry Pico 2W implicó cierto desafio ya que nos tuvimos que adaptar a las limitaciones de la tarjeta, particularmente en el uso de bibliotecas disponibles como \texttt{cmath} queresultó fundamental para el manejo de números complejos y la correcta aplicación de fórmulas como la resolución de ecuaciones cuadráticas y el método de Cardano para ecuaciones cúbicas.
+
+        La optimización del código y el control de errores de redondeo nos permitieron comprender mejor el comportamiento numérico en microcontroladores con recursos limitado. Este proyecto integró teoría matemática y programación estructurada para el hardware, contribuyendo al entendimiento del uso de MicroPython en la Raspberry Pico 2W y sus limitaciones en aplicaciones de cálculo numérico.
 
         \item \textbf{Garcia Cortes Adolfo de Jesus:}
         
