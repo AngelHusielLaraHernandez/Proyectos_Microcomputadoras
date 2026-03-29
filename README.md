@@ -21,55 +21,41 @@ mostrar el procedimiento paso a paso en la terminal.
 
 ---
 
+
 ## Estructura del proyecto
 
 ```
 Proyecto1/
-├── code/                       # Codigos fuente en MicroPython
-│   ├── main.py                 # Punto de entrada — menu principal e interaccion con el usuario
-│   ├── solver_cuadratico.py    # Resolucion de ecuaciones cuadraticas (formula general)
-│   ├── solver_cubico.py        # Resolucion de ecuaciones cubicas (metodo de Cardano)
-│   └── formato.py              # Funciones de formato: menus, resultados, separadores y texto
-├── img/                        # Imagenes utilizadas en el reporte LaTeX
+├── code/                       # Códigos fuente en MicroPython
+│   ├── main.py                 # Punto de entrada — menú principal e interacción con el usuario
+│   ├── solver_cuadratico.py    # Resolución de ecuaciones cuadráticas (fórmula general)
+│   ├── solver_cubico.py        # Resolución de ecuaciones cúbicas (método de Cardano)
+│   ├── formato.py              # Funciones de formato: menús, resultados, separadores y texto
+│   └── Leds.py                 # Control de LEDs con menú interactivo (nuevo módulo)
+├── img/                        # Imágenes utilizadas en el reporte LaTeX
 ├── portada_img/                # Escudos institucionales para la portada del reporte
 │   ├── der.png                 # Logo derecho del encabezado
 │   ├── izq.png                 # Logo izquierdo del encabezado
 │   ├── escudounam_negro.jpg    # Escudo UNAM
-│   └── escudofi_negro.jpg      # Escudo Facultad de Ingenieria
+│   └── escudofi_negro.jpg      # Escudo Facultad de Ingeniería
 ├── main.tex                    # Documento principal del reporte en LaTeX
 ├── portada.tex                 # Portada del reporte
-├── referencias.bib             # Referencias bibliograficas (BibLaTeX / Biber)
+├── referencias.bib             # Referencias bibliográficas (BibLaTeX / Biber)
 ├── main.pdf                    # PDF compilado del reporte
 └── README.md                   # Este archivo
 ```
 
 ---
 
-## Modulos del codigo
 
-### `main.py`
-Punto de entrada del programa. Contiene el menu interactivo que permite al usuario elegir
-entre resolver una ecuacion cuadratica o cubica. Lee los coeficientes desde la terminal,
-llama al solver correspondiente y muestra los resultados formateados.
+## Módulos del código
 
-### `solver_cuadratico.py`
-Contiene la funcion `resolver_cuadratica(coef_a, coef_b, coef_c, mostrar_pasos)`.
-Aplica la formula general $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$ usando `cmath.sqrt`
-para soportar discriminantes negativos (raices complejas). Si `mostrar_pasos=True` imprime
-el procedimiento detallado.
 
-### `solver_cubico.py`
-Contiene la funcion `resolver_cubica(coef_a, coef_b, coef_c, coef_d, mostrar_pasos)`.
-Aplica el **metodo de Cardano**: reduce la cubica a forma deprimida calculando los parametros
-$p$ y $q$, obtiene el discriminante de Cardano $D = (q/2)^2 + (p/3)^3$, calcula $u$ y $v$
-con raiz cubica compleja, y reconstruye las tres raices usando las raices de la unidad.
-Si `coef_a == 0` delega automaticamente a `resolver_cuadratica`.
-
-### `formato.py`
-Funciones auxiliares de presentacion: `imprimir_menu`, `imprimir_resultados`,
-`imprimir_separador`, `formatear_raiz`, `construir_ecuacion_cuadratica` y
-`construir_ecuacion_cubica`. Centralizan todo el formato de salida para mantener
-el codigo de los solvers limpio.
+### `Leds.py` (nuevo módulo)
+Permite el control de 8 LEDs conectados a la Raspberry Pi Pico mediante un menú interactivo en terminal.
+El usuario puede seleccionar diferentes combinaciones de entradas binarias para ejecutar patrones de encendido,
+apagado, corrimientos y efectos visuales en los LEDs. El menú y los mensajes han sido mejorados para una interacción
+más clara y estética. Ideal para prácticas de manejo de hardware y visualización de salidas digitales.
 
 ---
 
