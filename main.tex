@@ -218,11 +218,132 @@
     Mediante la creacion, implementacion de un programa en MicroPython, diseñar el control de 8 leds conectados a una Raspberry Pi Pico, utilizando diferentes secuencias de encendido y apagado, asi como la capacidad de tener la lectura desde la terminal para saber las entradas
     que se estaran realizando para cada secuencia, asi mismo contruir fisicamente el circuito con los leds y las resistencias necesarias para su correcto funcionamiento.
     \section{Desarrollo:}
+    
+    \subsection{Lógica de Control a Nivel de Bits}
+    Para optimizar el manejo de los pines de salida de la Raspberry Pi Pico sin tener que declarar el estado de cada pin de forma individual y repetitiva, se implementó la función \texttt{set\_leds(valor)}, esta función recibe como argumento un número entero el cual representa el estado de los 8 LEDs y se encarga de traducirlo a señales físicas en el microcontrolador.
+    
+    El funcionamiento de esta parte se basa en operadores de corrimiento a nivel de bits. Dentro de un ciclo \texttt{for} que itera 8 veces, una por cada LED, se aplica la instrucción \texttt{(valor >> i) \& 1}. 
+    
+    Primero, el operador de corrimiento a la derecha (\texttt{>>}) desplaza los bits del \texttt{valor} ingresado \texttt{i} posiciones hacia la derecha. Esto coloca el bit específico que se desea evaluar en la posición del bit menos significativo. Luego, se aplica la operación lógica AND (\texttt{\&}) con el número 1, esta operación actúa como un filtro para el resto de los bits y separa únicamente el menos significativo, devolviendo como resultado final un 1 lógico (encendido) o un 0 lógico (apagado). Y ya por último, este resultado se envía al método \texttt{.value()} del pin correspondiente.
 
+    \begin{lstlisting}[language={[LAB]Python}, caption={Función para manejar el estado de los pines mediante lógica a nivel de bits}]
+def set_leds(valor):
+    for i in range(8):
+        pines_leds[i].value((valor >> i) & 1)
+    \end{lstlisting}
+
+    \subsection{Implementación de un menú de usuario}
+    Para facilitar la interacción del usuario con el programa, se hizo la función \texttt{mostrar\_menu()}, con la finalidad de imprimir en la consola de manera estructurada las 8 combinaciones binarias posibles y la acción correspondiente a cada una, mejorando la usabilidad general. Además, esta función se mandará a llamar más tarde y así también mejoramos la legibilidad del código al separar la lógica de presentación de la lógica de control.
+    
+    \begin{lstlisting}[language={[LAB]Python}, caption={Interfaz de menú y función de lectura en hilo secundario}]
+def mostrar_menu():
+    print("\n" + "="*60)
+    print(" " * 18 + "CONTROL DE LEDs")
+    print("="*60)
+    print("  [000] - Todos los LEDs apagados")
+    print("  [001] - Encender / Apagar LEDs")
+    print("  [010] - Encender / Apagar Nibbles")
+    print("  [011] - Corrimientos entre Nibbles a la derecha")
+    print("  [100] - Corrimientos entre Nibbles a la izquierda")
+    print("  [101] - Corrimientos de LEDs a la derecha")
+    print("  [110] - Corrimientos de LEDs a la izquierda")
+    print("  [111] - Corrimientos de LEDs en Zig - Zag")
+    print("="*60)
+    \end{lstlisting}
+
+    \subsection{Implementación de Multihilo}
+    Uno de los principales retos en el diseño del programa para este sistema de control fue lograr que las secuencias luminosas se ejecutaran de manera ininterrumpida mientras el programa se mantenía a la espera de nuevas instrucciones. En una ejecución secuencial clásica, invocar la función \texttt{input()} detiene por completo el flujo del programa hasta que el nosotros como usuarios ingresamos un dato por teclado, lo cual congelaría el parpadeo de los LEDs.
+    
+    Para resolver esta parte, implementamos el uso de la biblioteca \texttt{\_thread} nativa de MicroPython, esta biblioteca nos permite crear un hilo de ejecución secundario que opera en paralelo al procesamiento principal del microcontrolador.
+    
+    La captura de datos se implemento en la función \texttt{leer\_entradas()}, que es la que se ejecuta en el hilo secundario, despliega el menú y entra en un ciclo infinito evaluando la entrada por teclado. Al recibir una cadena, verifica que pertenezca al arreglo de combinaciones válidas (desde \texttt{'000'} hasta \texttt{'111'}) y de ser correcta, actualiza de inmediato la variable global \texttt{Decision}. Al utilizar \texttt{\_thread.start\_new\_thread(leer\_entradas, ())}, el hilo principal queda libre de interrupciones, dedicándose exclusivamente a leer la variable \texttt{Decision} y ejecutar las secuencias de tiempo crítico en el hardware.
+
+    \begin{lstlisting}[language={[LAB]Python}, caption={Interfaz de menú y función de lectura en hilo secundario}]
+def leer_entradas():
+    global Decision
+    Entradas = ['000', '001', '010', '011', '100', '101', '110', '111']
+    
+    mostrar_menu()
+    print(f'\nESTADO INICIAL: [{Decision}] - Todos los LEDs apagados')
+    
+    while True:
+        nueva_opcion = input('\n>> Teclee la combinacion [PIN11, PIN15, PIN17]: ')
+        
+        if nueva_opcion in Entradas:
+            Decision = nueva_opcion
+            
+            print("\n" + "-"*60)
+            if Decision == '000':
+                print(f'   Ejecutando: [{Decision}] - Todos los LEDs apagados')
+            elif Decision == '001':
+                print(f'   Ejecutando: [{Decision}] - Encender / Apagar LEDs')
+            elif Decision == '010':
+                print(f'   Ejecutando: [{Decision}] - Encender / Apagar Nibbles')
+            elif Decision == '011':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos entre Nibbles (Derecha)')
+            elif Decision == '100':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos entre Nibbles (Izquierda)')
+            elif Decision == '101':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs (Derecha)')
+            elif Decision == '110':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs (Izquierda)')
+            elif Decision == '111':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs en Zig-Zag')
+            print("-" * 60)
+        else:
+            print("\n" + "!"*60)
+            print("   Opcion no valida.")
+            print("   Entradas disponibles: 000, 001, 010, 011, 100, 101, 110, 111")
+            print("!"*60)
+    \end{lstlisting}
+
+
+    \subsection{Diseño y Lógica Combinacional de las Secuencias}
+    El hilo principal del programa está formado por un ciclo infinito (\texttt{while True}) que evalúa de forma continua la variable global \texttt{Decision}. Dependiendo de su estado lógico, el cual representa las combinaciones binarias desde \texttt{'000'} hasta \texttt{'111'}, el flujo de ejecución se direcciona hacia rutinas específicas. Para optimizar el procesamiento en la Raspberry Pi Pico, estas rutinas se agruparon en tres categorías:
+    
+    \subsubsection{Secuencias de estado fijo y alternancia de Nibbles (000, 001 y 010)}
+    Para los comportamientos más directos, como apagar todos los LEDs (\texttt{000}), generar un parpadeo general (\texttt{001}) o el parpadeo alternado de Nibbles (\texttt{010}), se enviaron directamente literales binarios a la función \texttt{set\_leds}. Por ejemplo, para los Nibbles se alternaron las máscaras \texttt{0b11110000} (parte alta) y \texttt{0b00001111} (parte baja), controlando la frecuencia de oscilación con la instrucción \texttt{time.sleep(0.2)}.
+
+    \subsubsection{Corrimientos direccionales iterativos (011, 100, 101 y 110)}
+    Los casos que implican desplazamientos espaciales de LEDs o Nibbles a lo largo de la barra se implementaron utilizando listas que contienen los estados precalculados en formato binario y un ciclo \texttt{for} itera sobre estos arreglos y envía el estado correspondiente.
+    
+    Un detalle importante en esta implementación es el manejo del control asíncrono, pues dentro de cada iteración del ciclo \texttt{for}, se agregó una validación de estado (\texttt{if Decision != '...': break}). Esto nos garantiza que, si el hilo secundario modifica la variable de control ante un nuevo comando del usuario, el ciclo de corrimiento en curso se interrumpa instantáneamente, logrando un tiempo de respuesta inmediato en el hardware y evitando que la secuencia termine de ejecutarse antes de aplicar el cambio.
+
+    \subsubsection{Implementación matemática del corrimiento en Zig-Zag (111)}
+    Para lograr el efecto de rebote de luces tipo Zig-Zag, y no tener que definir una extensa lista de estados de 8 bits, se uso un arreglo que representa únicamente las posiciones espaciales: \texttt{secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]}. 
+    
+    Haciendo uso de un contador global que se incrementa infinitamente (\texttt{paso}) y el operador de módulo (\texttt{\%}), se calcula un índice dinámico pero seguro mediante la expresión \texttt{paso \% len(secuencia)}. Una vez obtenida la posición de la iteración actual, se emplea un operador de corrimiento lógico a la izquierda (\texttt{1 << posicion}) para colocar un único bit en estado alto exactamente en el pin físico que le corresponde.
+
+    \begin{lstlisting}[language={[LAB]Python}, caption={Lógica de control del ciclo principal y casos principales de cada categoría}]
+    while True:
+        if Decision == '000':
+            set_leds(0b00000000)
+            time.sleep(0.1)
+        # ... Casos 001 a 100
+                
+        elif Decision == '101':
+            secuencia = [0b10000000, 0b01000000, 0b00100000, 0b00010000, 0b00001000, 0b00000100, 0b00000010, 0b00000001]
+            for valor in secuencia:
+                set_leds(valor)
+                time.sleep(0.2)
+                if Decision != '101':#Condicion de ruptura
+                    break
+        # ... Caso 110
+                
+        elif Decision == '111':
+            secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]
+            posicion = secuencia[paso % len(secuencia)]
+            set_leds(1 << posicion)
+            paso += 1
+            time.sleep(0.2)
+    \end{lstlisting}
+
+
+    \subsection{Implementación Física del Circuito}
     Para la implementacion de este proyecto se utiliza la Raspberry Pi Pico, cuyo diagrama de pines se muestra a continuacion:
 
     \begin{center}
-    \begin{circuitikz}[american, thick, scale=0.85, transform shape]
+    \begin{circuitikz}[american, thick, scale=0.75, transform shape]
         
         \picoboard 
 
@@ -280,7 +401,15 @@
     \end{circuitikz}
     \end{center}
 
+    Como se puede observar en el diagrama, el hardware se estructuró usando los pines de propósito general GPIO de la Raspberry. Se seleccionaron 8 salidas digitales consecutivas lógicamente (GP0, GP1, GP2, GP3, GP4, GP5, GP6 y GP7) para mantener un orden en el bus de datos de la función \texttt{set\_leds()}.
     
+    Para proteger tanto los puertos del microcontrolador como el display multicolor, se colocó una resistencia limitadora de corriente de $68\,\Omega$ en serie con cada una de las líneas de señal. 
+    
+    También optamos por una mejora en el diseño físico, ya que en lugar de alambrar 8 LEDs individuales, se empleó un display tipo barra multicolor de 10 segmentos, de esta barra, se conectaron y utilizaron únicamente 8 segmentos que corresponden a nuestros 8 bits de control. Esta decisión de hardware nos resultó ser mucho más funcional, primero en la implementación en la protoboard y además nos permitió una presentación mucho más limpia visualmente.
+
+    
+
+    \newpage
     \section{Resultados:}
 
 
