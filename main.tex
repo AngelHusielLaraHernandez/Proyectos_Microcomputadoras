@@ -594,6 +594,311 @@ Esta opción genera un efecto de desplazamiento visual a la derecha de manera si
         \caption{Ejecución Opción 011: Vuelva a hacer el Primer Desplazamiento (T1) para después seguir con T2 y T3 nuevamente, así de forma cíclica.}
     \end{figure}
 
+    \newpage
+        \subsection{Caso 5: Corrimientos entre Nibbles a la izquierda}
+
+        Este caso es el opuesto del caso anterior, pero genera un efecto de desplazamiento visual hacia la izquierda y al igual que en el Caso 4, se itera sobre una secuencia predefinida de valores binarios que hacen que dos pares de LEDs (uno en la parte alta y otro en la baja) se muevan sincronizadamente. Para el corrimiento a la izquierda, la secuencia utilizada es \texttt{0b10011001}, \texttt{0b00110011}, \texttt{0b01100110} y \texttt{0b11001100}, invirtiendo el orden del Caso 4. Cada valor se aplica a los pines con una pausa de 0.2 {[}s{]} para crear una ilusión de movimiento continua hacia la izquierda.
+
+        \subsubsection{Ejecución del corrimiento a la izquierda}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=1.0\textwidth]{img/Renglon5/SalidaTerminal.png}
+            \caption{Elección de la opción 100 - Corrimientos entre Nibbles a la izquierda}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame1.jpg}
+            \caption{Ejecución Opción 100: Estado Inicial (T0). Se observa un patrón de 2 pares de LEDs encendidos que comenzarán a desplazarse a la izquierda.}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame2.jpg}
+            \caption{Ejecución Opción 100: Primer Desplazamiento (T1). Ambos pares de LEDS se desplazan a la izquierda una posición.}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame3.jpg}
+            \caption{Ejecución Opción 100: Segundo Desplazamiento (T2). Ambos pares de LEDS se desplazan una posición más y el led que se encontraba más a la izquierda en la última posición ahora retorna a la primera posición en el lado derecho.}
+        \end{figure}
+
+        \newpage
+    \subsection{Caso 6: Corrimientos de LEDs a la derecha}
+
+    A diferencia de los casos anteriores que trabajaban con nibbles completos, esta opción genera un efecto de "luz móvil" donde un solo LED se desplaza a lo largo de toda la barra, para su implementación se definio una lista  con la secuencia predefinida que es iterada por el programa y que sirve para indicar quee LED se enciende, comenzando desde el extremo izquierdo (GP0) hasta el extremo derecho (GP7), creando la ilusión visual de que un punto de luz se mueve hacia la derecha. Cada cambio de estado tiene una pausa de 0.2 {[}s{]} para que el movimiento sea claramente perceptible. Una vez que el LED llega al final, la secuencia se reinicia cíclicamente.
+
+    \subsubsection{Ejecución del corrimiento a la derecha}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon6/SalidaTerminal.png}
+        \caption{Elección de la opción 101 - Corrimientos de LEDs a la derecha}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame1.jpg}
+        \caption{Ejecución Opción 101: Posición Inicial (LED 0). El LED en el extremo izquierdo (GP0) es el primero en encenderse.}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame2.jpg}
+        \caption{Ejecución Opción 101: Primer Corrimiento (LED 1). La luz se desplaza una posición hacia la derecha (GP1).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame3.jpg}
+        \caption{Ejecución Opción 101: Segundo Corrimiento (LED 2). El movimiento continúa hacia la derecha (GP2).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame4.jpg}
+        \caption{Ejecución Opción 101: Tercer Corrimiento (LED 3). La luz avanza hacia el centro de la barra (GP3).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame5.jpg}
+        \caption{Ejecución Opción 101: Cuarto Corrimiento (LED 4). El LED continúa su desplazamiento hacia la derecha (GP4).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame6.jpg}
+        \caption{Ejecución Opción 101: Quinto Corrimiento (LED 5). La luz se mueve hacia la mitad derecha de la barra (GP5).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame7.jpg}
+        \caption{Ejecución Opción 101: Sexto Corrimiento (LED 6). Se enciende el penúltimo LED (GP6).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame8.jpg}
+        \caption{Ejecución Opción 101: Séptimo Corrimiento (LED 7). El LED alcanza el extremo derecho (GP7). Inmediatamente después, la secuencia se reinicia desde la posición inicial (LED 0).}
+    \end{figure}
+
+        \subsection{Caso 7: Corrimientos de LEDs a la izquierda}
+
+    Este caso funciona prácticamente igual al anterior solo que los LEDS se van encendiendo en sentido contrario al caso anterior. El programa itera sobre una secuencia predefinida como en casos pasados que sirve para encender un LED a la vez, comenzando desde el extremo derecho (GP7) hasta el extremo izquierdo (GP0), creando la ilusión visual de que un punto de luz se mueve hacia la izquierda y cada cambio de estado tiene una pausa de 0.2 {[}s{]} para que el movimiento sea visible y una vez que el LED llega al extremo izquierdo, la secuencia se reinicia cíclicamente.
+
+    \subsubsection{Ejecución del corrimiento a la izquierda}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon7/SalidaTerminal.png}
+        \caption{Elección de la opción 110 - Corrimientos de LEDs a la izquierda}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame1.jpg}
+        \caption{Ejecución Opción 110: Posición Inicial (LED 7). El LED en el extremo derecho (GP7) es el primero en encenderse.}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame2.jpg}
+        \caption{Ejecución Opción 110: Primer Corrimiento (LED 6). La luz se desplaza una posición hacia la izquierda (GP6).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame3.jpg}
+        \caption{Ejecución Opción 110: Segundo Corrimiento (LED 5). La luz se desplaza una posición más a la izquierda (GP5).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame4.jpg}
+        \caption{Ejecución Opción 110: Tercer Corrimiento (LED 4). La luz avanza una posición más (GP4).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame5.jpg}
+        \caption{Ejecución Opción 110: Cuarto Corrimiento (LED 3). El LED continúa su desplazamiento hacia la izquierda (GP3).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame6.jpg}
+        \caption{Ejecución Opción 110: Quinto Corrimiento (LED 2). La luz se mueve hacia la mitad izquierda de la barra (GP2).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame7.jpg}
+        \caption{Ejecución Opción 110: Sexto Corrimiento (LED 1). El LED se aproxima al extremo izquierdo (GP1).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame8.jpg}
+        \caption{Ejecución Opción 110: Séptimo Corrimiento (LED 0). El LED alcanza el extremo izquierdo (GP0). Inmediatamente después la secuencia se reinicia desde la posición inicial (LED 7).}
+    \end{figure}
+
+    \newpage
+\newpage
+\subsection{Caso 8: Corrimientos de LEDs en Zig-Zag}
+
+Este caso es básicamente la unión de los casos 6 y 7 ya que el Zig-Zag genera un efecto de "rebote" continuo: el punto de luz se desplaza desde el extremo izquierdo (GP0) hacia el extremo derecho (GP7) y al llegar al final, invierte inmediatamente su dirección para regresar hacia la izquierda, creando un movimiento de vaivén que se repite cíclicamente.
+
+Para implementar este caso en lugar de definir una lista de 15 valores binarios precalculados, el programa utiliza una lista que representa únicamente las posiciones espaciales: \texttt{secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]}. Un contador global \texttt{paso} se incrementa infinitamente, y mediante el operador de módulo (\texttt{\%}) se calcula un índice dinámico y seguro (\texttt{paso \% len(secuencia)}) y una vez obtenida la posición, se emplea un operador de corrimiento lógico a la izquierda (\texttt{1 << posicion}) para colocar un único bit en estado alto exactamente en el pin físico correspondiente y como en los casos pasados cada cambio de estado tiene una pausa de 0.2 {[}s{]}.
+
+\subsubsection{Ejecución del corrimiento en Zig-Zag}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{img/Renglon8/SalidaTerminal.png}
+    \caption{Elección de la opción 111 - Corrimientos de LEDs en Zig-Zag}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame1.jpg}
+        \caption{Posición 0 (GP0) - Inicio del recorrido hacia la derecha}
+        \label{fig:zigzag1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame2.jpg}
+        \caption{Posición 1 (GP1) - Primer avance hacia la derecha}
+        \label{fig:zigzag2}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame3.jpg}
+        \caption{Posición 2 (GP2) - Segundo avance hacia la derecha}
+        \label{fig:zigzag3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame4.jpg}
+        \caption{Posición 3 (GP3) - Tercer avance hacia la derecha}
+        \label{fig:zigzag4}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame5.jpg}
+        \caption{Posición 4 (GP4) - Cuarto avance hacia la derecha}
+        \label{fig:zigzag5}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame6.jpg}
+        \caption{Posición 5 (GP5) - Quinto avance hacia la derecha}
+        \label{fig:zigzag6}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame7.jpg}
+        \caption{Posición 6 (GP6) - Sexto avance hacia la derecha}
+        \label{fig:zigzag7}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame8.jpg}
+        \caption{Posición 7 (GP7) - Extremo derecho alcanzado}
+        \label{fig:zigzag8}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame9.jpg}
+        \caption{Posición 6 (GP6) - Inicio del retorno hacia la izquierda}
+        \label{fig:zigzag9}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame10.jpg}
+        \caption{Posición 5 (GP5) - Retorno (segundo paso)}
+        \label{fig:zigzag10}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame11.jpg}
+        \caption{Posición 4 (GP4) - Retorno (tercer paso)}
+        \label{fig:zigzag11}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame12.jpg}
+        \caption{Posición 3 (GP3) - Retorno (cuarto paso)}
+        \label{fig:zigzag12}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame13.jpg}
+        \caption{Posición 2 (GP2) - Retorno (quinto paso)}
+        \label{fig:zigzag13}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame14.jpg}
+        \caption{Posición 1 (GP1) - Retorno (sexto paso)}
+        \label{fig:zigzag14}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame15.jpg}
+        \caption{Posición 0 (GP0) - Extremo izquierdo alcanzado}
+        \label{fig:zigzag15}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame1.jpg}
+        \caption{Posición 1 (GP1) - Nuevo ciclo (reinicio)}
+        \label{fig:zigzag16}
+    \end{subfigure}
+    \caption{Fin del ciclo y reinicio automático. El movimiento continúa indefinidamente.}
+\end{figure}
+
 
     \newpage
     \section{Conclusiones:}
@@ -602,6 +907,12 @@ Esta opción genera un efecto de desplazamiento visual a la derecha de manera si
         \item \textbf{Espinoza Matamoros Percival Ulises:} 
    
         \item \textbf{Flores Colin Victor Jaziel:}
+        La realización de esta práctica me permitió consolidar conceptos fundamentales sobre la interacción entre software y hardware utilizando MicroPython en la Raspberry Pi Pico ya que see logró implementar un sistema de control para 8 LEDs con ocho secuencias luminosas distintas, seleccionables por el usuario mediante un menú en la terminal.
+
+        Uno de los principales aprendizajes fue el trabajo a nivel de bits. La función \texttt{set\_leds(valor)} utilizó operadores de corrimiento (\texttt{>>}) y máscaras AND (\texttt{\&}) para tratar los 8 LEDs como un bus de datos, optimizando memoria y simplificando el código y otro aspecto fundamental fue el uso de hilos (\texttt{\_thread}) para manejar tareas concurrentes. Al ejecutar la captura de entrada del usuario en un hilo secundario, se resolvió el problema de las funciones bloqueantes como \texttt{input()}, permitiendo que las secuencias de luces continuaran sin interrupciones.
+
+        En la interfaz de terminal, se utilizaron arreglos para validar entradas y un menú estructurado. Para el Zig-Zag, se optimizó el código usando una lista de posiciones y la operación \texttt{1 << posicion}, evitando definir 15 valores explícitos y físicamente, se construyó el circuito con una barra de LEDs para facilitar la implementación y resistencias de 68 $\Omega$, validando las ocho secuencias implementadas.
+
 
         \item \textbf{Garcia Cortes Adolfo de Jesus:}
 
