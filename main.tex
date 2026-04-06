@@ -252,8 +252,8 @@ def mostrar_menu():
     \end{lstlisting}
 
     \subsection{Implementación de Multihilo}
-    Uno de los principales retos en el diseño del programa para este sistema de control fue lograr que las secuencias luminosas se ejecutaran de manera ininterrumpida mientras el programa se mantenía a la espera de nuevas instrucciones. En una ejecución secuencial clásica, invocar la función \texttt{input()} detiene por completo el flujo del programa hasta que el nosotros como usuarios ingresamos un dato por teclado, lo cual congelaría el parpadeo de los LEDs.
-    
+    Uno de los principales retos en el diseño del programa para este sistema de control fue lograr que las secuencias luminosas se ejecutaran de manera ininterrumpida mientras el programa se mantenía a la espera de nuevas instrucciones. En una ejecución secuencial clásica, invocar la función \texttt{input()} que esta es una funcion bloqueante, lo que quiere decir que esta funcion al momento que entra bloquea todos los procesos que se esten ejecutando asi hasta que se vuelva a salir de esto, es por estp que al momento de implementar el multihilo, un hilo se encargara de esta funcion bloqueando mientras el otro hilo seguira ejecutando el programa.
+
     Para resolver esta parte, implementamos el uso de la biblioteca \texttt{\_thread} nativa de MicroPython, esta biblioteca nos permite crear un hilo de ejecución secundario que opera en paralelo al procesamiento principal del microcontrolador.
     
     La captura de datos se implemento en la función \texttt{leer\_entradas()}, que es la que se ejecuta en el hilo secundario, despliega el menú y entra en un ciclo infinito evaluando la entrada por teclado. Al recibir una cadena, verifica que pertenezca al arreglo de combinaciones válidas (desde \texttt{'000'} hasta \texttt{'111'}) y de ser correcta, actualiza de inmediato la variable global \texttt{Decision}. Al utilizar \texttt{\_thread.start\_new\_thread(leer\_entradas, ())}, el hilo principal queda libre de interrupciones, dedicándose exclusivamente a leer la variable \texttt{Decision} y ejecutar las secuencias de tiempo crítico en el hardware.
@@ -314,6 +314,36 @@ def leer_entradas():
     
     Haciendo uso de un contador global que se incrementa infinitamente (\texttt{paso}) y el operador de módulo (\texttt{\%}), se calcula un índice dinámico pero seguro mediante la expresión \texttt{paso \% len(secuencia)}. Una vez obtenida la posición de la iteración actual, se emplea un operador de corrimiento lógico a la izquierda (\texttt{1 << posicion}) para colocar un único bit en estado alto exactamente en el pin físico que le corresponde.
 
+    Para esto en la ultima que es el Zig-Zag, podemos simular la ejecucion de esta forma viendo como va iterando los pasos por el modulo y el recorrimiento de bits, para esto, tendriamos lo siguiente:
+
+    \begin{lstlisting}
+    Paso: 0 | Posición: 0 | Decimal: 1 | Binario: 0b1
+    Paso: 1 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 2 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 3 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 4 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 5 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 6 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 7 | Posición: 7 | Decimal: 128 | Binario: 0b10000000
+    Paso: 8 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 9 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 10 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 11 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 12 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 13 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 14 | Posición: 0 | Decimal: 1 | Binario: 0b1
+    Paso: 15 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 16 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 17 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 18 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 19 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 20 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 21 | Posición: 7 | Decimal: 128 | Binario: 0b10000000
+    Paso: 22 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 23 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+
+    \end{lstlisting}
+    
     \begin{lstlisting}[language={[LAB]Python}, caption={Lógica de control del ciclo principal y casos principales de cada categoría}]
     while True:
         if Decision == '000':
@@ -584,6 +614,10 @@ Esta opción genera un efecto de desplazamiento visual a la derecha de manera si
 
 
         \item \textbf{Lara Hernandez Angel Husiel:} 
+        Para el desarrolo de esta practica, fue importante conocer mejor el multihilo de la pico 2, por que gracias a esto me ayudo a entender esta funcion, debido a que anteriormente en otros cursos con la parte de multihilo se solucion el problema de funciones bloqueantes, asi que para solucionar esto, fue de gran ayudar conocer los hilos para micropython y cuantos se pueden usar para pico 2, ademas de esto, esta practica tambien fue de utilidad para saber como progrmar de forma correcta los pines para asignarle los valores, esto tambien como se controlaba un arreglo de los 8 bits para los leds, esto en micropython fue muy facil debido a su sintaxys clara, esto con ayuda con las practicas de laboratorio nos ayudo a comprender mejor el funcionamiento de esta parte.
+        
+        Ahora bien, para esto la parte de la terminal, fue un codigo sencillo donde lo tipico de usar fue arreglos para la comprobacion de las entradas, asi tambien como el uso de recorrimiento de bits para optimizar las lineas de codigo en zig-zag, debido que en las otras entradas solo usamos arreglos basicos debido a que solo teniamos que repetir secuencias que eran sencillas de representar para el arreglo de 8 bits guardandolos en tuplas para hacerlo mas sencillo para comprenderlo, al final de todo esto la ayuda de la compresion del multihilo y la parte del control del arreglo de 8 bits fue la logica principal en este proyecto que fue interesante y de gran ayuda para conocer nuevas cosas para micropython.
+        
         
         \item \textbf{Lugo Manzano Rodrigo:} 
         
