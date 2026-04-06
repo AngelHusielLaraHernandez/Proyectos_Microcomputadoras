@@ -413,6 +413,157 @@ def leer_entradas():
     \section{Resultados:}
 
 
+    Como ya sabemos de la descripción anterior, los LEDs se encienden y apagan de la siguiente manera: el programa utiliza una función principal que actúa como traductor entre un número binario de 8 bits y los pines físicos del microcontrolador. Mediante el uso de operaciones matemáticas a nivel de bits (específicamente desplazamientos y compuertas lógicas AND), el sistema descompone ese número para evaluar cada uno de sus ceros y unos. Dependiendo de este valor, el microcontrolador envía una señal eléctrica en estado alto (1) para encender el LED, o en estado bajo (0) para apagarlo. De esta forma, enviando diferentes patrones binarios, podemos controlar el arreglo de luces a voluntad.
+
+    A continuación, vamos a observar las siguientes opciones de secuencias, de acuerdo a nuestro menú principal:
+    \subsection{Caso 1: Leds apagados}
+
+    Esta opción es la más sencilla de todas, ya que simplemente se envía el valor binario \texttt{0b00000000} a la función de control. Esto hace que todos los LEDs se mantengan apagados y que el sistema conserve ese estado de forma continua mientras el programa permanece en esta opción, asegurando que cualquier cambio previo en los LEDs se borre.
+
+    \begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.7\textwidth]{img/Renglon1/SalidaTerminal.png}
+        \caption{Eleccion de la opción 000 - Todos los LEDs apagados}
+    \end{figure}
+
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon1/frame1.jpg}
+        \caption{Ejecución de la opción 000 - Todos los LEDs apagados}
+    \end{figure}
+
+    \newpage
+    \subsection{Caso 2: Encender / Apagar LEDs  (Parpadear Leds)}
+
+    Esta opción sirve para hacer parpadear a los LEDS, es decir, todos los LEDs se encienden y apagan al mismo tiempo .Para lograr esto, el programa alterna entre enviar el valor binario \texttt{0b11111111} (todos los LEDs encendidos) y \texttt{0b00000000} (todos los LEDs apagados) a la función de control, con una pausa de tiempo entre cada cambio de 0.2 {[s]} para que el parpadeo sea visible.
+
+    \subsubsection{Encender}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/SalidaTerminal.png}
+        \caption{Eleccion de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/frame1.jpg}
+        \caption{Ejecución de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    
+    \subsubsection{Apagar}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/SalidaTerminal.png}
+        \caption{Eleccion de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/frame2.jpg}
+        \caption{Ejecución de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+     \subsection{Caso 3: Encender / Apagar Nibbles (Parpadear Nibbles)}
+
+    Esta opción hace que los LEDs parpadeen en grupos de 4, es decir, primero se encienden los 4 LEDs de la parte alta (GP7 a GP4) mientras los otros 4 (GP3 a GP0) permanecen apagados, luego se invierte el patrón y se encienden los 4 LEDs de la parte baja mientras los otros 4 se apagan. Para lograr esto, el programa alterna entre enviar el valor binario \texttt{0b11110000} (parte alta encendida) y \texttt{0b00001111} (parte baja encendida) a la función de control, con una pausa de tiempo entre cada cambio de 0.2 {[s]} para que el parpadeo sea visible.
+
+    \subsubsection{Encender}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/SalidaTerminal.png}
+        \caption{Eleccion de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/frame1.jpg}
+        \caption{Ejecución de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    
+    \subsubsection{Apagar}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/SalidaTerminal.png}
+        \caption{Eleccion de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\textwidth]{img/Renglon3/frame2.jpg}
+        \caption{Ejecución de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \newpage
+    \subsection{Caso 4: Corrimientos entre Nibbles a la derecha}
+
+Esta opción genera un efecto de desplazamiento visual a la derecha de manera simultánea en ambas mitades del conjunto de LEDs. Para lograr esto, en lugar de utilizar operadores lógicos de corrimiento de bits, el programa itera sobre un arreglo predefinido (\texttt{secuencia}) que contiene los valores binarios \texttt{0b11001100}, \texttt{0b01100110}, \texttt{0b00110011} y \texttt{0b10011001}. De esta forma, dos pares de LEDs (uno en la parte alta y otro en la parte baja) se desplazan una posición a la derecha en cada ciclo. El sistema aplica cada valor del arreglo a los pines correspondientes, haciendo una pausa de 0.2 {[s]} entre cada cambio para que el parpadeo y la ilusión de movimiento sean visibles.
+
+\subsubsection{Ejecución del corrimiento a la derecha}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon4/SalidaTerminal.png}
+        \caption{Eleccion de la opción 011 - Corrimientos entre Nibbles a la derecha}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame1.jpg}
+        \caption{Ejecución Opción 011: Estado Inicial (T0). Se observa un bloque central de LEDs encendido y un LED inferior individual activo.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame2.jpg}
+        \caption{Ejecución Opción 011: Primer Desplazamiento (T1). El bloque central se desplaza una posición hacia arriba; el LED inferior individual se apaga.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame3.jpg}
+        \caption{Ejecución Opción 011: Segundo Desplazamiento (T2). El bloque central sigue su avance ascendente; se encienden los dos LEDs en el extremo inferior.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame4.jpg}
+        \caption{Ejecución Opción 011: Estado Final de la Secuencia Única (T3). El bloque central alcanza el extremo superior de su rango. Los dos LEDs inferiores permanecen activos.}
+    \end{figure}
+
+
+     \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame5.jpg}
+        \caption{Ejecución Opción 011: Regresa al Estado Inicial (T0).  }
+    \end{figure}
+
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame6.jpg}
+        \caption{Ejecución Opción 011: Vuelva a hacer el Primer Desplazamiento (T1) para después seguir con T2 y T3 nuevamente, así de forma cíclica.}
+    \end{figure}
+
 
     \newpage
     \section{Conclusiones:}
@@ -423,6 +574,14 @@ def leer_entradas():
         \item \textbf{Flores Colin Victor Jaziel:}
 
         \item \textbf{Garcia Cortes Adolfo de Jesus:}
+
+        En conclusión la realización de esta práctica me ayudó a entender mejor cómo interactuar con componentes externos usando MicroPython, como los LEDs y el display. Es decir, cómo enviarles señales desde el programa para que respondan de cierta forma (encender, apagar o mostrar patrones). También se vio que trabajar con bits es muy útil, ya que permite ahorrar memoria y hacer el código más sencillo. En lugar de usar un enfoque paso a paso tradicional, se utilizó la función set\_leds() con operadores de corrimiento y máscaras AND (\&), lo que permitió manejar los 8 LEDs como si fueran un solo grupo de 8 bits.
+
+        Otra cosa fundamental fue el uso de hilos (thread) para manejar varias tareas al mismo tiempo. Gracias a esto, las secuencias de luces podían seguir funcionando mientras el microcontrolador esperaba instrucciones del usuario en la terminal. Esto muestra un buen entendimiento de cómo trabaja la Raspberry Pi Pico. 
+        
+
+
+
 
         \item \textbf{Lara Hernandez Angel Husiel:} 
         
