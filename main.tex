@@ -904,12 +904,13 @@ Para implementar este caso en lugar de definir una lista de 15 valores binarios 
     \section{Conclusiones:}
 
     \begin{itemize}
-        \item \textbf{Espinoza Matamoros Percival Ulises:} 
+        \item \textbf{Espinoza Matamoros Percival Ulises:}
         Por medio de la realización de esta práctica se logró comprender de mejor forma el funcionamiento y manejo de los pines GPIO de la Raspberry Pi Pico, ya que por medio de estos pines es que se puede interactuar con componentes externos, en este caso con la barra led de 10 segmentos, donde por medio de la implementación de código se implementó correctamente un tipo máquina de estados, donde dependiendo de la entrada del usuario se ejecuta una secuencia diferente, esto se logró gracias a la implementación de un menú de usuario que se muestra en la terminal, donde se muestran las diferentes opciones para controlar los LEDs. El control de los LEDS se implementó por medio de la función \texttt{set\_leds(valor)}, donde se hizo uso de la lógica a nivel de bits para controlar los 8 LEDs con un solo número entero, obteniendo un código óptimo y eficiente.
         
         Por otro lado es importante mencionar que se implementó el uso de hilos para poder ejecutar las secuencias de luces sin que el programa se detenga al momento de esperar una nueva entrada del usuario, permitiendo así una experiencia más fluida e interactiva. De forma que por medio de la implementación de esta práctica se reafirmó el funcionamiento de la Raspberry Pi Pico y cómo interactuar con componentes externos utilizando MicroPython, así como manejar la lógica a nivel de bits y el uso de hilos para mejorar la eficiencia del programa.
-   
+
         \item \textbf{Flores Colin Victor Jaziel:}
+        
         La realización de esta práctica me permitió consolidar conceptos fundamentales sobre la interacción entre software y hardware utilizando MicroPython en la Raspberry Pi Pico ya que see logró implementar un sistema de control para 8 LEDs con ocho secuencias luminosas distintas, seleccionables por el usuario mediante un menú en la terminal.
 
         Uno de los principales aprendizajes fue el trabajo a nivel de bits. La función \texttt{set\_leds(valor)} utilizó operadores de corrimiento (\texttt{>>}) y máscaras AND (\texttt{\&}) para tratar los 8 LEDs como un bus de datos, optimizando memoria y simplificando el código y otro aspecto fundamental fue el uso de hilos (\texttt{\_thread}) para manejar tareas concurrentes. Al ejecutar la captura de entrada del usuario en un hilo secundario, se resolvió el problema de las funciones bloqueantes como \texttt{input()}, permitiendo que las secuencias de luces continuaran sin interrupciones.
@@ -923,17 +924,20 @@ Para implementar este caso en lugar de definir una lista de 15 valores binarios 
 
         Otra cosa fundamental fue el uso de hilos (thread) para manejar varias tareas al mismo tiempo. Gracias a esto, las secuencias de luces podían seguir funcionando mientras el microcontrolador esperaba instrucciones del usuario en la terminal. Esto muestra un buen entendimiento de cómo trabaja la Raspberry Pi Pico. 
         
-
-
-
-
-        \item \textbf{Lara Hernandez Angel Husiel:} 
+        \item \textbf{Lara Hernandez Angel Husiel:}
+        
         Para el desarrolo de esta practica, fue importante conocer mejor el multihilo de la pico 2, por que gracias a esto me ayudo a entender esta funcion, debido a que anteriormente en otros cursos con la parte de multihilo se solucion el problema de funciones bloqueantes, asi que para solucionar esto, fue de gran ayudar conocer los hilos para micropython y cuantos se pueden usar para pico 2, ademas de esto, esta practica tambien fue de utilidad para saber como progrmar de forma correcta los pines para asignarle los valores, esto tambien como se controlaba un arreglo de los 8 bits para los leds, esto en micropython fue muy facil debido a su sintaxys clara, esto con ayuda con las practicas de laboratorio nos ayudo a comprender mejor el funcionamiento de esta parte.
         
         Ahora bien, para esto la parte de la terminal, fue un codigo sencillo donde lo tipico de usar fue arreglos para la comprobacion de las entradas, asi tambien como el uso de recorrimiento de bits para optimizar las lineas de codigo en zig-zag, debido que en las otras entradas solo usamos arreglos basicos debido a que solo teniamos que repetir secuencias que eran sencillas de representar para el arreglo de 8 bits guardandolos en tuplas para hacerlo mas sencillo para comprenderlo, al final de todo esto la ayuda de la compresion del multihilo y la parte del control del arreglo de 8 bits fue la logica principal en este proyecto que fue interesante y de gran ayuda para conocer nuevas cosas para micropython.
         
         
         \item \textbf{Lugo Manzano Rodrigo:} 
+
+        Esta práctica me ayudo a seguir reforzando mis conocimeintos sobre cómo interactúa el software con el hardware de la Raspberry Pi Pico 2W. De las cosas más importantes igual fue manejar las funciones bloqueantes, como la captura de datos en la terminal, que detenían por completo las secuencias de luces. Además implementar la librería thread fue la solución para ese problema, ya que nos permitió manejar la entrada del menú en un hilo secundario mientras el microcontrolador continuaba ejecutando el parpadeo de los LEDs sin interrupciones.
+
+        También, comprendi la importancia de optimizar el código trabajando a nivel de bits, utilizar operaciones como el corrimiento lógico y la máscara AND en la función principal hizo que el control del arreglo de LEDs fuera mucho más rápido y eficiente que tratar de configurar cada pin de manera individual. Además, el haber optado por un display tipo barra multicolor en lugar de diodos individuales no solo nos ahorró espacio y cableado, sino que resultó en un circuito mucho más limpio y funcional en la protoboard. En sí, esta práctica fue muy buena para aplicar conceptos de programación y seguir conociendo Micropython, y tambíen para comenzar a trabajar con hardware externo en este caso los LEDs por medio de los pines GPIO.
+        
+
         
     \end{itemize}
 
