@@ -1,0 +1,949 @@
+\documentclass[letterpaper,12pt]{article}
+
+% --- PAQUETES DE IDIOMA
+\usepackage[spanish,mexico]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+
+% --- PAQUETES MATEMÁTICOS --
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cancel}
+\usepackage{mathrsfs}
+
+% --- PAQUETES GRÁFICOS Y DE DISEÑO ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usetikzlibrary{shapes.geometric, shapes.multipart, shapes.symbols, positioning, arrows.meta, calc, shadows, decorations.pathreplacing,babel}
+
+% Definición de color para las líneas de tierra (verde)
+\definecolor{powergreen}{HTML}{008000}
+
+% --- LISTAS ---
+\usepackage{enumitem}
+
+% --- PAQUETES DE CÓDIGO ---
+\usepackage{listings}
+% Configuración del estilo de listings
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}   
+\definecolor{keyword}{rgb}{0.0,0.2,0.6}     
+\definecolor{comment}{rgb}{0.25,0.5,0.35}   
+\definecolor{string}{rgb}{0.6,0.0,0.0}      
+\definecolor{number}{rgb}{0.5,0.0,0.5}      
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+% Definición de colores para los LEDs
+\definecolor{led0}{HTML}{FF0000} % Rojo
+\definecolor{led1}{HTML}{FF7F00} % Naranja
+\definecolor{led2}{HTML}{FFFF00} % Amarillo
+\definecolor{led3}{HTML}{00FF00} % Verde
+\definecolor{led4}{HTML}{0000FF} % Azul
+\definecolor{led5}{HTML}{4B0082} % Índigo
+\definecolor{led6}{HTML}{9400D3} % Violeta
+\definecolor{led7}{HTML}{FF1493} % Rosa Intenso
+
+\lstset{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{codepurple},
+  commentstyle=\color{codegray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  frame=single,
+  rulecolor=\color{black},
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false,
+  literate={á}{{\'a}}1
+           {é}{{\'e}}1
+           {í}{{\'i}}1
+           {ó}{{\'o}}1
+           {ú}{{\'u}}1
+           {Á}{{\'A}}1
+           {É}{{\'E}}1
+           {Í}{{\'I}}1
+           {Ó}{{\'O}}1
+           {Ú}{{\'U}}1
+           {ñ}{{\~n}}1
+           {Ñ}{{\~N}}1
+           {¿}{{\textquestiondown}}1
+           {¡}{{\textexclamdown}}1
+}
+
+% Definición del lenguaje Python para listings
+\lstdefinelanguage[LAB]{Python}{
+    morekeywords={False, None, True, and, as, assert, async, await, break,
+                                class, continue, def, del, elif, else, except, finally,
+                                for, from, global, if, import, in, is, lambda, nonlocal,
+                                not, or, pass, raise, return, try, while, with, yield,
+                                machine, Pin, PWM, ADC, Timer, sleep_ms, sleep_us},
+    morecomment=[l]{\#},
+    morestring=[b]",
+    morestring=[b]',
+    sensitive=true
+}
+
+% --- ESTILOS PARA DIAGRAMAS DE FLUJO (TIKZ) ---
+\tikzset{
+  startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
+  process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
+  decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
+  arrow/.style={thick,->,>=stealth}
+}
+
+% Macro para dibujar la Raspberry Pi Pico y sus nodos
+\newcommand{\picoboard}{
+    \draw[thick] (0,0.5) rectangle (4,-9.5);
+    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico};
+
+    % Pines Superiores
+    \draw[red, thick] (0.8, 0.5) -- (0.8, 0.8) coordinate (P41); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P41) {41};
+    \draw[red, thick] (2.0, 0.5) -- (2.0, 0.8) coordinate (P42); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P42) {42};
+    \draw[red, thick] (3.2, 0.5) -- (3.2, 0.8) coordinate (P43); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P43) {43};
+    \node[below, font=\tiny\sffamily] at (0.8, 0.5) {SW CLK};
+    \node[below, font=\tiny\sffamily] at (2.0, 0.5) {SW GND};
+    \node[below, font=\tiny\sffamily] at (3.2, 0.5) {SW DIO};
+
+    % GND Inferior
+    \draw[red, thick] (2, -9.5) -- (2, -10.2) coordinate (PGND);
+    \node[above, font=\tiny\sffamily] at (2, -9.5) {GND};
+    \node[below, font=\tiny\sffamily] at (2, -10.2) {3,8,13,18 \quad 23,28,38};
+
+    % Pines del lado Izquierdo
+    \foreach \i/\pin/\num in {
+        1/GP0/1, 2/GP1/2, 
+        4/GP2/4, 5/GP3/5, 6/GP4/6, 7/GP5/7, 
+        9/GP6/9, 10/GP7/10, 11/GP8/11, 12/GP9/12, 
+        14/GP10/14, 15/GP11/15, 16/GP12/16, 17/GP13/17, 
+        19/GP14/19, 20/GP15/20
+    } {
+        \draw[red, thick] (0, -\i*0.45) -- (-0.4, -\i*0.45) coordinate (P\num);
+        \node[right, font=\tiny\sffamily] at (0, -\i*0.45) {\pin};
+        \node[above left, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+
+    % Pines del lado Derecho
+    \foreach \i/\pin/\num in {
+        1/VBUS/40, 2/VSS/39, 
+        4/3V3\_EN/37, 5/3V3/36, 6/ADC\_VREF/35, 7/GP28\_A2/34, 8/AGND/33, 
+        9/GP27\_A1/32, 10/GP26\_A0/31, 11/RUN/30, 12/GP22/29, 
+        14/GP21/27, 15/GP20/26, 16/GP19/25, 17/GP18/24, 
+        19/GP17/22, 20/GP16/21
+    } {
+        \draw[red, thick] (4, -\i*0.45) -- (4.4, -\i*0.45) coordinate (P\num);
+        \node[left, font=\tiny\sffamily] at (4, -\i*0.45) {\pin};
+        \node[above right, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+}
+
+
+
+\definecolor{azulresultado}{HTML}{0072C6}
+\definecolor{rojoacarreo}{HTML}{FF0000}
+
+% Colores para la tabla
+\definecolor{headblue}{HTML}{4F81BD}
+\definecolor{subheadblue}{HTML}{B8CCE4}
+\definecolor{datablockblue}{HTML}{DCE6F1}
+
+% --- RUTAS DE IMÁGENES ---
+\graphicspath{{img/}{portada_img/}}
+
+\definecolor{armblue}{RGB}{0, 113, 188}
+
+% --- CONFIGURACIÓN DE PÁGINA (GEOMETRÍA) ---
+\usepackage[
+    left=25mm, 
+    right=25mm,
+    top=35mm,
+    bottom=30mm,
+    headheight=77pt, 
+    papersize={21.59cm,27.94cm}
+]{geometry}
+
+% --- FORMATO DE TEXTO ---
+\renewcommand{\baselinestretch}{1.25} 
+\usepackage{parskip} 
+\usepackage{lipsum}  
+
+% --- VARIABLES GLOBALES ---
+\newcommand{\materia}{}
+
+% --- ENCABEZADOS Y PIES DE PÁGINA ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} 
+\fancyhead[L]{\includegraphics[height=1.5cm]{portada_img/der.png}}
+\fancyhead[R]{\includegraphics[height=1.5cm]{portada_img/izq.png}}
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.4pt} 
+\renewcommand{\footrulewidth}{0pt}  
+
+% --- BIBLIOGRAFÍA ---
+\usepackage[backend=biber, style=apa, sortcites, url=true]{biblatex}
+\addbibresource{referencias.bib}
+
+% --- HIPERVÍNCULOS ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan
+}
+
+\begin{document}
+
+    \input{portada.tex}
+
+    \newpage
+    \setcounter{page}{1}
+
+    \section{Objetivo:}
+
+    Mediante la creacion, implementacion de un programa en MicroPython, diseñar el control de 8 leds conectados a una Raspberry Pi Pico, utilizando diferentes secuencias de encendido y apagado, asi como la capacidad de tener la lectura desde la terminal para saber las entradas
+    que se estaran realizando para cada secuencia, asi mismo contruir fisicamente el circuito con los leds y las resistencias necesarias para su correcto funcionamiento.
+    \section{Desarrollo:}
+    
+    \subsection{Lógica de Control a Nivel de Bits}
+    Para optimizar el manejo de los pines de salida de la Raspberry Pi Pico sin tener que declarar el estado de cada pin de forma individual y repetitiva, se implementó la función \texttt{set\_leds(valor)}, esta función recibe como argumento un número entero el cual representa el estado de los 8 LEDs y se encarga de traducirlo a señales físicas en el microcontrolador.
+    
+    El funcionamiento de esta parte se basa en operadores de corrimiento a nivel de bits. Dentro de un ciclo \texttt{for} que itera 8 veces, una por cada LED, se aplica la instrucción \texttt{(valor >> i) \& 1}. 
+    
+    Primero, el operador de corrimiento a la derecha (\texttt{>>}) desplaza los bits del \texttt{valor} ingresado \texttt{i} posiciones hacia la derecha. Esto coloca el bit específico que se desea evaluar en la posición del bit menos significativo. Luego, se aplica la operación lógica AND (\texttt{\&}) con el número 1, esta operación actúa como un filtro para el resto de los bits y separa únicamente el menos significativo, devolviendo como resultado final un 1 lógico (encendido) o un 0 lógico (apagado). Y ya por último, este resultado se envía al método \texttt{.value()} del pin correspondiente.
+
+    \begin{lstlisting}[language={[LAB]Python}, caption={Función para manejar el estado de los pines mediante lógica a nivel de bits}]
+def set_leds(valor):
+    for i in range(8):
+        pines_leds[i].value((valor >> i) & 1)
+    \end{lstlisting}
+
+    \subsection{Implementación de un menú de usuario}
+    Para facilitar la interacción del usuario con el programa, se hizo la función \texttt{mostrar\_menu()}, con la finalidad de imprimir en la consola de manera estructurada las 8 combinaciones binarias posibles y la acción correspondiente a cada una, mejorando la usabilidad general. Además, esta función se mandará a llamar más tarde y así también mejoramos la legibilidad del código al separar la lógica de presentación de la lógica de control.
+    
+    \begin{lstlisting}[language={[LAB]Python}, caption={Interfaz de menú y función de lectura en hilo secundario}]
+def mostrar_menu():
+    print("\n" + "="*60)
+    print(" " * 18 + "CONTROL DE LEDs")
+    print("="*60)
+    print("  [000] - Todos los LEDs apagados")
+    print("  [001] - Encender / Apagar LEDs")
+    print("  [010] - Encender / Apagar Nibbles")
+    print("  [011] - Corrimientos entre Nibbles a la derecha")
+    print("  [100] - Corrimientos entre Nibbles a la izquierda")
+    print("  [101] - Corrimientos de LEDs a la derecha")
+    print("  [110] - Corrimientos de LEDs a la izquierda")
+    print("  [111] - Corrimientos de LEDs en Zig - Zag")
+    print("="*60)
+    \end{lstlisting}
+
+    \subsection{Implementación de Multihilo}
+    Uno de los principales retos en el diseño del programa para este sistema de control fue lograr que las secuencias luminosas se ejecutaran de manera ininterrumpida mientras el programa se mantenía a la espera de nuevas instrucciones. En una ejecución secuencial clásica, invocar la función \texttt{input()} que esta es una funcion bloqueante, lo que quiere decir que esta funcion al momento que entra bloquea todos los procesos que se esten ejecutando asi hasta que se vuelva a salir de esto, es por estp que al momento de implementar el multihilo, un hilo se encargara de esta funcion bloqueando mientras el otro hilo seguira ejecutando el programa.
+
+    Para resolver esta parte, implementamos el uso de la biblioteca \texttt{\_thread} nativa de MicroPython, esta biblioteca nos permite crear un hilo de ejecución secundario que opera en paralelo al procesamiento principal del microcontrolador.
+    
+    La captura de datos se implemento en la función \texttt{leer\_entradas()}, que es la que se ejecuta en el hilo secundario, despliega el menú y entra en un ciclo infinito evaluando la entrada por teclado. Al recibir una cadena, verifica que pertenezca al arreglo de combinaciones válidas (desde \texttt{'000'} hasta \texttt{'111'}) y de ser correcta, actualiza de inmediato la variable global \texttt{Decision}. Al utilizar \texttt{\_thread.start\_new\_thread(leer\_entradas, ())}, el hilo principal queda libre de interrupciones, dedicándose exclusivamente a leer la variable \texttt{Decision} y ejecutar las secuencias de tiempo crítico en el hardware.
+
+    \begin{lstlisting}[language={[LAB]Python}, caption={Interfaz de menú y función de lectura en hilo secundario}]
+def leer_entradas():
+    global Decision
+    Entradas = ['000', '001', '010', '011', '100', '101', '110', '111']
+    
+    mostrar_menu()
+    print(f'\nESTADO INICIAL: [{Decision}] - Todos los LEDs apagados')
+    
+    while True:
+        nueva_opcion = input('\n>> Teclee la combinacion [PIN11, PIN15, PIN17]: ')
+        
+        if nueva_opcion in Entradas:
+            Decision = nueva_opcion
+            
+            print("\n" + "-"*60)
+            if Decision == '000':
+                print(f'   Ejecutando: [{Decision}] - Todos los LEDs apagados')
+            elif Decision == '001':
+                print(f'   Ejecutando: [{Decision}] - Encender / Apagar LEDs')
+            elif Decision == '010':
+                print(f'   Ejecutando: [{Decision}] - Encender / Apagar Nibbles')
+            elif Decision == '011':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos entre Nibbles (Derecha)')
+            elif Decision == '100':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos entre Nibbles (Izquierda)')
+            elif Decision == '101':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs (Derecha)')
+            elif Decision == '110':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs (Izquierda)')
+            elif Decision == '111':
+                print(f'   Ejecutando: [{Decision}] - Corrimientos de LEDs en Zig-Zag')
+            print("-" * 60)
+        else:
+            print("\n" + "!"*60)
+            print("   Opcion no valida.")
+            print("   Entradas disponibles: 000, 001, 010, 011, 100, 101, 110, 111")
+            print("!"*60)
+    \end{lstlisting}
+
+
+    \subsection{Diseño y Lógica Combinacional de las Secuencias}
+    El hilo principal del programa está formado por un ciclo infinito (\texttt{while True}) que evalúa de forma continua la variable global \texttt{Decision}. Dependiendo de su estado lógico, el cual representa las combinaciones binarias desde \texttt{'000'} hasta \texttt{'111'}, el flujo de ejecución se direcciona hacia rutinas específicas. Para optimizar el procesamiento en la Raspberry Pi Pico, estas rutinas se agruparon en tres categorías:
+    
+    \subsubsection{Secuencias de estado fijo y alternancia de Nibbles (000, 001 y 010)}
+    Para los comportamientos más directos, como apagar todos los LEDs (\texttt{000}), generar un parpadeo general (\texttt{001}) o el parpadeo alternado de Nibbles (\texttt{010}), se enviaron directamente literales binarios a la función \texttt{set\_leds}. Por ejemplo, para los Nibbles se alternaron las máscaras \texttt{0b11110000} (parte alta) y \texttt{0b00001111} (parte baja), controlando la frecuencia de oscilación con la instrucción \texttt{time.sleep(0.2)}.
+
+    \subsubsection{Corrimientos direccionales iterativos (011, 100, 101 y 110)}
+    Los casos que implican desplazamientos espaciales de LEDs o Nibbles a lo largo de la barra se implementaron utilizando listas que contienen los estados precalculados en formato binario y un ciclo \texttt{for} itera sobre estos arreglos y envía el estado correspondiente.
+    
+    Un detalle importante en esta implementación es el manejo del control asíncrono, pues dentro de cada iteración del ciclo \texttt{for}, se agregó una validación de estado (\texttt{if Decision != '...': break}). Esto nos garantiza que, si el hilo secundario modifica la variable de control ante un nuevo comando del usuario, el ciclo de corrimiento en curso se interrumpa instantáneamente, logrando un tiempo de respuesta inmediato en el hardware y evitando que la secuencia termine de ejecutarse antes de aplicar el cambio.
+
+    \subsubsection{Implementación matemática del corrimiento en Zig-Zag (111)}
+    Para lograr el efecto de rebote de luces tipo Zig-Zag, y no tener que definir una extensa lista de estados de 8 bits, se uso un arreglo que representa únicamente las posiciones espaciales: \texttt{secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]}. 
+    
+    Haciendo uso de un contador global que se incrementa infinitamente (\texttt{paso}) y el operador de módulo (\texttt{\%}), se calcula un índice dinámico pero seguro mediante la expresión \texttt{paso \% len(secuencia)}. Una vez obtenida la posición de la iteración actual, se emplea un operador de corrimiento lógico a la izquierda (\texttt{1 << posicion}) para colocar un único bit en estado alto exactamente en el pin físico que le corresponde.
+
+    Para esto en la ultima que es el Zig-Zag, podemos simular la ejecucion de esta forma viendo como va iterando los pasos por el modulo y el recorrimiento de bits, para esto, tendriamos lo siguiente:
+
+    \begin{lstlisting}
+    Paso: 0 | Posición: 0 | Decimal: 1 | Binario: 0b1
+    Paso: 1 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 2 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 3 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 4 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 5 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 6 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 7 | Posición: 7 | Decimal: 128 | Binario: 0b10000000
+    Paso: 8 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 9 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 10 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 11 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 12 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 13 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 14 | Posición: 0 | Decimal: 1 | Binario: 0b1
+    Paso: 15 | Posición: 1 | Decimal: 2 | Binario: 0b10
+    Paso: 16 | Posición: 2 | Decimal: 4 | Binario: 0b100
+    Paso: 17 | Posición: 3 | Decimal: 8 | Binario: 0b1000
+    Paso: 18 | Posición: 4 | Decimal: 16 | Binario: 0b10000
+    Paso: 19 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+    Paso: 20 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 21 | Posición: 7 | Decimal: 128 | Binario: 0b10000000
+    Paso: 22 | Posición: 6 | Decimal: 64 | Binario: 0b1000000
+    Paso: 23 | Posición: 5 | Decimal: 32 | Binario: 0b100000
+
+    \end{lstlisting}
+    
+    \begin{lstlisting}[language={[LAB]Python}, caption={Lógica de control del ciclo principal y casos principales de cada categoría}]
+    while True:
+        if Decision == '000':
+            set_leds(0b00000000)
+            time.sleep(0.1)
+        # ... Casos 001 a 100
+                
+        elif Decision == '101':
+            secuencia = [0b10000000, 0b01000000, 0b00100000, 0b00010000, 0b00001000, 0b00000100, 0b00000010, 0b00000001]
+            for valor in secuencia:
+                set_leds(valor)
+                time.sleep(0.2)
+                if Decision != '101':#Condicion de ruptura
+                    break
+        # ... Caso 110
+                
+        elif Decision == '111':
+            secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]
+            posicion = secuencia[paso % len(secuencia)]
+            set_leds(1 << posicion)
+            paso += 1
+            time.sleep(0.2)
+    \end{lstlisting}
+
+
+    \subsection{Implementación Física del Circuito}
+    Para la implementacion de este proyecto se utiliza la Raspberry Pi Pico, cuyo diagrama de pines se muestra a continuacion:
+
+    \begin{center}
+    \begin{circuitikz}[american, thick, scale=0.75, transform shape]
+        
+        \picoboard 
+
+        \def\colorzero{red}
+        \def\colorone{orange}
+        \def\colortwo{yellow!90!black} 
+        \def\colorthree{lime}
+        \def\colorfour{green!80!black}
+        \def\colorfive{cyan}
+        \def\colorsix{blue}
+        \def\colorseven{magenta}
+
+        \def\rcol{-5.0cm}      
+        \def\routcol{-6.5cm}   
+        \def\ledcol{-7.0cm}    
+        \def\ledoutcol{-8.5cm} 
+        \def\gndcol{-9.5cm}    
+
+        % Bucle principal
+        \foreach \i/\pin/\numled/\col/\xdrop in {
+            1/1/0/\colorzero/-3.5, 
+            2/2/1/\colorone/-3.1, 
+            4/4/2/\colortwo/-2.7, 
+            5/5/3/\colorthree/-2.3, 
+            6/6/4/\colorfour/-1.9, 
+            7/7/5/\colorfive/-1.5, 
+            9/9/6/\colorsix/-1.1, 
+            10/10/7/\colorseven/-0.7
+        } {
+            \pgfmathsetmacro{\ypin}{-\i * 0.45}
+            
+            \pgfmathsetmacro{\ypos}{ -0.45 - (\numled * 1.6) }
+            
+            \coordinate (Rin\pin) at (\rcol, {\ypos cm});
+            \coordinate (Rout\pin) at (\routcol, {\ypos cm});
+            \coordinate (Ledin\pin) at (\ledcol, {\ypos cm});
+            \coordinate (Ledout\pin) at (\ledoutcol, {\ypos cm});
+
+            \draw (Rin\pin) to[R, l=$68\,\Omega$] (Rout\pin);
+            \draw (Ledin\pin) to[led, color=\col, l_=LED \numled] (Ledout\pin);
+            
+            \draw (Rout\pin) -- (Ledin\pin);
+
+            \draw (P\pin) -- (\xdrop, {\ypin cm}) |- (Rin\pin);
+
+            \draw[green, thick] (Ledout\pin) -- ({\gndcol}, {\ypos cm});
+        }
+
+        \draw[green, thick] ({\gndcol}, -0.5 cm) -- ({\gndcol}, -11.7 cm);
+
+        \draw[green, thick] ({\gndcol}, -11.7 cm) -- ({\gndcol}, -12.5 cm) -- (2, -12.5 cm) -- (PGND);
+
+        \node[ground] at (2, -12.5 cm) {};
+
+    \end{circuitikz}
+    \end{center}
+
+    Como se puede observar en el diagrama, el hardware se estructuró usando los pines de propósito general GPIO de la Raspberry. Se seleccionaron 8 salidas digitales consecutivas lógicamente (GP0, GP1, GP2, GP3, GP4, GP5, GP6 y GP7) para mantener un orden en el bus de datos de la función \texttt{set\_leds()}.
+    
+    Para proteger tanto los puertos del microcontrolador como el display multicolor, se colocó una resistencia limitadora de corriente de $68\,\Omega$ en serie con cada una de las líneas de señal. 
+    
+    También optamos por una mejora en el diseño físico, ya que en lugar de alambrar 8 LEDs individuales, se empleó un display tipo barra multicolor de 10 segmentos, de esta barra, se conectaron y utilizaron únicamente 8 segmentos que corresponden a nuestros 8 bits de control. Esta decisión de hardware nos resultó ser mucho más funcional, primero en la implementación en la protoboard y además nos permitió una presentación mucho más limpia visualmente.
+
+    
+
+    \newpage
+    \section{Resultados:}
+
+
+    Como ya sabemos de la descripción anterior, los LEDs se encienden y apagan de la siguiente manera: el programa utiliza una función principal que actúa como traductor entre un número binario de 8 bits y los pines físicos del microcontrolador. Mediante el uso de operaciones matemáticas a nivel de bits (específicamente desplazamientos y compuertas lógicas AND), el sistema descompone ese número para evaluar cada uno de sus ceros y unos. Dependiendo de este valor, el microcontrolador envía una señal eléctrica en estado alto (1) para encender el LED, o en estado bajo (0) para apagarlo. De esta forma, enviando diferentes patrones binarios, podemos controlar el arreglo de luces a voluntad.
+
+    A continuación, vamos a observar las siguientes opciones de secuencias, de acuerdo a nuestro menú principal:
+    \subsection{Caso 1: Leds apagados}
+
+    Esta opción es la más sencilla de todas, ya que simplemente se envía el valor binario \texttt{0b00000000} a la función de control. Esto hace que todos los LEDs se mantengan apagados y que el sistema conserve ese estado de forma continua mientras el programa permanece en esta opción, asegurando que cualquier cambio previo en los LEDs se borre.
+
+    \begin{figure}[h!]
+        \centering
+        \includegraphics[width=0.7\textwidth]{img/Renglon1/SalidaTerminal.png}
+        \caption{Eleccion de la opción 000 - Todos los LEDs apagados}
+    \end{figure}
+
+
+    \begin{figure}[h]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon1/frame1.jpg}
+        \caption{Ejecución de la opción 000 - Todos los LEDs apagados}
+    \end{figure}
+
+    \newpage
+    \subsection{Caso 2: Encender / Apagar LEDs  (Parpadear Leds)}
+
+    Esta opción sirve para hacer parpadear a los LEDS, es decir, todos los LEDs se encienden y apagan al mismo tiempo .Para lograr esto, el programa alterna entre enviar el valor binario \texttt{0b11111111} (todos los LEDs encendidos) y \texttt{0b00000000} (todos los LEDs apagados) a la función de control, con una pausa de tiempo entre cada cambio de 0.2 {[s]} para que el parpadeo sea visible.
+
+    \subsubsection{Encender}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/SalidaTerminal.png}
+        \caption{Eleccion de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/frame1.jpg}
+        \caption{Ejecución de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    
+    \subsubsection{Apagar}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/SalidaTerminal.png}
+        \caption{Eleccion de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon2/frame2.jpg}
+        \caption{Ejecución de la opción 001 - Encender / Apagar LEDs}
+    \end{figure}
+
+
+     \subsection{Caso 3: Encender / Apagar Nibbles (Parpadear Nibbles)}
+
+    Esta opción hace que los LEDs parpadeen en grupos de 4, es decir, primero se encienden los 4 LEDs de la parte alta (GP7 a GP4) mientras los otros 4 (GP3 a GP0) permanecen apagados, luego se invierte el patrón y se encienden los 4 LEDs de la parte baja mientras los otros 4 se apagan. Para lograr esto, el programa alterna entre enviar el valor binario \texttt{0b11110000} (parte alta encendida) y \texttt{0b00001111} (parte baja encendida) a la función de control, con una pausa de tiempo entre cada cambio de 0.2 {[s]} para que el parpadeo sea visible.
+
+    \subsubsection{Encender}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/SalidaTerminal.png}
+        \caption{Eleccion de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/frame1.jpg}
+        \caption{Ejecución de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    
+    \subsubsection{Apagar}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon3/SalidaTerminal.png}
+        \caption{Eleccion de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.7\textwidth]{img/Renglon3/frame2.jpg}
+        \caption{Ejecución de la opción 010 - Encender / Apagar Nibbles}
+    \end{figure}
+
+
+    \newpage
+    \subsection{Caso 4: Corrimientos entre Nibbles a la derecha}
+
+Esta opción genera un efecto de desplazamiento visual a la derecha de manera simultánea en ambas mitades del conjunto de LEDs. Para lograr esto, en lugar de utilizar operadores lógicos de corrimiento de bits, el programa itera sobre un arreglo predefinido (\texttt{secuencia}) que contiene los valores binarios \texttt{0b11001100}, \texttt{0b01100110}, \texttt{0b00110011} y \texttt{0b10011001}. De esta forma, dos pares de LEDs (uno en la parte alta y otro en la parte baja) se desplazan una posición a la derecha en cada ciclo. El sistema aplica cada valor del arreglo a los pines correspondientes, haciendo una pausa de 0.2 {[s]} entre cada cambio para que el parpadeo y la ilusión de movimiento sean visibles.
+
+\subsubsection{Ejecución del corrimiento a la derecha}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon4/SalidaTerminal.png}
+        \caption{Eleccion de la opción 011 - Corrimientos entre Nibbles a la derecha}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame1.jpg}
+        \caption{Ejecución Opción 011: Estado Inicial (T0). Se observa un bloque central de LEDs encendido y un LED inferior individual activo.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame2.jpg}
+        \caption{Ejecución Opción 011: Primer Desplazamiento (T1). El bloque central se desplaza una posición hacia arriba; el LED inferior individual se apaga.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame3.jpg}
+        \caption{Ejecución Opción 011: Segundo Desplazamiento (T2). El bloque central sigue su avance ascendente; se encienden los dos LEDs en el extremo inferior.}
+    \end{figure}
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame4.jpg}
+        \caption{Ejecución Opción 011: Estado Final de la Secuencia Única (T3). El bloque central alcanza el extremo superior de su rango. Los dos LEDs inferiores permanecen activos.}
+    \end{figure}
+
+
+     \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame5.jpg}
+        \caption{Ejecución Opción 011: Regresa al Estado Inicial (T0).  }
+    \end{figure}
+
+
+
+ \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon4/frame6.jpg}
+        \caption{Ejecución Opción 011: Vuelva a hacer el Primer Desplazamiento (T1) para después seguir con T2 y T3 nuevamente, así de forma cíclica.}
+    \end{figure}
+
+    \newpage
+        \subsection{Caso 5: Corrimientos entre Nibbles a la izquierda}
+
+        Este caso es el opuesto del caso anterior, pero genera un efecto de desplazamiento visual hacia la izquierda y al igual que en el Caso 4, se itera sobre una secuencia predefinida de valores binarios que hacen que dos pares de LEDs (uno en la parte alta y otro en la baja) se muevan sincronizadamente. Para el corrimiento a la izquierda, la secuencia utilizada es \texttt{0b10011001}, \texttt{0b00110011}, \texttt{0b01100110} y \texttt{0b11001100}, invirtiendo el orden del Caso 4. Cada valor se aplica a los pines con una pausa de 0.2 {[}s{]} para crear una ilusión de movimiento continua hacia la izquierda.
+
+        \subsubsection{Ejecución del corrimiento a la izquierda}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=1.0\textwidth]{img/Renglon5/SalidaTerminal.png}
+            \caption{Elección de la opción 100 - Corrimientos entre Nibbles a la izquierda}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame1.jpg}
+            \caption{Ejecución Opción 100: Estado Inicial (T0). Se observa un patrón de 2 pares de LEDs encendidos que comenzarán a desplazarse a la izquierda.}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame2.jpg}
+            \caption{Ejecución Opción 100: Primer Desplazamiento (T1). Ambos pares de LEDS se desplazan a la izquierda una posición.}
+        \end{figure}
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon5/frame3.jpg}
+            \caption{Ejecución Opción 100: Segundo Desplazamiento (T2). Ambos pares de LEDS se desplazan una posición más y el led que se encontraba más a la izquierda en la última posición ahora retorna a la primera posición en el lado derecho.}
+        \end{figure}
+
+        \newpage
+    \subsection{Caso 6: Corrimientos de LEDs a la derecha}
+
+    A diferencia de los casos anteriores que trabajaban con nibbles completos, esta opción genera un efecto de "luz móvil" donde un solo LED se desplaza a lo largo de toda la barra, para su implementación se definio una lista  con la secuencia predefinida que es iterada por el programa y que sirve para indicar quee LED se enciende, comenzando desde el extremo izquierdo (GP0) hasta el extremo derecho (GP7), creando la ilusión visual de que un punto de luz se mueve hacia la derecha. Cada cambio de estado tiene una pausa de 0.2 {[}s{]} para que el movimiento sea claramente perceptible. Una vez que el LED llega al final, la secuencia se reinicia cíclicamente.
+
+    \subsubsection{Ejecución del corrimiento a la derecha}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon6/SalidaTerminal.png}
+        \caption{Elección de la opción 101 - Corrimientos de LEDs a la derecha}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame1.jpg}
+        \caption{Ejecución Opción 101: Posición Inicial (LED 0). El LED en el extremo izquierdo (GP0) es el primero en encenderse.}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame2.jpg}
+        \caption{Ejecución Opción 101: Primer Corrimiento (LED 1). La luz se desplaza una posición hacia la derecha (GP1).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame3.jpg}
+        \caption{Ejecución Opción 101: Segundo Corrimiento (LED 2). El movimiento continúa hacia la derecha (GP2).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame4.jpg}
+        \caption{Ejecución Opción 101: Tercer Corrimiento (LED 3). La luz avanza hacia el centro de la barra (GP3).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame5.jpg}
+        \caption{Ejecución Opción 101: Cuarto Corrimiento (LED 4). El LED continúa su desplazamiento hacia la derecha (GP4).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame6.jpg}
+        \caption{Ejecución Opción 101: Quinto Corrimiento (LED 5). La luz se mueve hacia la mitad derecha de la barra (GP5).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame7.jpg}
+        \caption{Ejecución Opción 101: Sexto Corrimiento (LED 6). Se enciende el penúltimo LED (GP6).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=0, width=0.7\textwidth]{img/Renglon6/frame8.jpg}
+        \caption{Ejecución Opción 101: Séptimo Corrimiento (LED 7). El LED alcanza el extremo derecho (GP7). Inmediatamente después, la secuencia se reinicia desde la posición inicial (LED 0).}
+    \end{figure}
+
+        \subsection{Caso 7: Corrimientos de LEDs a la izquierda}
+
+    Este caso funciona prácticamente igual al anterior solo que los LEDS se van encendiendo en sentido contrario al caso anterior. El programa itera sobre una secuencia predefinida como en casos pasados que sirve para encender un LED a la vez, comenzando desde el extremo derecho (GP7) hasta el extremo izquierdo (GP0), creando la ilusión visual de que un punto de luz se mueve hacia la izquierda y cada cambio de estado tiene una pausa de 0.2 {[}s{]} para que el movimiento sea visible y una vez que el LED llega al extremo izquierdo, la secuencia se reinicia cíclicamente.
+
+    \subsubsection{Ejecución del corrimiento a la izquierda}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1.0\textwidth]{img/Renglon7/SalidaTerminal.png}
+        \caption{Elección de la opción 110 - Corrimientos de LEDs a la izquierda}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame1.jpg}
+        \caption{Ejecución Opción 110: Posición Inicial (LED 7). El LED en el extremo derecho (GP7) es el primero en encenderse.}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame2.jpg}
+        \caption{Ejecución Opción 110: Primer Corrimiento (LED 6). La luz se desplaza una posición hacia la izquierda (GP6).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame3.jpg}
+        \caption{Ejecución Opción 110: Segundo Corrimiento (LED 5). La luz se desplaza una posición más a la izquierda (GP5).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame4.jpg}
+        \caption{Ejecución Opción 110: Tercer Corrimiento (LED 4). La luz avanza una posición más (GP4).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame5.jpg}
+        \caption{Ejecución Opción 110: Cuarto Corrimiento (LED 3). El LED continúa su desplazamiento hacia la izquierda (GP3).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame6.jpg}
+        \caption{Ejecución Opción 110: Quinto Corrimiento (LED 2). La luz se mueve hacia la mitad izquierda de la barra (GP2).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame7.jpg}
+        \caption{Ejecución Opción 110: Sexto Corrimiento (LED 1). El LED se aproxima al extremo izquierdo (GP1).}
+    \end{figure}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[angle=90, width=0.7\textwidth]{img/Renglon7/frame8.jpg}
+        \caption{Ejecución Opción 110: Séptimo Corrimiento (LED 0). El LED alcanza el extremo izquierdo (GP0). Inmediatamente después la secuencia se reinicia desde la posición inicial (LED 7).}
+    \end{figure}
+
+    \newpage
+\newpage
+\subsection{Caso 8: Corrimientos de LEDs en Zig-Zag}
+
+Este caso es básicamente la unión de los casos 6 y 7 ya que el Zig-Zag genera un efecto de "rebote" continuo: el punto de luz se desplaza desde el extremo izquierdo (GP0) hacia el extremo derecho (GP7) y al llegar al final, invierte inmediatamente su dirección para regresar hacia la izquierda, creando un movimiento de vaivén que se repite cíclicamente.
+
+Para implementar este caso en lugar de definir una lista de 15 valores binarios precalculados, el programa utiliza una lista que representa únicamente las posiciones espaciales: \texttt{secuencia = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]}. Un contador global \texttt{paso} se incrementa infinitamente, y mediante el operador de módulo (\texttt{\%}) se calcula un índice dinámico y seguro (\texttt{paso \% len(secuencia)}) y una vez obtenida la posición, se emplea un operador de corrimiento lógico a la izquierda (\texttt{1 << posicion}) para colocar un único bit en estado alto exactamente en el pin físico correspondiente y como en los casos pasados cada cambio de estado tiene una pausa de 0.2 {[}s{]}.
+
+\subsubsection{Ejecución del corrimiento en Zig-Zag}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\textwidth]{img/Renglon8/SalidaTerminal.png}
+    \caption{Elección de la opción 111 - Corrimientos de LEDs en Zig-Zag}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame1.jpg}
+        \caption{Posición 0 (GP0) - Inicio del recorrido hacia la derecha}
+        \label{fig:zigzag1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame2.jpg}
+        \caption{Posición 1 (GP1) - Primer avance hacia la derecha}
+        \label{fig:zigzag2}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame3.jpg}
+        \caption{Posición 2 (GP2) - Segundo avance hacia la derecha}
+        \label{fig:zigzag3}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame4.jpg}
+        \caption{Posición 3 (GP3) - Tercer avance hacia la derecha}
+        \label{fig:zigzag4}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame5.jpg}
+        \caption{Posición 4 (GP4) - Cuarto avance hacia la derecha}
+        \label{fig:zigzag5}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame6.jpg}
+        \caption{Posición 5 (GP5) - Quinto avance hacia la derecha}
+        \label{fig:zigzag6}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame7.jpg}
+        \caption{Posición 6 (GP6) - Sexto avance hacia la derecha}
+        \label{fig:zigzag7}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame8.jpg}
+        \caption{Posición 7 (GP7) - Extremo derecho alcanzado}
+        \label{fig:zigzag8}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame9.jpg}
+        \caption{Posición 6 (GP6) - Inicio del retorno hacia la izquierda}
+        \label{fig:zigzag9}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame10.jpg}
+        \caption{Posición 5 (GP5) - Retorno (segundo paso)}
+        \label{fig:zigzag10}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame11.jpg}
+        \caption{Posición 4 (GP4) - Retorno (tercer paso)}
+        \label{fig:zigzag11}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame12.jpg}
+        \caption{Posición 3 (GP3) - Retorno (cuarto paso)}
+        \label{fig:zigzag12}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame13.jpg}
+        \caption{Posición 2 (GP2) - Retorno (quinto paso)}
+        \label{fig:zigzag13}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame14.jpg}
+        \caption{Posición 1 (GP1) - Retorno (sexto paso)}
+        \label{fig:zigzag14}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame15.jpg}
+        \caption{Posición 0 (GP0) - Extremo izquierdo alcanzado}
+        \label{fig:zigzag15}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[angle=90, width=\textwidth]{img/Renglon8/frame1.jpg}
+        \caption{Posición 1 (GP1) - Nuevo ciclo (reinicio)}
+        \label{fig:zigzag16}
+    \end{subfigure}
+    \caption{Fin del ciclo y reinicio automático. El movimiento continúa indefinidamente.}
+\end{figure}
+
+
+    \newpage
+    \section{Conclusiones:}
+
+    \begin{itemize}
+        \item \textbf{Espinoza Matamoros Percival Ulises:}
+        Por medio de la realización de esta práctica se logró comprender de mejor forma el funcionamiento y manejo de los pines GPIO de la Raspberry Pi Pico, ya que por medio de estos pines es que se puede interactuar con componentes externos, en este caso con la barra led de 10 segmentos, donde por medio de la implementación de código se implementó correctamente un tipo máquina de estados, donde dependiendo de la entrada del usuario se ejecuta una secuencia diferente, esto se logró gracias a la implementación de un menú de usuario que se muestra en la terminal, donde se muestran las diferentes opciones para controlar los LEDs. El control de los LEDS se implementó por medio de la función \texttt{set\_leds(valor)}, donde se hizo uso de la lógica a nivel de bits para controlar los 8 LEDs con un solo número entero, obteniendo un código óptimo y eficiente.
+        
+        Por otro lado es importante mencionar que se implementó el uso de hilos para poder ejecutar las secuencias de luces sin que el programa se detenga al momento de esperar una nueva entrada del usuario, permitiendo así una experiencia más fluida e interactiva. De forma que por medio de la implementación de esta práctica se reafirmó el funcionamiento de la Raspberry Pi Pico y cómo interactuar con componentes externos utilizando MicroPython, así como manejar la lógica a nivel de bits y el uso de hilos para mejorar la eficiencia del programa.
+
+        \item \textbf{Flores Colin Victor Jaziel:}
+        
+        La realización de esta práctica me permitió consolidar conceptos fundamentales sobre la interacción entre software y hardware utilizando MicroPython en la Raspberry Pi Pico ya que see logró implementar un sistema de control para 8 LEDs con ocho secuencias luminosas distintas, seleccionables por el usuario mediante un menú en la terminal.
+
+        Uno de los principales aprendizajes fue el trabajo a nivel de bits. La función \texttt{set\_leds(valor)} utilizó operadores de corrimiento (\texttt{>>}) y máscaras AND (\texttt{\&}) para tratar los 8 LEDs como un bus de datos, optimizando memoria y simplificando el código y otro aspecto fundamental fue el uso de hilos (\texttt{\_thread}) para manejar tareas concurrentes. Al ejecutar la captura de entrada del usuario en un hilo secundario, se resolvió el problema de las funciones bloqueantes como \texttt{input()}, permitiendo que las secuencias de luces continuaran sin interrupciones.
+
+        En la interfaz de terminal, se utilizaron arreglos para validar entradas y un menú estructurado. Para el Zig-Zag, se optimizó el código usando una lista de posiciones y la operación \texttt{1 << posicion}, evitando definir 15 valores explícitos y físicamente, se construyó el circuito con una barra de LEDs para facilitar la implementación y resistencias de 68 $\Omega$, validando las ocho secuencias implementadas.
+
+
+        \item \textbf{Garcia Cortes Adolfo de Jesus:}
+
+        En conclusión la realización de esta práctica me ayudó a entender mejor cómo interactuar con componentes externos usando MicroPython, como los LEDs y el display. Es decir, cómo enviarles señales desde el programa para que respondan de cierta forma (encender, apagar o mostrar patrones). También se vio que trabajar con bits es muy útil, ya que permite ahorrar memoria y hacer el código más sencillo. En lugar de usar un enfoque paso a paso tradicional, se utilizó la función set\_leds() con operadores de corrimiento y máscaras AND (\&), lo que permitió manejar los 8 LEDs como si fueran un solo grupo de 8 bits.
+
+        Otra cosa fundamental fue el uso de hilos (thread) para manejar varias tareas al mismo tiempo. Gracias a esto, las secuencias de luces podían seguir funcionando mientras el microcontrolador esperaba instrucciones del usuario en la terminal. Esto muestra un buen entendimiento de cómo trabaja la Raspberry Pi Pico. 
+        
+        \item \textbf{Lara Hernandez Angel Husiel:}
+        
+        Para el desarrolo de esta practica, fue importante conocer mejor el multihilo de la pico 2, por que gracias a esto me ayudo a entender esta funcion, debido a que anteriormente en otros cursos con la parte de multihilo se solucion el problema de funciones bloqueantes, asi que para solucionar esto, fue de gran ayudar conocer los hilos para micropython y cuantos se pueden usar para pico 2, ademas de esto, esta practica tambien fue de utilidad para saber como progrmar de forma correcta los pines para asignarle los valores, esto tambien como se controlaba un arreglo de los 8 bits para los leds, esto en micropython fue muy facil debido a su sintaxys clara, esto con ayuda con las practicas de laboratorio nos ayudo a comprender mejor el funcionamiento de esta parte.
+        
+        Ahora bien, para esto la parte de la terminal, fue un codigo sencillo donde lo tipico de usar fue arreglos para la comprobacion de las entradas, asi tambien como el uso de recorrimiento de bits para optimizar las lineas de codigo en zig-zag, debido que en las otras entradas solo usamos arreglos basicos debido a que solo teniamos que repetir secuencias que eran sencillas de representar para el arreglo de 8 bits guardandolos en tuplas para hacerlo mas sencillo para comprenderlo, al final de todo esto la ayuda de la compresion del multihilo y la parte del control del arreglo de 8 bits fue la logica principal en este proyecto que fue interesante y de gran ayuda para conocer nuevas cosas para micropython.
+        
+        
+        \item \textbf{Lugo Manzano Rodrigo:} 
+
+        Esta práctica me ayudo a seguir reforzando mis conocimeintos sobre cómo interactúa el software con el hardware de la Raspberry Pi Pico 2W. De las cosas más importantes igual fue manejar las funciones bloqueantes, como la captura de datos en la terminal, que detenían por completo las secuencias de luces. Además implementar la librería thread fue la solución para ese problema, ya que nos permitió manejar la entrada del menú en un hilo secundario mientras el microcontrolador continuaba ejecutando el parpadeo de los LEDs sin interrupciones.
+
+        También, comprendi la importancia de optimizar el código trabajando a nivel de bits, utilizar operaciones como el corrimiento lógico y la máscara AND en la función principal hizo que el control del arreglo de LEDs fuera mucho más rápido y eficiente que tratar de configurar cada pin de manera individual. Además, el haber optado por un display tipo barra multicolor en lugar de diodos individuales no solo nos ahorró espacio y cableado, sino que resultó en un circuito mucho más limpio y funcional en la protoboard. En sí, esta práctica fue muy buena para aplicar conceptos de programación y seguir conociendo Micropython, y tambíen para comenzar a trabajar con hardware externo en este caso los LEDs por medio de los pines GPIO.
+        
+
+        
+    \end{itemize}
+
+    \newpage
+
+    % Impresión Referencias
+    \nocite{*}
+    \printbibliography[heading=bibintoc, title={Referencias}]
+\end{document}

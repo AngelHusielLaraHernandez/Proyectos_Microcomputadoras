@@ -1,0 +1,79 @@
+% ============================================================
+% RESULTADOS - Análisis teórico esperado
+% ============================================================
+
+\subsection{coeficientes}
+
+\begin{table}[H]
+    \centering
+    \caption{Comparación de coeficientes de los filtros diseñados.}
+    \label{tab:coeff_summary}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \rowcolor{headblue}
+        \textcolor{white}{\textbf{Coeficiente}} &
+        \textcolor{white}{\textbf{Pasa Bajas 1er Orden}} &
+        \textcolor{white}{\textbf{Pasa Altas 2do Orden}} \\
+        \hline
+        $A_0$ & $0.16591$ & $0.63897$ \\
+        \hline
+        $A_1$ & $0.16591$ & $-1.27795$ \\
+        \hline
+        $A_2$ & $0.0$ & $0.63897$ \\
+        \hline
+        $B_1$ & $0.66818$ & $1.14305$ \\
+        \hline
+        $B_2$ & $0.0$ & $-0.41286$ \\
+        \hline
+        \rowcolor{subheadblue}
+        $f_c$ & $500$ Hz & $800$ Hz \\
+        \hline
+        \rowcolor{subheadblue}
+        Tipo & IIR Butterworth & RLC Butterworth \\
+        \hline
+        \rowcolor{subheadblue}
+        Orden & 1 & 2 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+
+\newpage
+\subsubsection{Valores esperados con señal de onda cuadrada}
+
+Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba, se esperan los siguientes comportamientos:
+
+\begin{table}[H]
+    \centering
+    \caption{Comportamiento esperado con onda cuadrada a distintas frecuencias.}
+    \label{tab:expected_sq}
+    \begin{tabular}{|c|p{5cm}|p{5cm}|}
+        \hline
+        \rowcolor{headblue}
+        \textcolor{white}{\textbf{$f_{\text{sq}}$ (Hz)}} &
+        \textcolor{white}{\textbf{Pasa Bajas ($f_c=500$ Hz)}} &
+        \textcolor{white}{\textbf{Pasa Altas ($f_c=800$ Hz)}} \\
+        \hline
+        50 Hz &
+        La salida sigue la onda cuadrada con esquinas redondeadas (atenuación mínima). &
+        La salida muestra picos en cada transición, decayendo a cero entre flancos. \\
+        \hline
+        200 Hz &
+        Onda cuadrada visible con suavizado moderado de las transiciones. &
+        Picos pronunciados en los flancos; la componente fundamental se atenúa parcialmente. \\
+        \hline
+        500 Hz &
+        Señal significativamente suavizada; la fundamental pasa con $-3$ dB. &
+        Picos visibles; la fundamental pasa parcialmente ($-8.9$ dB de atenuación). \\
+        \hline
+        1000 Hz &
+        Señal muy atenuada y suavizada, salida casi triangular/senoidal. &
+        La onda cuadrada pasa con modificación moderada ($-1.5$ dB en la fundamental). \\
+        \hline
+        2000 Hz &
+        Salida fuertemente atenuada ($-12.3$ dB); casi imperceptible. &
+        La onda cuadrada pasa prácticamente sin modificación ($-0.1$ dB). \\
+        \hline
+    \end{tabular}
+\end{table}

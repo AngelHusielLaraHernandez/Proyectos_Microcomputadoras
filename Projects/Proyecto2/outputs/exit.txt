@@ -1,0 +1,78 @@
+>>> %Run -c $EDITOR_CONTENT
+
+MPY: soft reboot
+
+============================================================
+                  CONTROL DE LEDs
+============================================================
+  [000] - Todos los LEDs apagados
+  [001] - Encender / Apagar LEDs
+  [010] - Encender / Apagar Nibbles
+  [011] - Corrimientos entre Nibbles a la derecha
+  [100] - Corrimientos entre Nibbles a la izquierda
+  [101] - Corrimientos de LEDs a la derecha
+  [110] - Corrimientos de LEDs a la izquierda
+  [111] - Corrimientos de LEDs en Zig - Zag
+============================================================
+
+ESTADO INICIAL: [000] - Todos los LEDs apagados
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 000
+
+------------------------------------------------------------
+   Ejecutando: [000] - Todos los LEDs apagados
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 001
+
+------------------------------------------------------------
+   Ejecutando: [001] - Encender / Apagar LEDs
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 010
+
+------------------------------------------------------------
+   Ejecutando: [010] - Encender / Apagar Nibbles
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 011
+
+------------------------------------------------------------
+   Ejecutando: [011] - Corrimientos entre Nibbles (Derecha)
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 100
+
+------------------------------------------------------------
+   Ejecutando: [100] - Corrimientos entre Nibbles (Izquierda)
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 101
+
+------------------------------------------------------------
+   Ejecutando: [101] - Corrimientos de LEDs (Derecha)
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 110
+
+------------------------------------------------------------
+   Ejecutando: [110] - Corrimientos de LEDs (Izquierda)
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 101
+
+------------------------------------------------------------
+   Ejecutando: [101] - Corrimientos de LEDs (Derecha)
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 111
+
+------------------------------------------------------------
+   Ejecutando: [111] - Corrimientos de LEDs en Zig-Zag
+------------------------------------------------------------
+
+>> Teclee la combinacion [PIN11, PIN15, PIN17]: 000
+
+------------------------------------------------------------
+   Ejecutando: [000] - Todos los LEDs apagados
+------------------------------------------------------------
