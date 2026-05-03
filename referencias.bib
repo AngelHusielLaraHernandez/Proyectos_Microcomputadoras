@@ -1,48 +1,98 @@
-@manual{rp2040-datasheet,
-  author   = {{Raspberry Pi Ltd.}},
-  title    = {RP2040 Datasheet: A microcontroller by Raspberry Pi},
-  date     = {2025-02-20},
-  url      = {https://pip-assets.raspberrypi.com/categories/814-rp2040/documents/RP-008371-DS-1-rp2040-datasheet.pdf},
-  version  = {build-version: 3184e62-clean}
+
+% --- Libros de filtros y diseño analogico ---
+
+@book{sedra2020microelectronic,
+    author    = {Sedra, Adel S. and Smith, Kenneth C. and Carusone, Tony Chan and Gaudet, Vincent},
+    title     = {Microelectronic Circuits},
+    edition   = {8},
+    year      = {2020},
+    publisher = {Oxford University Press},
+    address   = {New York, NY},
+    isbn      = {978-0190853464}
 }
 
-@online{raspberry-pi-ltd-2025,
-	author = {{Raspberry Pi Ltd}},
-	date = {2025},
-	title = {Raspberry Pi Pico 2 W Datasheet},
-	url = {https://pip-assets.raspberrypi.com/categories/1088-raspberry-pi-pico-2-w/documents/RP-008304-DS-2-pico-2-w-datasheet.pdf?disposition=inline},
+% --- Referencia clasica de filtros Butterworth ---
+
+@article{butterworth1930filter,
+    author  = {Butterworth, Stephen},
+    title   = {On the Theory of Filter Amplifiers},
+    journal = {Wireless Engineer},
+    volume  = {7},
+    number  = {6},
+    pages   = {536--541},
+    year    = {1930}
 }
 
-@online{python-software-foundation-2025,
-	author = {{Python Software Foundation}},
-	date = {2025},
-	title = {17.9. \_thread — Low-level threading API —},
-	url = {https://docs.python.org/3.5/library/_thread.html#module-_thread},
+% --- Documentacion de hardware ---
+
+@manual{rp2350-datasheet,
+    author  = {{Raspberry Pi Ltd.}},
+    title   = {{RP2350 Datasheet}: A Microcontroller by {Raspberry Pi}},
+    year    = {2024},
+    url     = {https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf}
 }
 
-@online{the-micropython-documentation-2026A,
-	author = {{The MicroPython Documentation}},
-	date = {2026},
-	title = {class Pin - control I/O pins},
-	url = {https://docs.micropython.org/en/latest/library/machine.Pin.html},
+@manual{pico2w-datasheet,
+    author  = {{Raspberry Pi Ltd.}},
+    title   = {{Raspberry Pi Pico 2 W Datasheet}},
+    year    = {2024},
+    url     = {https://datasheets.raspberrypi.com/pico/pico-2-w-datasheet.pdf}
 }
 
-@online{berrybase-no-date,
-	author = {{BerryBase}},
-	title = {Datasheet for 10 segment LED bargraph display},
-	url = {https://www.berrybase.ch/en/product-datasheet/019234a4c5f8708ea1981dcf7d03458b/create},
+% --- Documentacion de MicroPython ---
+
+@online{micropython-machine,
+    author = {{MicroPython Contributors}},
+    title  = {machine --- Functions Related to the Hardware},
+    year   = {2024},
+    url    = {https://docs.micropython.org/en/latest/library/machine.html}
 }
 
-@online{the-micropython-documentation-2026B,
-	author = {{The MicroPython Documentation}},
-	date = {2026},
-	title = {\_thread - multithreading support —},
-	url = {https://docs.micropython.org/en/latest/library/_thread.html#module-_thread},
+@online{micropython-adc,
+    author = {{MicroPython Contributors}},
+    title  = {class {ADC} --- Analog to Digital Conversion},
+    year   = {2024},
+    url    = {https://docs.micropython.org/en/latest/library/machine.ADC.html}
 }
 
-@online{the-micropython-documentation-2026C,
-	author = {{The MicroPython Documentation}},
-	date = {2026},
-	title = {machine — functions related to the hardware},
-	url = {https://docs.micropython.org/en/latest/library/machine.html},
+@online{micropython-pwm,
+    author = {{MicroPython Contributors}},
+    title  = {class {PWM} --- Pulse Width Modulation},
+    year   = {2024},
+    url    = {https://docs.micropython.org/en/latest/library/machine.PWM.html}
+}
+
+@online{micropython-thread,
+    author = {{MicroPython Contributors}},
+    title  = {\_thread --- Multithreading Support},
+    year   = {2024},
+    url    = {https://docs.micropython.org/en/latest/library/_thread.html}
+}
+
+@online{micropython-time,
+    author = {{MicroPython Contributors}},
+    title  = {time --- Time Related Functions},
+    year   = {2024},
+    url    = {https://docs.micropython.org/en/latest/library/time.html}
+}
+
+% --- Python oficial ---
+
+@online{python-thread,
+    author = {{Python Software Foundation}},
+    title  = {\_thread --- Low-Level Threading {API}},
+    year   = {2024},
+    url    = {https://docs.python.org/3/library/_thread.html}
+}
+
+% --- Transformada bilineal / Tustin ---
+
+@book{ogata2010modern,
+    author    = {Ogata, Katsuhiko},
+    title     = {Modern Control Engineering},
+    edition   = {5},
+    year      = {2010},
+    publisher = {Pearson},
+    address   = {Upper Saddle River, NJ},
+    isbn      = {978-0136156734}
 }

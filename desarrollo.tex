@@ -556,15 +556,58 @@ Sustituyendo los valores numéricos:
 \subsection{Implementación en MicroPython}
 % ============================================================
 
-\begin{itemize}
-    \item \textbf{Núcleo~1:} Ejecuta exclusivamente la ecuación en diferencias a $f_s = 8000$ Hz. Este núcleo \textbf{no realiza impresión por serial} para evitar saturar el buffer USB, lo cual garantiza que el Núcleo~0 siempre pueda recibir comandos (como \texttt{STOP}).
-    \item \textbf{Núcleo~0:} Gestiona la comunicación serial USB mediante lectura \textbf{no bloqueante} (\texttt{select.poll()}) y se encarga de imprimir los datos del filtro a una tasa reducida de 200 muestras/segundo, compatible con la velocidad del puerto serial.
-\end{itemize}
+\subsubsection{Documentación del código}
 
-Los comandos disponibles son: \texttt{START} (iniciar filtrado), \texttt{STOP} (detener), \texttt{LP} (seleccionar pasa bajas), \texttt{HP} (seleccionar pasa altas), \texttt{FREQ~<hz>} (cambiar frecuencia de la onda cuadrada de prueba) y \texttt{STATUS} (consultar estado).
+El programa comienza importando las bibliotecas necesarias para interactuar con el hardware de la Raspberry Pi Pico 2W. De la biblioteca \texttt{machine} se traen las clases \texttt{Pin}, \texttt{ADC} y \texttt{PWM}, que permiten configurar pines digitales, leer señales analógicas y generar ondas con modulación de ancho de pulso, respectivamente. También se importa el módulo \texttt{\_thread}, que es la herramienta que ofrece MicroPython para trabajar con los dos núcleos del procesador RP2350 de forma simultánea, y el módulo \texttt{time}, que se utiliza para medir tiempos y hacer pausas con precisión de microsegundos.
+
+A continuación se definen los parámetros fundamentales del sistema. La frecuencia de muestreo se fija en 8000~Hz, lo que implica que el filtro debe calcular una nueva muestra cada 125~microsegundos. Estos valores se guardan en las constantes \texttt{FS} y \texttt{PERIOD\_US} para que sean fáciles de modificar si en algún momento se quisiera cambiar la tasa de muestreo.
+
+Después viene la configuración del hardware. El pin GP26 se configura como entrada analógica a través de la clase \texttt{ADC}, ya que es uno de los pines que tiene convertidor analógico-digital integrado en la Pico. El pin GP3 se configura como salida PWM para generar la onda cuadrada que sirve como señal de prueba; se le asigna una frecuencia inicial de 200~Hz y un ciclo de trabajo del 50\%, lo que produce una onda simétrica. Finalmente, el LED integrado de la placa se configura como salida digital para servir como indicador visual de que el sistema se encuentra filtrando activamente.
+
+Los coeficientes de los dos filtros se declaran como constantes globales. Para el filtro pasa bajas de primer orden, que se diseñó a partir del circuito RC con frecuencia de corte de 500~Hz, los coeficientes son $A_0 = A_1 = 0.16591$ y $B_1 = 0.66818$, obtenidos mediante la transformada bilineal como se mostró en la sección anterior. Para el filtro pasa altas de segundo orden, derivado del circuito RLC con frecuencia de corte de 800~Hz, los coeficientes son $A_0 = 0.63897$, $A_1 = -1.27795$, $A_2 = 0.63897$, $B_1 = 1.14305$ y $B_2 = -0.41286$. Estos valores se almacenan con cinco decimales para mantener una precisión adecuada en los cálculos de punto flotante.
+
+Luego se declaran las variables de estado que necesita cada filtro para recordar las muestras anteriores. El filtro pasa bajas solo requiere guardar la entrada anterior $u(k-1)$ y la salida anterior $y(k-1)$, ya que es de primer orden. El filtro pasa altas, al ser de segundo orden, necesita dos entradas pasadas $u(k-1)$ y $u(k-2)$, además de dos salidas pasadas $y(k-1)$ y $y(k-2)$. Todas estas variables se inicializan en cero. También se crean dos variables de control: \texttt{active\_filter}, que indica cuál filtro está seleccionado, y \texttt{running}, que determina si el sistema está procesando muestras o se encuentra detenido.
+
+Se define una función auxiliar llamada \texttt{mostrar\_menu} que imprime por el puerto serial un encabezado con el nombre del sistema, la frecuencia de muestreo, y la lista de comandos disponibles. Esta función se llama al inicio del programa y cada vez que el usuario detiene el filtrado, para que siempre tenga a la vista las opciones que puede utilizar.
+
+La parte central del programa es la función \texttt{filter\_core}, que se ejecuta en el Núcleo~1 del procesador. Esta función corre en un ciclo infinito y, mientras la variable \texttt{running} sea verdadera, realiza lo siguiente en cada iteración: primero registra el tiempo de inicio para poder controlar la duración del ciclo; luego lee el valor del ADC, que devuelve un número entero de 16 bits (entre 0 y 65535), y lo convierte a voltaje multiplicando por 3.3 y dividiendo entre 65535. Una vez obtenida la muestra de entrada $u(k)$ en voltios, se evalúa cuál filtro está activo. Si es el pasa bajas, se calcula la salida aplicando la ecuación en diferencias $y(k) = A_0 \cdot u(k) + A_1 \cdot u(k-1) + B_1 \cdot y(k-1)$ y se actualizan las variables de estado. Si es el pasa altas, se usa la ecuación completa de segundo orden con los cinco coeficientes y se actualizan las cuatro variables de estado, teniendo cuidado de respetar el orden de asignación para no sobrescribir valores que todavía se necesitan. Después de calcular la salida, se envía por el puerto serial una línea con el formato \texttt{entrada,salida}, que es el formato que espera el Serial Plotter. Al final del ciclo se mide cuánto tiempo transcurrió y, si fue menos de 125~microsegundos, se espera el tiempo restante para mantener la frecuencia de muestreo constante. Si el cálculo tomó más tiempo del disponible, se hace una pausa mínima de cero microsegundos para ceder brevemente el procesador al otro núcleo.
+
+La función \texttt{filter\_core} se lanza en el Núcleo~1 mediante la instrucción \texttt{\_thread.start\_new\_thread}, lo que permite que ambos núcleos del RP2350 trabajen de manera simultánea sin interferirse. A partir de ese momento, el Núcleo~1 queda dedicado exclusivamente al cálculo del filtro.
+
+El Núcleo~0 se encarga de la interacción con el usuario a través del puerto serial USB. Tras mostrar el menú inicial, entra en un ciclo infinito donde espera a recibir un comando. La función \texttt{input()} lee una línea completa del puerto serial, y después se convierte a mayúsculas para que el usuario pueda escribir los comandos en cualquier combinación de mayúsculas y minúsculas. Según el comando recibido, el programa ejecuta la acción correspondiente: \texttt{START} activa el filtrado y enciende el LED; \texttt{STOP} lo detiene, apaga el LED y vuelve a mostrar el menú; \texttt{LP} selecciona el filtro pasa bajas y reinicia sus variables de estado; \texttt{HP} hace lo mismo para el filtro pasa altas; \texttt{FREQ} seguido de un número cambia la frecuencia de la onda cuadrada de prueba que genera el PWM; y \texttt{STATUS} muestra en pantalla qué filtro está seleccionado, si está activo o detenido, la frecuencia de muestreo y la frecuencia actual de la onda cuadrada. Si el comando no corresponde a ninguna opción reconocida, se muestra un mensaje de error. Todo el bloque de lectura y procesamiento de comandos se encuentra dentro de un \texttt{try-except} para que, si ocurre algún error inesperado en la comunicación serial, el programa no se detenga sino que simplemente espere un breve instante y vuelva a intentar leer.
+
+\subsubsection{Código fuente}
 
 \lstinputlisting[
     language={[LAB]Python},
     caption={Código MicroPython del sistema de filtros digitales IIR para Raspberry Pi Pico 2W.},
     label={lst:filtros_code}
 ]{code/filtros_iir.py}
+
+\subsubsection{Diagrama de conexión física}
+
+Para probar el sistema, la señal de prueba generada por el pin GP3 (PWM) se conecta directamente al pin GP26 (ADC0) mediante un cable puente. De esta forma, la onda cuadrada producida por el propio microcontrolador entra al convertidor analógico-digital sin necesidad de componentes externos, lo que permite verificar el funcionamiento de los filtros digitales de manera sencilla.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.0]
+        \picoboard
+
+        % Cable puente de GP3 (P5) a GP26_A0 (P31)
+        \draw[blue, thick, rounded corners=8pt]
+            (P5) -- (-1.5, -2.25)
+            -- (-1.5, -5.5)
+            -- (5.5, -5.5)
+            -- (5.5, -4.5)
+            -- (P31);
+
+        % Etiquetas del cable
+        \node[left, font=\footnotesize\sffamily, blue] at (-1.5, -3.8) {Cable puente};
+
+        % Anotaciones de los pines
+        \node[left, font=\scriptsize\sffamily, fill=white, inner sep=1pt] at (-0.8, -2.25) {GP3 (PWM)};
+        \node[right, font=\scriptsize\sffamily, fill=white, inner sep=1pt] at (4.8, -4.5) {GP26 (ADC0)};
+    \end{tikzpicture}
+    \caption{Conexión física: cable puente entre GP3 (salida PWM) y GP26 (entrada ADC) en la Raspberry Pi Pico 2W.}
+    \label{fig:conexion_pico}
+\end{figure}
