@@ -6,7 +6,6 @@
 # Filtro 2 (HP): Pasa Altas (Ajustado a los coeficientes de tu captura)
 #
 # fs = 8000 Hz | T = 125 us
-# Comunicacion: USB Serial (NO BLOQUEANTE)
 # =============================================================
 
 from machine import Pin, ADC, PWM
@@ -22,8 +21,8 @@ FS = 8000                   # Frecuencia de muestreo (Hz)
 PERIOD_US = 125             # Periodo de muestreo (us)
 
 # Resoluciones visuales independientes para Thonny
-PRINT_SKIP_LP = 3           # Resolucion fina para la aleta de tiburon
-PRINT_SKIP_HP = 15          # Comprime la vista para el filtro pasa altas
+PRINT_SKIP_LP = 3           
+PRINT_SKIP_HP = 15          
 
 # =============================================================
 # CONFIGURACION DE HARDWARE
