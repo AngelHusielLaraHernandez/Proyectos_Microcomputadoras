@@ -71,10 +71,6 @@ Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba
         Señal muy atenuada y suavizada, salida casi triangular/senoidal. &
         La onda cuadrada pasa con modificación moderada ($-1.5$ dB en la fundamental). \\
         \hline
-        2000 Hz &
-        Salida fuertemente atenuada ($-12.3$ dB); casi imperceptible. &
-        La onda cuadrada pasa prácticamente sin modificación ($-0.1$ dB). \\
-        \hline
     \end{tabular}
 \end{table}
 
@@ -87,7 +83,7 @@ Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba
 En esta sección se presentan los resultados obtenidos al aplicar el filtro pasa-bajas
 de primer orden con frecuencia de corte $f_c = 500\,\text{Hz}$ sobre una señal
 cuadrada evaluada a distintas frecuencias de entrada:
-$50$, $200$, $500$, $1000$ y $2000\,\text{Hz}$.
+$50$, $200$, $500$ y $1000\,\text{Hz}$.
 
 En cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$
 (señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
@@ -166,26 +162,10 @@ integran la onda cuadrada, conservando principalmente la componente fundamental.
 \end{figure}
 
 
-A $2000\,\text{Hz}$, cuatro veces por encima de $f_c$, la atenuación es la
-mayor dentro del rango evaluado. La señal de entrada, a pesar de seguir siendo
-cuadrada, se percibe visualmente como triangular por la alta velocidad de
-alternancia. La señal de salida queda muy atenuada y pierde prácticamente toda
-semejanza con la forma original: el filtro ha bloqueado la gran mayoría de las
-componentes frecuenciales, conservando únicamente la fundamental con amplitud
-muy reducida.
-
-
-Entonces se puede observar que el comportamiento observado confirma el funcionamiento correcto del
-filtro pasa-bajas de primer orden: las frecuencias por debajo de $f_c$ son
-transmitidas con poca atenuación, mientras que las frecuencias superiores son
-progresivamente atenuadas conforme se alejan de $f_c$. La transición entre la
-banda de paso y la banda de rechazo es suave y gradual, característica de un filtro de primer orden.
-
-
 \newpage
 \subsection{Filtro pasa altas de segundo orden}
 
-Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de segundo orden (Circuito RLC), con frecuencia de corte $f_c = 800\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$, $200$, $500$, $1000$ y $2000\,\text{Hz}$.
+Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de segundo orden (Circuito RLC), con frecuencia de corte $f_c = 800\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$, $200$, $500$ y $1000\,\text{Hz}$.
 
 Para comprender el comportamiento observado, es necesario recordar un principio fundamental, y es que la señal de entrada, al ser una onda cuadrada, está compuesta matemáticamente por la suma de múltiples señales senoidales con diferentes frecuencias, es decir, su frecuencia fundamental y una infinidad de armónicos. Es por esto que el filtro reacciona de manera distinta a ciertas partes de la señal, dejando pasar unas componentes frecuenciales y bloqueando otras. Asimismo, se notará en las gráficas que la señal de entrada, a pesar de ser cuadrada, llega a parecerse visualmente a una señal triangular en las frecuencias más altas debido a la enorme rapidez con la que alterna.
 
@@ -227,11 +207,10 @@ A $500\,\text{Hz}$, nos aproximamos a la frecuencia de corte del filtro. Los pic
 
 A $1000\,\text{Hz}$, la frecuencia fundamental de la señal ha superado la frecuencia de corte ($f_c = 800\,\text{Hz}$), ingresando por completo a la banda de paso. La atenuación teórica de la fundamental se reduce drásticamente a solo $-1.5\,\text{dB}$. Visualmente, los picos pronunciados y el efecto derivador en los flancos desaparecen. La señal de salida (naranja) ahora es capaz de seguir fielmente los niveles altos y bajos de la señal de entrada (azul), demostrando que la mayor parte de la energía frecuencial de la onda logra atravesar el circuito digital.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/2000Hz/f2_2000.png}
-    \caption{Filtro de segundo orden a $f = 2000\,\text{Hz}$.}
-    \label{fig:f2_2000hz}
-\end{figure}
 
-Finalmente, a $2000\,\text{Hz}$, la señal se encuentra operando muy por encima de $f_c$. El filtro funciona en su región de máxima transparencia para la banda de paso, presentando una atenuación teórica casi nula de $-0.1\,\text{dB}$. La forma y la amplitud de la señal filtrada empatan a la perfección con la señal cuadrada de prueba, ya que tanto la frecuencia fundamental como todos sus armónicos superiores de alta frecuencia, que dan forma a los flancos perfectos, pasan a través del sistema sin ninguna restricción.
+\newpage
+\subsection{Diferencias entre el Filtro de Primer Orden y Segundo Orden}
+
+Entre mayor es el orden de un filtro, mayor es la atenuación que ejerce sobre la señal; por ejemplo, en los filtros de Primer Orden la transición es más suave y lenta, mientras que en un filtro de Segundo Orden la transición es más breve y abrupta. 
+
+Aunque en esta práctica el filtro de Primer Orden es un pasa bajas y el de Segundo Orden es un pasa altas, podemos apreciar con claridad este comportamiento al observar la respuesta del sistema, donde el de segundo orden demuestra una mayor selectividad para rechazar las frecuencias no deseadas.Este comportamiento también se ve reflejado en el dominio digital al obtener la ecuación en diferencias. En un filtro de primer orden, la salida depende únicamente de una muestra anterior de la entrada ($u(k-1)$) y una de la salida ($y(k-1)$), de forma que para realizar los cálculos el sistema solo toma en cuenta un valor atrás ya procesado. En cambio, el filtro de segundo orden requiere el doble de información histórica ($k-1$ y $k-2$), lo que lo vuelve más complejo.
