@@ -230,12 +230,14 @@
     \section{Conclusiones:}
 
     \begin{itemize}
-        \item \textbf{Espinoza Matamoros Percival Ulises:} A partir de la realización de esta práctica pude retomar conceptos vistos en asignaturas anteriores, de forma que a partir de diseñar un filtro  y a partir de esta obtener sus funciones de transferencia, al tener que implementar el filtro en la Raspberry Pi Pico, pude aprender y comprender la importancia así como la necesidad de discretizar la función de transferencia, para así poder implementarla en un microcontrolador, donde por medio de una señal cuadrada de entrada se pudo observar el comportamiento del filtro, comprobando asi que el filtro se comporta de la forma esperada, es decir, que se atenúan las frecuencias bajas para el caso del filtro pasa altas, y se atenúan las frecuencias altas para el caso del filtro pasa bajas. Por otro lado al implementar estos dos filtros se pudo observar que el filtro de primer orden tiene una respuesta más lenta, es decir, que tarda más en estabilizarse, mientras que el filtro de segundo orden tiene una respuesta más rápida, es decir, que tarda menos en estabilizarse. De forma que en la raspberry pi pico se pueden implementar filtros digitales de forma sencilla, y con un buen desempeño, siempre y cuando se tenga una buena discretización de la función de transferencia y se realicen los cálculos correspondientes de forma correcta.
+        \item \textbf{Espinoza Matamoros Percival Ulises:}
+        
+        A partir de la realización de esta práctica pude retomar conceptos vistos en asignaturas anteriores, de forma que a partir de diseñar un filtro  y a partir de esta obtener sus funciones de transferencia, al tener que implementar el filtro en la Raspberry Pi Pico, pude aprender y comprender la importancia así como la necesidad de discretizar la función de transferencia, para así poder implementarla en un microcontrolador, donde por medio de una señal cuadrada de entrada se pudo observar el comportamiento del filtro, comprobando asi que el filtro se comporta de la forma esperada, es decir, que se atenúan las frecuencias bajas para el caso del filtro pasa altas, y se atenúan las frecuencias altas para el caso del filtro pasa bajas. Por otro lado al implementar estos dos filtros se pudo observar que el filtro de primer orden tiene una respuesta más lenta, es decir, que tarda más en estabilizarse, mientras que el filtro de segundo orden tiene una respuesta más rápida, es decir, que tarda menos en estabilizarse. De forma que en la raspberry pi pico se pueden implementar filtros digitales de forma sencilla, y con un buen desempeño, siempre y cuando se tenga una buena discretización de la función de transferencia y se realicen los cálculos correspondientes de forma correcta.
         
         \item \textbf{Flores Colin Victor Jaziel:}
 
 
-        \item \textbf{Garcia Cortes Adolfo de Jesus:}
+        \item \textbf{García Cortés Adolfo de Jesús:}
         
         Esta práctica ayudó a repasar lo aprendido en clases pasadas sobre señales y a aplicarlo en un dispositivo real. Al diseñar los filtros RC, quedó claro que para pasarlos de la teoría analógica a la Raspberry Pi Pico, era obligatorio convertirlos a formato digital mediante matemáticas (usando la transformada bilineal). De esta forma se obtuvo la ecuación necesaria para programarlos.
 
@@ -250,8 +252,9 @@
         \item \textbf{Lara Hernandez Angel Husiel:}
 
         
-        \item \textbf{Lugo Manzano Rodrigo:} 
-
+        \item \textbf{Lugo Manzano Rodrigo:}
+        
+        A lo largo de esta práctica, pude recordar lo ya aprendido en algunas asignaturas pasadas y ver cómo la teoría de circuitos analógicos se traslada al mundo digital mediante herramientas matemáticas. Pude observar cómo la señal cuadrada de entrada responde a los filtros dependiendo de su frecuencia, notando claramente cómo el pasa bajas suaviza la onda al eliminar los armónicos rápidos, mientras que el pasa altas aísla los cambios bruscos de los flancos. También fue evidente que subir a un segundo orden resulta en un corte de frecuencias mucho más estricto frente a la transición suave del primer orden, sin embargo, un reto  y aprendizaje importante también estuvo en la implementación física. Trasladar las ecuaciones en diferencias al microcontrolador requirió de una buena optimización para no perder el ritmo de la frecuencia de muestreo establecida. Para lograrlo, fue importante aprovechar la arquitectura de doble núcleo de la Raspberry Pi Pico 2W. Al aislar la ejecución matemática en el Núcleo 1, garantizamos que el filtro calculara cada muestra exactamente cada $125\,\mu\text{s}$, mientras que el Núcleo 0 se encargaba de la comunicación serial de forma no bloqueante. Esto me demostró que en el diseño no basta con tener un modelo matemático perfecto, sino que la eficiencia del código, la sincronización de los núcleos y el manejo adecuado de los recursos del hardware igual son partes importantes para lograr un procesamiento de señales digitales estable.
         
     \end{itemize}
 

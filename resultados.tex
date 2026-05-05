@@ -2,7 +2,7 @@
 % RESULTADOS - Análisis teórico esperado
 % ============================================================
 
-\subsection{coeficientes}
+\subsection{Coeficientes}
 
 \begin{table}[H]
     \centering
@@ -180,3 +180,58 @@ filtro pasa-bajas de primer orden: las frecuencias por debajo de $f_c$ son
 transmitidas con poca atenuación, mientras que las frecuencias superiores son
 progresivamente atenuadas conforme se alejan de $f_c$. La transición entre la
 banda de paso y la banda de rechazo es suave y gradual, característica de un filtro de primer orden.
+
+
+\newpage
+\subsection{Filtro pasa altas de segundo orden}
+
+Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de segundo orden (Circuito RLC), con frecuencia de corte $f_c = 800\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$, $200$, $500$, $1000$ y $2000\,\text{Hz}$.
+
+Para comprender el comportamiento observado, es necesario recordar un principio fundamental, y es que la señal de entrada, al ser una onda cuadrada, está compuesta matemáticamente por la suma de múltiples señales senoidales con diferentes frecuencias, es decir, su frecuencia fundamental y una infinidad de armónicos. Es por esto que el filtro reacciona de manera distinta a ciertas partes de la señal, dejando pasar unas componentes frecuenciales y bloqueando otras. Asimismo, se notará en las gráficas que la señal de entrada, a pesar de ser cuadrada, llega a parecerse visualmente a una señal triangular en las frecuencias más altas debido a la enorme rapidez con la que alterna.
+
+Igualmente en cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$ (señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/50Hz/f2_50.png}
+    \caption{Filtro de segundo orden a $f = 50\,\text{Hz}$.}
+    \label{fig:f2_50hz}
+\end{figure}
+
+A $50\,\text{Hz}$, la frecuencia fundamental de la señal se encuentra muy por debajo de la frecuencia de corte de $800\,\text{Hz}$. En la gráfica se observa que las partes planas de la onda cuadrada, que representan un comportamiento de voltaje constante (frecuencias cercanas a $0\,\text{Hz}$), son bloqueadas casi por completo. Sin embargo, en cada transición abrupta de voltaje (flancos de subida y bajada), la señal de salida presenta picos pronunciados. Esto ocurre porque dichos flancos están compuestos matemáticamente por una suma de armónicos de alta frecuencia, los cuales sí logran atravesar el filtro pasa altas. El resultado es un comportamiento puramente derivador, donde la señal reacciona solo a los cambios y decae a cero en los tramos estables.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/200Hz/f2_200.png}
+    \caption{Filtro de segundo orden a $f = 200\,\text{Hz}$.}
+    \label{fig:f2_200hz}
+\end{figure}
+
+A $200\,\text{Hz}$, la señal continúa en la banda de rechazo del filtro. Los picos generados por la alta frecuencia de los flancos siguen siendo la característica dominante de la señal de salida. No obstante, debido a que el periodo de la onda cuadrada es más corto, la respuesta transitoria de la señal filtrada no tiene el tiempo suficiente para decaer completamente a cero antes de que ocurra el siguiente flanco. A pesar de esto, la componente fundamental de $200\,\text{Hz}$ sigue estando severamente atenuada.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/500Hz/f2_500.png}
+    \caption{Filtro de segundo orden a $f = 500\,\text{Hz}$.}
+    \label{fig:f2_500hz}
+\end{figure}
+
+A $500\,\text{Hz}$, nos aproximamos a la frecuencia de corte del filtro. Los picos correspondientes a los flancos se ensanchan visiblemente en la base, lo que indica que la componente fundamental comienza a pasar de manera parcial. De acuerdo con el análisis teórico, a esta frecuencia se presenta una atenuación de $-8.9\,\text{dB}$. La señal de salida empieza a sostener la amplitud de forma más estable entre las transiciones, intentando replicar la forma de la onda cuadrada original, aunque con evidente distorsión.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/1000Hz/f2_1000.png}
+    \caption{Filtro de segundo orden a $f = 1000\,\text{Hz}$.}
+    \label{fig:f2_1000hz}
+\end{figure}
+
+A $1000\,\text{Hz}$, la frecuencia fundamental de la señal ha superado la frecuencia de corte ($f_c = 800\,\text{Hz}$), ingresando por completo a la banda de paso. La atenuación teórica de la fundamental se reduce drásticamente a solo $-1.5\,\text{dB}$. Visualmente, los picos pronunciados y el efecto derivador en los flancos desaparecen. La señal de salida (naranja) ahora es capaz de seguir fielmente los niveles altos y bajos de la señal de entrada (azul), demostrando que la mayor parte de la energía frecuencial de la onda logra atravesar el circuito digital.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/2000Hz/f2_2000.png}
+    \caption{Filtro de segundo orden a $f = 2000\,\text{Hz}$.}
+    \label{fig:f2_2000hz}
+\end{figure}
+
+Finalmente, a $2000\,\text{Hz}$, la señal se encuentra operando muy por encima de $f_c$. El filtro funciona en su región de máxima transparencia para la banda de paso, presentando una atenuación teórica casi nula de $-0.1\,\text{dB}$. La forma y la amplitud de la señal filtrada empatan a la perfección con la señal cuadrada de prueba, ya que tanto la frecuencia fundamental como todos sus armónicos superiores de alta frecuencia, que dan forma a los flancos perfectos, pasan a través del sistema sin ninguna restricción.
