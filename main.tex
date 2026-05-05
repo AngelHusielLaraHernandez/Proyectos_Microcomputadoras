@@ -151,6 +151,9 @@
 
 
 
+
+
+
 \definecolor{azulresultado}{HTML}{0072C6}
 \definecolor{rojoacarreo}{HTML}{FF0000}
 
@@ -233,6 +236,16 @@
 
 
         \item \textbf{Garcia Cortes Adolfo de Jesus:}
+        
+        Esta práctica ayudó a repasar lo aprendido en clases pasadas sobre señales y a aplicarlo en un dispositivo real. Al diseñar los filtros RC, quedó claro que para pasarlos de la teoría analógica a la Raspberry Pi Pico, era obligatorio convertirlos a formato digital mediante matemáticas (usando la transformada bilineal). De esta forma se obtuvo la ecuación necesaria para programarlos.
+
+        Probar los filtros con una señal cuadrada fue muy útil porque, por su naturaleza, este tipo de señal está formada por la suma de muchas frecuencias distintas. Esto dejó ver claramente qué hace cada filtro: el pasa-bajas dejó pasar las señales lentas y frenó las rápidas, mientras que el pasa-altas hizo exactamente lo contrario.
+
+        Al comparar los filtros, se notó una diferencia importante: el filtro de primer orden bloquea las frecuencias no deseadas de una forma suave, pero el de segundo orden las corta de manera mucho más brusca. Esto también afecta la programación, ya que el de primer orden es más sencillo al solo necesitar el valor anterior de la entrada y la salida ($u(k-1)$ y $y(k-1)$). En cambio, el de segundo orden necesita los dos valores anteriores, lo que le exige más cálculos a la placa.
+
+        Por último, quedó demostrado que la Raspberry Pi Pico funciona muy bien para crear filtros digitales, siempre y cuando las conversiones matemáticas y la velocidad para tomar los datos sean las correctas. Los resultados físicos fueron iguales a lo que decía la teoría, lo que confirma que tanto el diseño como el código en MicroPython se hicieron bien.
+
+
 
         \item \textbf{Lara Hernandez Angel Husiel:}
 

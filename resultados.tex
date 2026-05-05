@@ -77,3 +77,106 @@ Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba
         \hline
     \end{tabular}
 \end{table}
+
+
+\newpage
+
+
+\subsection{Filtro de primer orden}
+
+En esta sección se presentan los resultados obtenidos al aplicar el filtro pasa-bajas
+de primer orden con frecuencia de corte $f_c = 500\,\text{Hz}$ sobre una señal
+cuadrada evaluada a distintas frecuencias de entrada:
+$50$, $200$, $500$, $1000$ y $2000\,\text{Hz}$.
+
+En cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$
+(señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/50Hz/f1_50hz.png}
+    \caption{Filtro de primer orden a $f = 50\,\text{Hz}$.}
+    \label{fig:f1_50hz}
+\end{figure}
+
+A $50\,\text{Hz}$, la frecuencia de entrada es muy inferior a la frecuencia de
+corte $f_c = 500\,\text{Hz}$, por lo que la señal alterna lentamente y su forma
+cuadrada es perfectamente distinguible, con flancos abruptos y niveles estables
+en $3.3\,\text{V}$ y $0\,\text{V}$. La señal de salida sigue de cerca a la
+entrada, presentando únicamente una ligera suavización en los flancos de subida
+y bajada. La amplitud se conserva prácticamente intacta, lo cual es consistente
+con que el filtro deja pasar sin atenuación significativa las componentes
+frecuenciales que se encuentran bien por debajo de $f_c$.
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/200Hz/f1_200.png}
+    \caption{Filtro de primer orden a $f = 200\,\text{Hz}$.}
+    \label{fig:f1_200hz}
+\end{figure}
+
+
+A $200\,\text{Hz}$ la señal de entrada continúa siendo reconocible como cuadrada,
+aunque los ciclos son más rápidos. La salida presenta flancos más redondeados:
+el filtro comienza a atenuar las componentes armónicas de alta frecuencia que
+conforman los bordes abruptos de la señal cuadrada, resultando en transiciones
+más graduales. La amplitud de la salida se mantiene cercana a la de la entrada,
+dado que $200\,\text{Hz}$ aún se encuentra en la banda de paso del filtro.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/500Hz/f1_500.png}
+    \caption{Filtro de primer orden a $f = 500\,\text{Hz}$.}
+    \label{fig:f1_500hz}
+\end{figure}
+
+A $500\,\text{Hz}$, que corresponde exactamente a la frecuencia de corte $f_c$,
+la ganancia del filtro es $1/\sqrt{2} \approx 0.707$, equivalente a una
+atenuación de $-3\,\text{dB}$. La señal de salida ha perdido amplitud de forma
+notable y sus flancos son considerablemente más suaves. La forma cuadrada ya no
+es distinguible con claridad; en cambio, la señal de salida adopta una apariencia
+triangular, producto de la atenuación de los armónicos superiores que componen
+la onda cuadrada.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/1000Hz/f1_1000.png}
+    \caption{Filtro de primer orden a $f = 1000\,\text{Hz}$.}
+    \label{fig:f1_1000hz}
+\end{figure}
+
+
+A $1000\,\text{Hz}$, el doble de la frecuencia de corte, la atenuación es más
+pronunciada. La señal de entrada, al alternar con mayor rapidez, se asemeja
+visualmente a una señal triangular. La señal de salida presenta una amplitud
+significativamente reducida y sus transiciones están casi completamente
+suavizadas; el filtro elimina la mayor parte de las componentes armónicas que
+integran la onda cuadrada, conservando principalmente la componente fundamental.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/2000Hz/f1_2000.png}
+    \caption{Filtro de primer orden a $f = 2000\,\text{Hz}$.}
+    \label{fig:f1_2000hz}
+\end{figure}
+
+
+A $2000\,\text{Hz}$, cuatro veces por encima de $f_c$, la atenuación es la
+mayor dentro del rango evaluado. La señal de entrada, a pesar de seguir siendo
+cuadrada, se percibe visualmente como triangular por la alta velocidad de
+alternancia. La señal de salida queda muy atenuada y pierde prácticamente toda
+semejanza con la forma original: el filtro ha bloqueado la gran mayoría de las
+componentes frecuenciales, conservando únicamente la fundamental con amplitud
+muy reducida.
+
+
+Entonces se puede observar que el comportamiento observado confirma el funcionamiento correcto del
+filtro pasa-bajas de primer orden: las frecuencias por debajo de $f_c$ son
+transmitidas con poca atenuación, mientras que las frecuencias superiores son
+progresivamente atenuadas conforme se alejan de $f_c$. La transición entre la
+banda de paso y la banda de rechazo es suave y gradual, característica de un filtro de primer orden.
