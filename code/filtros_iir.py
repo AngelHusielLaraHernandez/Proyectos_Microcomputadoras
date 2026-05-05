@@ -6,27 +6,35 @@
 # Filtro 2: Pasa Altas de 2do Orden (Circuito RLC, fc=800 Hz)
 #
 # fs = 8000 Hz | T = 125 us
-# Comunicación: USB Serial (COM5)
+# Comunicacion: USB Serial (COM5)
 #
-# Arquitectura de doble núcleo:
-#   Núcleo 0: Comunicación serial y comandos
-#   Núcleo 1: Ecuación en diferencias del filtro
+# Arquitectura de doble nucleo:
+#   Nucleo 0: Comunicacion serial (no bloqueante) e impresion
+#   Nucleo 1: Ecuacion en diferencias del filtro
+#
+# SOLUCION AL BUG DE _thread EN RP2350:
+# El Core 1 no puede ver nombres del modulo (globals).
+# TODO lo que necesita el hilo se pasa como argumentos
+# en _thread.start_new_thread(func, (arg1, arg2, ...)).
 # =============================================================
 
 from machine import Pin, ADC, PWM
 import _thread
 import time
+import sys
+import select
 
 # =============================================================
-# PARÁMETROS DEL SISTEMA
+# PARAMETROS DEL SISTEMA
 # =============================================================
 FS = 8000                   # Frecuencia de muestreo (Hz)
-PERIOD_US = 125             # Período de muestreo (us)
+PERIOD_US = 125             # Periodo de muestreo (us)
+PRINT_SKIP = 2              # Imprimir cada N muestras (4000 lineas/s)
 
 # =============================================================
-# CONFIGURACIÓN DE HARDWARE
+# CONFIGURACION DE HARDWARE
 # =============================================================
-adc = ADC(Pin(26))          # GP26 = ADC0 (entrada analógica)
+adc = ADC(Pin(26))          # GP26 = ADC0 (entrada analogica)
 pwm_sq = PWM(Pin(3))        # GP3 = Onda cuadrada de prueba
 pwm_sq.freq(200)            # Frecuencia inicial: 200 Hz
 pwm_sq.duty_u16(32768)      # 50% duty cycle
@@ -58,152 +66,197 @@ HP_B1 =  1.14305
 HP_B2 = -0.41286
 
 # =============================================================
-# VARIABLES DE ESTADO
+# ESTADO COMPARTIDO - lista mutable (visible desde ambos cores)
+# Se pasa por referencia al hilo como argumento.
+#
+# st[0]  = running       (0 o 1)
+# st[1]  = active_filter (0=PB, 1=PA)
+# st[2]  = lp_u1         u(k-1) del pasa bajas
+# st[3]  = lp_y1         y(k-1) del pasa bajas
+# st[4]  = hp_u1         u(k-1) del pasa altas
+# st[5]  = hp_u2         u(k-2) del pasa altas
+# st[6]  = hp_y1         y(k-1) del pasa altas
+# st[7]  = hp_y2         y(k-2) del pasa altas
+# st[8]  = shared_u      (ultimo valor u para imprimir)
+# st[9]  = shared_y      (ultimo valor y para imprimir)
+# st[10] = new_data      (0 o 1)
 # =============================================================
-# Pasa bajas (1er orden)
-lp_u1 = 0.0        # u(k-1)
-lp_y1 = 0.0        # y(k-1)
+st = [0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0]
 
-# Pasa altas (2do orden)
-hp_u1 = 0.0        # u(k-1)
-hp_u2 = 0.0        # u(k-2)
-hp_y1 = 0.0        # y(k-1)
-hp_y2 = 0.0        # y(k-2)
-
-# Control
-active_filter = 0   # 0 = Pasa Bajas, 1 = Pasa Altas
-running = False
-
-# =============================================================
-# FUNCIÓN DEL MENÚ
-# =============================================================
-def mostrar_menu():
-    print("\n" + "=" * 50)
-    print("  Sistema de Filtros Digitales IIR")
-    print("  Raspberry Pi Pico 2W | fs = {} Hz".format(FS))
-    print("=" * 50)
-    print("Comandos disponibles:")
-    print("  START       - Iniciar filtrado")
-    print("  STOP        - Detener filtrado")
-    print("  LP          - Filtro pasa bajas (fc=500 Hz)")
-    print("  HP          - Filtro pasa altas (fc=800 Hz)")
-    print("  FREQ <hz>   - Frecuencia de onda cuadrada")
-    print("  STATUS      - Estado actual del sistema")
-    print("=" * 50)
+# Indices con nombre para legibilidad
+RUN  = 0
+FILT = 1
+LU1  = 2
+LY1  = 3
+HU1  = 4
+HU2  = 5
+HY1  = 6
+HY2  = 7
+SU   = 8
+SY   = 9
+ND   = 10
 
 # =============================================================
-# NÚCLEO 1: ECUACIÓN EN DIFERENCIAS (ejecuta a fs = 8000 Hz)
+# NUCLEO 1: ECUACION EN DIFERENCIAS
+# Recibe TODO por argumento - no usa globals del modulo.
 # =============================================================
-def filter_core():
-    global lp_u1, lp_y1
-    global hp_u1, hp_u2, hp_y1, hp_y2
-    global active_filter, running
+def filter_core(st, adc_obj, tm,
+                lp_a0, lp_a1, lp_b1,
+                hp_a0, hp_a1, hp_a2, hp_b1, hp_b2,
+                period, skip):
+    counter = 0
 
     while True:
-        if not running:
-            time.sleep_ms(1)
+        if st[0] == 0:       # running?
+            tm.sleep_ms(1)
             continue
 
-        t0 = time.ticks_us()
+        t0 = tm.ticks_us()
 
         # Lectura del ADC (16 bits: 0-65535)
-        raw = adc.read_u16()
-        u_k = (raw / 65535.0) * 3.3    # Conversión a voltaje (0-3.3V)
+        raw = adc_obj.read_u16()
+        u_k = (raw / 65535.0) * 3.3    # Conversion a voltaje (0-3.3V)
 
-        if active_filter == 0:
+        if st[1] == 0:       # active_filter == PB
             # ---- Filtro Pasa Bajas 1er Orden (RC) ----
             # y(k) = A0*u(k) + A1*u(k-1) + B1*y(k-1)
-            y_k = LP_A0 * u_k + LP_A1 * lp_u1 + LP_B1 * lp_y1
-            # Actualizar estados
-            lp_u1 = u_k
-            lp_y1 = y_k
+            y_k = lp_a0 * u_k + lp_a1 * st[2] + lp_b1 * st[3]
+            st[2] = u_k      # lp_u1
+            st[3] = y_k      # lp_y1
         else:
             # ---- Filtro Pasa Altas 2do Orden (RLC) ----
             # y(k) = A0*u(k) + A1*u(k-1) + A2*u(k-2)
             #       + B1*y(k-1) + B2*y(k-2)
-            y_k = (HP_A0 * u_k + HP_A1 * hp_u1 + HP_A2 * hp_u2
-                   + HP_B1 * hp_y1 + HP_B2 * hp_y2)
-            # Actualizar estados (orden importa)
-            hp_u2 = hp_u1
-            hp_u1 = u_k
-            hp_y2 = hp_y1
-            hp_y1 = y_k
+            y_k = (hp_a0 * u_k + hp_a1 * st[4] + hp_a2 * st[5]
+                   + hp_b1 * st[6] + hp_b2 * st[7])
+            st[5] = st[4]    # hp_u2 = hp_u1
+            st[4] = u_k      # hp_u1
+            st[7] = st[6]    # hp_y2 = hp_y1
+            st[6] = y_k      # hp_y1
 
-        # Enviar datos por USB Serial: entrada,salida
-        print("{:.4f},{:.4f}".format(u_k, y_k))
+        # Guardar datos para impresion (cada 'skip' muestras)
+        counter += 1
+        if counter >= skip:
+            st[8] = u_k      # shared_u
+            st[9] = y_k      # shared_y
+            st[10] = 1       # new_data
+            counter = 0
 
-        # Esperar resto del período de muestreo
-        elapsed = time.ticks_diff(time.ticks_us(), t0)
-        if elapsed < PERIOD_US:
-            time.sleep_us(PERIOD_US - elapsed)
-        else:
-            # Forzamos al Núcleo 1 a ceder el procesador (GIL) por un instante.
-            # Esto evita que el Núcleo 0 se congele si el ciclo toma más de 125us.
-            time.sleep_us(0)
-
-# =============================================================
-# INICIAR NÚCLEO 1
-# =============================================================
-_thread.start_new_thread(filter_core, ())
+        # Esperar resto del periodo de muestreo
+        elapsed = tm.ticks_diff(tm.ticks_us(), t0)
+        if elapsed < period:
+            tm.sleep_us(period - elapsed)
 
 # =============================================================
-# NÚCLEO 0: COMUNICACIÓN SERIAL Y COMANDOS
+# INICIAR NUCLEO 1 - pasar TODO como argumentos
 # =============================================================
-mostrar_menu()
+_thread.start_new_thread(filter_core, (
+    st, adc, time,
+    LP_A0, LP_A1, LP_B1,
+    HP_A0, HP_A1, HP_A2, HP_B1, HP_B2,
+    PERIOD_US, PRINT_SKIP
+))
+
+# =============================================================
+# NUCLEO 0: COMUNICACION SERIAL NO BLOQUEANTE + IMPRESION
+# =============================================================
+poll_obj = select.poll()
+poll_obj.register(sys.stdin, select.POLLIN)
+
+print("\n" + "=" * 50)
+print("  Sistema de Filtros Digitales IIR")
+print("  Raspberry Pi Pico 2W | fs = {} Hz".format(FS))
+print("=" * 50)
+print("Comandos disponibles:")
+print("  START       - Iniciar filtrado")
+print("  STOP        - Detener filtrado")
+print("  LP          - Filtro pasa bajas (fc=500 Hz)")
+print("  HP          - Filtro pasa altas (fc=800 Hz)")
+print("  FREQ <hz>   - Frecuencia de onda cuadrada")
+print("  STATUS      - Estado actual del sistema")
+print("=" * 50)
+
+cmd_buf = ""
 
 while True:
-    try:
-        line = input()                  # Lectura bloqueante (Core 0)
-        cmd = line.strip().upper()
+    # --- Verificar entrada serial (NO bloqueante) ---
+    if poll_obj.poll(0):
+        ch = sys.stdin.read(1)
+        if ch in ('\n', '\r'):
+            cmd = cmd_buf.strip().upper()
+            cmd_buf = ""
 
-        if cmd == "START":
-            running = True
-            led.on()
-            print("OK: Filtrado iniciado")
+            if not cmd:
+                pass
 
-        elif cmd == "STOP":
-            running = False
-            led.off()
-            print("OK: Filtrado detenido")
-            mostrar_menu()              # Se vuelve a mostrar el menú inmediatamente
+            elif cmd == "START":
+                st[RUN] = 1
+                led.on()
+                print("OK: Filtrado iniciado")
 
-        elif cmd == "LP":
-            active_filter = 0
-            lp_u1 = 0.0
-            lp_y1 = 0.0
-            print("OK: Pasa Bajas 1er Orden (fc=500 Hz)")
+            elif cmd == "STOP":
+                st[RUN] = 0
+                led.off()
+                # Reiniciar estados del filtro activo
+                if st[FILT] == 0:
+                    st[LU1] = 0.0
+                    st[LY1] = 0.0
+                else:
+                    st[HU1] = 0.0
+                    st[HU2] = 0.0
+                    st[HY1] = 0.0
+                    st[HY2] = 0.0
+                print("OK: Filtrado detenido")
+                print("=" * 50)
+                print("Comandos: START STOP LP HP FREQ<hz> STATUS")
+                print("=" * 50)
 
-        elif cmd == "HP":
-            active_filter = 1
-            hp_u1 = 0.0
-            hp_u2 = 0.0
-            hp_y1 = 0.0
-            hp_y2 = 0.0
-            print("OK: Pasa Altas 2do Orden (fc=800 Hz)")
+            elif cmd == "LP":
+                st[RUN] = 0
+                led.off()
+                st[FILT] = 0
+                st[LU1] = 0.0
+                st[LY1] = 0.0
+                print("OK: Pasa Bajas 1er Orden (fc=500 Hz)")
 
-        elif cmd.startswith("FREQ"):
-            parts = cmd.split()
-            if len(parts) >= 2:
-                try:
-                    freq = int(parts[1])
-                    pwm_sq.freq(freq)
-                    print("OK: Onda cuadrada = {} Hz".format(freq))
-                except ValueError:
-                    print("ERR: Frecuencia no valida")
+            elif cmd == "HP":
+                st[RUN] = 0
+                led.off()
+                st[FILT] = 1
+                st[HU1] = 0.0
+                st[HU2] = 0.0
+                st[HY1] = 0.0
+                st[HY2] = 0.0
+                print("OK: Pasa Altas 2do Orden (fc=800 Hz)")
+
+            elif cmd.startswith("FREQ"):
+                parts = cmd.split()
+                if len(parts) >= 2:
+                    try:
+                        freq = int(parts[1])
+                        pwm_sq.freq(freq)
+                        print("OK: Onda cuadrada = {} Hz".format(freq))
+                    except ValueError:
+                        print("ERR: Frecuencia no valida")
+                else:
+                    print("Uso: FREQ <frecuencia_hz>")
+
+            elif cmd == "STATUS":
+                nombre = "Pasa Bajas (fc=500Hz)" if st[FILT] == 0 \
+                         else "Pasa Altas (fc=800Hz)"
+                estado = "Activo" if st[RUN] == 1 else "Detenido"
+                print("Filtro: {} | Estado: {} | fs: {} Hz | Onda Cuadrada: {} Hz".format(
+                    nombre, estado, FS, pwm_sq.freq()))
+
             else:
-                print("Uso: FREQ <frecuencia_hz>")
+                print("ERR: Comando desconocido: {}".format(cmd))
 
-        elif cmd == "STATUS":
-            nombre = "Pasa Bajas (fc=500Hz)" if active_filter == 0 \
-                     else "Pasa Altas (fc=800Hz)"
-            estado = "Activo" if running else "Detenido"
-            frecuencia_onda = pwm_sq.freq() # Leemos la frecuencia actual del hardware
-            
-            print("Filtro: {} | Estado: {} | fs: {} Hz | Onda Cuadrada: {} Hz".format(
-                nombre, estado, FS, frecuencia_onda))
+        elif ch:
+            cmd_buf += ch
 
-        elif cmd != "":
-            print("ERR: Comando desconocido: {}".format(line))
+    # --- Imprimir datos si hay nuevos ---
+    if st[ND] == 1:
+        st[ND] = 0
+        print("{:.4f},{:.4f}".format(st[SU], st[SY]))
 
-    except Exception as e:
-        time.sleep_ms(100)
+    time.sleep_us(200)
