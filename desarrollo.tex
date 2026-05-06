@@ -261,7 +261,7 @@ De este modo, se verifica que la componente DC no sufre atenuación.
 
 % ============================================================
 \newpage
-\subsection{Diseño del Filtro Pasa Altas de Primer Orden (Circuito RC)}
+\subsection{Diseño del Filtro Pasa Altas (Circuito RC)}
 % ============================================================
 
 Se selecciona una frecuencia de corte $f_c = 500$ Hz para el filtro pasa altas. 
@@ -278,7 +278,7 @@ Para esto, se tomo en cuenta lo siguiente:
 
 \textbf{Circuito:}
 
-El filtro pasa altas de primer orden se implementa con un circuito \textbf{RC serie}, tomando la salida sobre la resistencia.
+El filtro pasa altas se implementa con un circuito \textbf{RC serie}, tomando la salida sobre la resistencia.
 
 \begin{figure}[H]
     \centering
@@ -292,7 +292,7 @@ El filtro pasa altas de primer orden se implementa con un circuito \textbf{RC se
         \node[right] at (5.5,3) {$+$};
         \node[right] at (5.5,0) {$-$};
     \end{circuitikz}
-    \caption{Circuito RC pasa altas de primer orden (salida sobre $R$).}
+    \caption{Circuito RC pasa altas (salida sobre $R$).}
     \label{fig:rc_highpass}
 \end{figure}
 
@@ -425,7 +425,7 @@ Sustituyendo los valores numéricos:
 
 \begin{table}[H]
     \centering
-    \caption{Coeficientes del filtro pasa altas de primer orden ($f_c = 500$ Hz, $f_s = 8000$ Hz).}
+    \caption{Coeficientes del filtro pasa altas ($f_c = 500$ Hz, $f_s = 8000$ Hz).}
     \label{tab:hp_coeff}
     \begin{tabular}{|c|c|c|}
         \hline
@@ -504,7 +504,7 @@ Sustituyendo los valores numéricos:
         \draw[->] (Z1y) -- (B1);
         \draw[->] (B1) -- (S);
     \end{tikzpicture}
-    \caption{Diagrama de flujo de señal del filtro pasa altas de primer orden (Forma Directa I).}
+    \caption{Diagrama de flujo de señal del filtro pasa altas (Forma Directa I).}
     \label{fig:hp_signal_flow}
 \end{figure}
 
@@ -550,7 +550,7 @@ A continuación se definen los parámetros fundamentales del sistema. La frecuen
 
 Después viene la configuración del hardware. El pin GP26 se configura como entrada analógica a través de la clase \texttt{ADC}, ya que es uno de los pines que tiene convertidor analógico-digital integrado en la Pico. El pin GP3 se configura como salida PWM para generar la onda cuadrada que sirve como señal de prueba; se le asigna una frecuencia inicial de 50~Hz y un ciclo de trabajo del 50\%, lo que produce una onda simétrica.
 
-Los coeficientes de los dos filtros se declaran como constantes globales. Para el filtro pasa bajas de primer orden, diseñado con $f_c \approx 79.6$~Hz, los coeficientes son $A_0 = A_1 = 0.0303$ y $B_1 = 0.9394$, obtenidos mediante la transformada bilineal como se mostró en la sección anterior. Para el filtro pasa altas de primer orden con $f_c = 500$~Hz, los coeficientes son $A_0 = 0.8341$, $A_1 = -0.8341$ y $B_1 = 0.6682$, con $A_2 = 0$ y $B_2 = 0$. Estos valores se almacenan con los decimales necesarios para mantener una precisión adecuada en los cálculos de punto flotante.
+Los coeficientes de los dos filtros se declaran como constantes globales. Para el filtro pasa bajas de primer orden, diseñado con $f_c \approx 79.6$~Hz, los coeficientes son $A_0 = A_1 = 0.0303$ y $B_1 = 0.9394$, obtenidos mediante la transformada bilineal como se mostró en la sección anterior. Para el filtro pasa altas con $f_c = 500$~Hz, los coeficientes son $A_0 = 0.8341$, $A_1 = -0.8341$ y $B_1 = 0.6682$, con $A_2 = 0$ y $B_2 = 0$. Estos valores se almacenan con los decimales necesarios para mantener una precisión adecuada en los cálculos de punto flotante.
 
 El estado compartido entre los dos núcleos se almacena en una lista mutable de Python llamada \texttt{st}, que contiene once elementos: dos banderas de control (si el filtro está corriendo y cuál filtro está activo), las variables de estado de ambos filtros (entradas y salidas anteriores), y tres valores para la comunicación con el Núcleo~0 (la última entrada leída, la última salida calculada, y una bandera que indica si hay datos nuevos listos para imprimir). Se eligió una lista mutable porque en el RP2350, el Núcleo~1 no puede acceder de manera confiable a las variables globales del módulo principal; al pasar la lista como argumento a la función del hilo, ambos núcleos pueden leer y escribir los mismos datos sin problema, ya que la lista se pasa por referencia. Para hacer el código más legible, se definen constantes con los nombres de cada índice de la lista.
 

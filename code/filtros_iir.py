@@ -20,8 +20,7 @@ import select
 FS = 8000                   # Frecuencia de muestreo (Hz)
 PERIOD_US = 125             # Periodo de muestreo (us)
 
-# Resoluciones visuales independientes para Thonny
-PRINT_SKIP_LP = 3           
+PRINT_SKIP_LP = 10           
 PRINT_SKIP_HP = 15          
 
 # =============================================================
@@ -34,15 +33,13 @@ pwm_sq.duty_u16(32768)      # 50% duty cycle
 
 # =============================================================
 # COEFICIENTES - FILTRO PASA BAJAS (1er Orden)
-# INTACTO COMO PEDISTE
 # =============================================================
 LP_A0 =  0.0303
 LP_A1 =  0.0303
 LP_B1 =  0.9394
 
 # =============================================================
-# COEFICIENTES - FILTRO PASA ALTAS (Ahora ajustado a tu captura)
-# Valores exactos de la Actividad 8.2 del PDF
+# COEFICIENTES - FILTRO PASA ALTAS 
 # =============================================================
 HP_A0 =  0.8341
 HP_A1 = -0.8341
@@ -68,7 +65,7 @@ SY   = 9
 ND   = 10
 
 # =============================================================
-# NUCLEO 1: ECUACION EN DIFERENCIAS (TEMPORIZACION CORREGIDA)
+# NUCLEO 1: ECUACION EN DIFERENCIAS 
 # =============================================================
 def filter_core(st, adc_obj, tm,
                 lp_a0, lp_a1, lp_b1,
@@ -86,14 +83,14 @@ def filter_core(st, adc_obj, tm,
             u_k = (raw / 65535.0) * 3.3
 
             if st[1] == 0:       
-                # ---- Filtro Pasa Bajas (Intacto) ----
+                # ---- Filtro Pasa Bajas ----
                 y_k = lp_a0 * u_k + lp_a1 * st[2] + lp_b1 * st[3]
                 st[2] = u_k      
                 st[3] = y_k      
                 current_skip = skip_lp
                 
             else:
-                # ---- Filtro Pasa Altas (Con tus nuevos coeficientes) ----
+                # ---- Filtro Pasa Altas ----
                 y_k = hp_a0 * u_k + hp_a1 * st[4] + hp_a2 * st[5] + hp_b1 * st[6] + hp_b2 * st[7]
                 st[5] = st[4]    
                 st[4] = u_k      
@@ -101,7 +98,7 @@ def filter_core(st, adc_obj, tm,
                 st[6] = y_k      
                 current_skip = skip_hp
 
-            # 3. Peak Catcher dinamico (Garantiza ver los picos negativos)
+            # 3. Peak Catcher dinamico 
             counter += 1
             if counter >= current_skip or (st[1] == 1 and abs(y_k - st[9]) > 0.8):
                 st[8] = u_k      

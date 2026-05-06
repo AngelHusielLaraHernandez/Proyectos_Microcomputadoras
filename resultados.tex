@@ -67,10 +67,6 @@ Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba
         Señal significativamente suavizada; la fundamental pasa con $-3$ dB. &
         Picos visibles; la fundamental pasa parcialmente ($-8.9$ dB de atenuación). \\
         \hline
-        1000 Hz &
-        Señal muy atenuada y suavizada, salida casi triangular/senoidal. &
-        La onda cuadrada pasa con modificación moderada ($-1.5$ dB en la fundamental). \\
-        \hline
     \end{tabular}
 \end{table}
 
@@ -83,7 +79,7 @@ Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba
 En esta sección se presentan los resultados obtenidos al aplicar el filtro pasa-bajas
 de primer orden con frecuencia de corte $f_c = 500\,\text{Hz}$ sobre una señal
 cuadrada evaluada a distintas frecuencias de entrada:
-$50$, $200$, $500$ y $1000\,\text{Hz}$.
+$50$, $200$, $500$ $\,\text{Hz}$.
 
 En cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$
 (señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
@@ -138,34 +134,11 @@ triangular, producto de la atenuación de los armónicos superiores que componen
 la onda cuadrada.
 
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/1000Hz/f1_1000.png}
-    \caption{Filtro de primer orden a $f = 1000\,\text{Hz}$.}
-    \label{fig:f1_1000hz}
-\end{figure}
-
-
-A $1000\,\text{Hz}$, el doble de la frecuencia de corte, la atenuación es más
-pronunciada. La señal de entrada, al alternar con mayor rapidez, se asemeja
-visualmente a una señal triangular. La señal de salida presenta una amplitud
-significativamente reducida y sus transiciones están casi completamente
-suavizadas; el filtro elimina la mayor parte de las componentes armónicas que
-integran la onda cuadrada, conservando principalmente la componente fundamental.
-
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/2000Hz/f1_2000.png}
-    \caption{Filtro de primer orden a $f = 2000\,\text{Hz}$.}
-    \label{fig:f1_2000hz}
-\end{figure}
-
 
 \newpage
 \subsection{Filtro pasa altas de segundo orden}
 
-Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de segundo orden (Circuito RLC), con frecuencia de corte $f_c = 800\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$, $200$, $500$ y $1000\,\text{Hz}$.
+Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de segundo orden (Circuito RLC), con frecuencia de corte $f_c = 800\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$, $200$, $500$ $\,\text{Hz}$.
 
 Para comprender el comportamiento observado, es necesario recordar un principio fundamental, y es que la señal de entrada, al ser una onda cuadrada, está compuesta matemáticamente por la suma de múltiples señales senoidales con diferentes frecuencias, es decir, su frecuencia fundamental y una infinidad de armónicos. Es por esto que el filtro reacciona de manera distinta a ciertas partes de la señal, dejando pasar unas componentes frecuenciales y bloqueando otras. Asimismo, se notará en las gráficas que la señal de entrada, a pesar de ser cuadrada, llega a parecerse visualmente a una señal triangular en las frecuencias más altas debido a la enorme rapidez con la que alterna.
 
@@ -198,14 +171,6 @@ A $200\,\text{Hz}$, la señal continúa en la banda de rechazo del filtro. Los p
 
 A $500\,\text{Hz}$, nos aproximamos a la frecuencia de corte del filtro. Los picos correspondientes a los flancos se ensanchan visiblemente en la base, lo que indica que la componente fundamental comienza a pasar de manera parcial. De acuerdo con el análisis teórico, a esta frecuencia se presenta una atenuación de $-8.9\,\text{dB}$. La señal de salida empieza a sostener la amplitud de forma más estable entre las transiciones, intentando replicar la forma de la onda cuadrada original, aunque con evidente distorsión.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/1000Hz/f2_1000.png}
-    \caption{Filtro de segundo orden a $f = 1000\,\text{Hz}$.}
-    \label{fig:f2_1000hz}
-\end{figure}
-
-A $1000\,\text{Hz}$, la frecuencia fundamental de la señal ha superado la frecuencia de corte ($f_c = 800\,\text{Hz}$), ingresando por completo a la banda de paso. La atenuación teórica de la fundamental se reduce drásticamente a solo $-1.5\,\text{dB}$. Visualmente, los picos pronunciados y el efecto derivador en los flancos desaparecen. La señal de salida (naranja) ahora es capaz de seguir fielmente los niveles altos y bajos de la señal de entrada (azul), demostrando que la mayor parte de la energía frecuencial de la onda logra atravesar el circuito digital.
 
 \subsection{Diferencias entre el Filtro de Primer Orden y Segundo Orden}
 
