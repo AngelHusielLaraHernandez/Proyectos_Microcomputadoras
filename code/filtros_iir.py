@@ -1,9 +1,8 @@
 # =============================================================
-# filtros_iir.py
 # Sistema de Filtros Digitales IIR - Raspberry Pi Pico 2W
 #
-# Filtro 1 (LP): Pasa Bajas a 8000 Hz
-# Filtro 2 (HP): Pasa Altas escalado a 400 Hz (Ambos usan Hardware)
+# Filtro 1 (LP): Pasa Bajas a 8000 Hz por Hardware 
+# Filtro 2 (HP): Pasa Altas a 400 Hz con Sesgo DC
 # =============================================================
 
 from machine import Pin, ADC, PWM
@@ -15,23 +14,26 @@ import select
 # =============================================================
 # PARAMETROS DEL SISTEMA
 # =============================================================
-# Parametros para el Pasa Bajas (Intactos)
+# Parametros para el Pasa Bajas
 FS_LP = 8000                
 PERIOD_US_LP = 125          
 PRINT_SKIP_LP = 2           
 
-# Parametros para el Pasa Altas (Escalados para mantener la curva del Profe)
+# Parametros para el Pasa Altas (Escalados para mantener la forma ideal)
 FS_HP = 400                  
-PERIOD_US_HP = 2500         # 2.5 milisegundos
-PRINT_SKIP_HP = 1           # Thonny dibuja todos los puntos a esta velocidad
+PERIOD_US_HP = 2500         
+PRINT_SKIP_HP = 1   
+
+DC_BIAS_LP = 0.5            # Sesgo ligero para el pasa bajas
+DC_BIAS_HP = 2.0            # Sesgo mayor para centrar el pasa altas biphasico
 
 # =============================================================
 # CONFIGURACION DE HARDWARE
 # =============================================================
-adc = ADC(Pin(26))          # ADC0 leyendo la señal fisica
+adc = ADC(Pin(26))          # ADC0 leyendo la señal fisica real
 pwm_sq = PWM(Pin(3))        # Onda cuadrada física generada en el Pin 3
 pwm_sq.freq(50)             # Frecuencia inicial segura
-pwm_sq.duty_u16(32768)      
+pwm_sq.duty_u16(32768)      # 50% ciclo de trabajo
 
 # =============================================================
 # COEFICIENTES - FILTRO PASA BAJAS
@@ -41,9 +43,8 @@ LP_A1 =  0.0303
 LP_B1 =  0.9394
 
 # =============================================================
-# COEFICIENTES - FILTRO PASA ALTAS 
-# Los coeficientes se mantienen iguales porque escalamos Fs y 
-# la onda fisica en la misma proporcion.
+# COEFICIENTES - FILTRO PASA ALTAS
+# Estos coeficientes generan voltajes negativos, 
 # =============================================================
 HP_A0 =  0.8889
 HP_A1 = -0.8889
@@ -65,7 +66,7 @@ SY   = 9
 ND   = 10
 
 # =============================================================
-# NUCLEO 1: ECUACION EN DIFERENCIAS (100% HARDWARE REAL)
+# NUCLEO 1: ECUACION EN DIFERENCIAS
 # =============================================================
 def filter_core(st, adc_obj, tm,
                 lp_a0, lp_a1, lp_b1,
@@ -80,7 +81,7 @@ def filter_core(st, adc_obj, tm,
 
         if st[0] == 1:       
             
-            # AMBOS FILTROS LEEN EL ADC FISICO
+            # Ambos filtros leen la entrada fisica real
             raw = adc_obj.read_u16()
             u_k = (raw / 65535.0) * 3.3    
 
@@ -138,14 +139,14 @@ poll_obj = select.poll()
 poll_obj.register(sys.stdin, select.POLLIN)
 
 print("\n" + "=" * 50)
-print("  Sistema de Filtros Digitales IIR (100% Hardware)")
+print("  Sistema de Filtros Digitales")
+print("  Usa el hardware real para ambos filtros")
 print("=" * 50)
 print("Comandos disponibles:")
 print("  START       - Iniciar filtrado")
-print("  STOP        - Detener filtrado")
-print("  LP          - Pasa Bajas (8000 Hz)")
-print("  HP          - Pasa Altas (Escalado a 400 Hz)")
-print("  FREQ <hz>   - Frecuencia PWM (Mínimo 20 Hz)")
+print("  LP          - Pasa Bajas")
+print("  HP          - Pasa Altas")
+print("  FREQ <hz>   - Frecuencia PWM")
 print("  STATUS      - Estado actual del sistema")
 print("=" * 50)
 
@@ -183,7 +184,7 @@ while True:
                 st[FILT] = 1
                 st[HU1] = 0.0
                 st[HY1] = 0.0
-                print("OK: Pasa Altas Seleccionado (Usa FREQ 20 para ver curva ideal)")
+                print("OK: Pasa Altas Seleccionado")
             elif cmd.startswith("FREQ"):
                 parts = cmd.split()
                 if len(parts) >= 2:
@@ -208,8 +209,18 @@ while True:
         elif ch:
             cmd_buf += ch
 
+
     if st[ND] == 1:
         st[ND] = 0
-        print("{:.4f},{:.4f}".format(st[SU], st[SY]))
+        
+
+        bias = DC_BIAS_LP if st[FILT] == 0 else DC_BIAS_HP
+        
+        
+        u_biased = st[SU] + bias
+        y_biased = st[SY] + bias
+        
+        # Imprimir los valores sesgados
+        print("{:.4f},{:.4f}".format(u_biased, y_biased))
 
     time.sleep_us(200)
