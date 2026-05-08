@@ -1,9 +1,6 @@
 # =============================================================
-# filtros_iir.py
 # Sistema de Filtros Digitales IIR - Raspberry Pi Pico 2W
 #
-# Filtro 1 (LP): Pasa Bajas (Hardware a 8000 Hz)
-# Filtro 2 (HP): Pasa Altas (Hardware a 1000 Hz)
 # =============================================================
 
 from machine import Pin, ADC, PWM
@@ -15,14 +12,12 @@ import select
 # =============================================================
 # PARAMETROS DEL SISTEMA
 # =============================================================
-# Parametros para el Pasa Bajas
+
 FS_LP = 8000                
 PERIOD_US_LP = 125          
 PRINT_SKIP_LP = 2           
 
-# Parametros para el Pasa Altas
-# A 1000 Hz, una onda de 50 Hz genera exactamente 10 muestras
-# por medio ciclo, igualando a la perfeccion el codigo del profe.
+
 FS_HP = 1000                  
 PERIOD_US_HP = 1000         
 PRINT_SKIP_HP = 1           
@@ -32,7 +27,7 @@ PRINT_SKIP_HP = 1
 # =============================================================
 adc = ADC(Pin(26))          # ADC0 leyendo la señal física real
 pwm_sq = PWM(Pin(3))        # Onda cuadrada física generada en el Pin 3
-pwm_sq.freq(50)             # Frecuencia requerida para la curva perfecta
+pwm_sq.freq(50)             
 pwm_sq.duty_u16(32768)      # 50% ciclo de trabajo
 
 # =============================================================
@@ -43,7 +38,7 @@ LP_A1 =  0.0303
 LP_B1 =  0.9394
 
 # =============================================================
-# COEFICIENTES - FILTRO PASA ALTAS (Código Original Profesor)
+# COEFICIENTES - FILTRO PASA ALTAS
 # =============================================================
 HP_A0 =  0.8889
 HP_A1 = -0.8889
@@ -65,7 +60,7 @@ SY   = 9
 ND   = 10
 
 # =============================================================
-# NUCLEO 1: ECUACION EN DIFERENCIAS (100% HARDWARE)
+# NUCLEO 1: ECUACION EN DIFERENCIAS 
 # =============================================================
 def filter_core(st, adc_obj, tm,
                 lp_a0, lp_a1, lp_b1,
@@ -82,11 +77,9 @@ def filter_core(st, adc_obj, tm,
             
             # Lectura del hardware físico (Pin 26)
             raw = adc_obj.read_u16()
-            # Normalizado a 1.0 para que la consola iguale la foto del profe
             u_k = raw / 65535.0    
 
             if st[1] == 0:       
-                # ---- FILTRO PASA BAJAS (8000 Hz) ----
                 y_k = lp_a0 * u_k + lp_a1 * st[2] + lp_b1 * st[3]
                 st[2] = u_k      
                 st[3] = y_k      
@@ -101,7 +94,7 @@ def filter_core(st, adc_obj, tm,
                 current_period = period_lp
                 
             else:
-                # ---- FILTRO PASA ALTAS (1000 Hz) ----
+              
                 y_k = hp_a0 * u_k + hp_a1 * st[4] + hp_b1 * st[6]
                 st[4] = u_k      
                 st[6] = y_k      
@@ -133,21 +126,20 @@ _thread.start_new_thread(filter_core, (
 ))
 
 # =============================================================
-# NUCLEO 0: COMUNICACION SERIAL NO BLOQUEANTE + IMPRESION
+# NUCLEO 0: COMUNICACION SERIAL NO BLOQUEANTE 
 # =============================================================
 poll_obj = select.poll()
 poll_obj.register(sys.stdin, select.POLLIN)
 
 print("\n" + "=" * 50)
-print("  Sistema de Filtros Digitales IIR (100% Hardware)")
+print("  Filtro pasa bajas y pasa altas.)")
 print("=" * 50)
 print("Comandos disponibles:")
 print("  START       - Iniciar filtrado")
-print("  STOP        - Detener filtrado")
 print("  LP          - Pasa Bajas")
-print("  HP          - Pasa Altas (Ajuste Perfecto)")
-print("  FREQ <hz>   - Frecuencia PWM Hardware")
-print("  STATUS      - Estado actual del sistema")
+print("  HP          - Pasa Altas ")
+print("  FREQ <hz>   - Frecuencia")
+print("  STATUS      - Estado actual")
 print("=" * 50)
 
 cmd_buf = ""
@@ -184,25 +176,25 @@ while True:
                 st[FILT] = 1
                 st[HU1] = 0.0
                 st[HY1] = 0.0
-                print("OK: Pasa Altas Seleccionado (Usa FREQ 50 para curva original)")
+                print("OK: Pasa Altas Seleccionado")
             elif cmd.startswith("FREQ"):
                 parts = cmd.split()
                 if len(parts) >= 2:
                     try:
                         freq = int(parts[1])
                         if freq < 20:
-                            print("ERR: Mínimo 20 Hz soportado por el hardware de la Pico")
+                            print("ERR: Frecuencia no soportada por la Pico")
                         else:
                             pwm_sq.freq(freq)
-                            print("OK: PWM Hardware = {} Hz".format(freq))
+                            print("OK")
                     except ValueError:
                         print("ERR: Frecuencia no valida")
             elif cmd == "STATUS":
                 if st[FILT] == 0:
-                    print("Modo: Pasa Bajas | Estado: {} | fs: 8000 Hz | PWM: {} Hz".format(
+                    print("Modo: Pasa Bajas | Estado: {} | PWM: {} Hz".format(
                         "Activo" if st[RUN] == 1 else "Detenido", pwm_sq.freq()))
                 else:
-                    print("Modo: Pasa Altas | Estado: {} | fs: 1000 Hz | PWM: {} Hz".format(
+                    print("Modo: Pasa Altas | Estado: {} | PWM: {} Hz".format(
                         "Activo" if st[RUN] == 1 else "Detenido", pwm_sq.freq()))
             else:
                 print("ERR: Comando desconocido")
@@ -211,7 +203,6 @@ while True:
 
     if st[ND] == 1:
         st[ND] = 0
-        # Impresión directa sin sesgos, exactamente como el profesor
         print("{:.4f},{:.4f}".format(st[SU], st[SY]))
 
     time.sleep_us(200)
