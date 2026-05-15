@@ -1,115 +1,13 @@
-% ============================================================
-% RESULTADOS - Análisis teórico esperado
-% ============================================================
+% ==================================================================
+%  RESULTADOS - Proyecto Final: Simulador de Filtros IIR
+% ==================================================================
 
-\subsection{Coeficientes}
-
-\begin{table}[H]
-    \centering
-    \caption{Comparación de coeficientes de los filtros diseñados.}
-    \label{tab:coeff_summary}
-    \begin{tabular}{|c|c|c|}
-        \hline
-        \rowcolor{headblue}
-        \textcolor{white}{\textbf{Coeficiente}} &
-        \textcolor{white}{\textbf{Pasa Bajas 1er Orden}} &
-        \textcolor{white}{\textbf{Pasa Altas 1er Orden}} \\
-        \hline
-        $A_0$ & $0.0303$ & $0.8889$ \\
-        \hline
-        $A_1$ & $0.0303$ & $-0.8889$ \\
-        \hline
-        $A_2$ & $0.0$ & $0.0$ \\
-        \hline
-        $B_1$ & $0.9394$ & $0.7778$ \\
-        \hline
-        $B_2$ & $0.0$ & $0.0$ \\
-        \hline
-        \rowcolor{subheadblue}
-        $f_c$ & $79.6$ Hz & $39.6$ Hz \\
-        \hline
-        \rowcolor{subheadblue}
-        Tipo & IIR Butterworth (RC) & IIR Butterworth (RC) \\
-        \hline
-        \rowcolor{subheadblue}
-        Orden & 1 & 1 \\
-        \hline
-    \end{tabular}
-\end{table}
+\subsection{Filtro Pasa Bajas ($f_c = 85$ Hz)}
 
 
-\subsubsection{Valores esperados con señal de onda cuadrada}
-
-Al aplicar una onda cuadrada de frecuencia $f_{\text{sq}}$ como señal de prueba, se esperan los siguientes comportamientos:
-
-\begin{table}[H]
-    \centering
-    \caption{Comportamiento esperado con onda cuadrada a distintas frecuencias.}
-    \label{tab:expected_sq}
-    \begin{tabular}{|c|p{5cm}|p{5cm}|}
-        \hline
-        \rowcolor{headblue}
-        \textcolor{white}{\textbf{$f_{\text{sq}}$ (Hz)}} &
-        \textcolor{white}{\textbf{Pasa Bajas ($f_c=79.6$ Hz)}} &
-        \textcolor{white}{\textbf{Pasa Altas ($f_c=39.6$ Hz)}} \\
-        \hline
-        50 Hz &
-        La salida sigue la onda cuadrada con esquinas redondeadas (atenuación leve). &
-        La salida reduce la componente DC y muestra transitorios en los flancos, con atenuación moderada. \\
-        \hline
-    \end{tabular}
-\end{table}
+\subsection{Filtro Pasa Altas ($f_c = 480$ Hz)}
 
 
-\newpage
+\subsection{Filtro Pasa Banda ($f_o = 580$ Hz, $BW = 45$ Hz)}
 
 
-\subsection{Filtro pasa bajas}
-
-En esta sección se presentan los resultados obtenidos al aplicar el filtro pasa-bajas
-de primer orden con frecuencia de corte $f_c \approx 79.6\,\text{Hz}$ sobre una señal
-cuadrada evaluada a distintas frecuencias de entrada:
-$50$ $\,\text{Hz}$.
-
-En cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$
-(señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroPrimerOrden/50Hz/f1_50hz.png}
-    \caption{Filtro de primer orden a $f = 50\,\text{Hz}$.}
-    \label{fig:f1_50hz}
-\end{figure}
-
-A $50\,\text{Hz}$, la frecuencia de entrada es inferior a la frecuencia de
-corte $f_c \approx 79.6\,\text{Hz}$, por lo que la señal alterna lentamente y su forma
-cuadrada es perfectamente distinguible, con flancos abruptos y niveles estables
-en $3.3\,\text{V}$ y $0\,\text{V}$. La señal de salida sigue de cerca a la
-entrada, presentando únicamente una ligera suavización en los flancos de subida
-y bajada. La amplitud se conserva prácticamente intacta, lo cual es consistente
-con que el filtro deja pasar sin atenuación significativa las componentes
-frecuenciales que se encuentran bien por debajo de $f_c$.
-
-
-
-\subsection{Filtro pasa altas}
-
-Ahora se presentan los resultados obtenidos al aplicar el filtro pasa altas de primer orden (Circuito RC), con frecuencia de corte $f_c \approx 39.6\,\text{Hz}$, sobre una señal cuadrada evaluada a distintas frecuencias de entrada como lo hicimos para el filtro anterior, $50$ $\,\text{Hz}$.
-
-Para comprender el comportamiento observado, es necesario recordar un principio fundamental, y es que la señal de entrada, al ser una onda cuadrada, está compuesta matemáticamente por la suma de múltiples señales senoidales con diferentes frecuencias, es decir, su frecuencia fundamental y una infinidad de armónicos. Es por esto que el filtro reacciona de manera distinta a ciertas partes de la señal, dejando pasar unas componentes frecuenciales y bloqueando otras. Asimismo, se notará en las gráficas que la señal de entrada, a pesar de ser cuadrada, llega a parecerse visualmente a una señal triangular en las frecuencias más altas debido a la enorme rapidez con la que alterna.
-
-Igualmente en cada gráfica se muestra en azul la señal de entrada $V_{\text{in}}$ (señal cuadrada) y en naranja la señal de salida $V_{\text{out}}$ ya filtrada.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=1.0\linewidth]{FotosNuevas/FiltroSegundoOrden/50Hz/f2_50.png}
-    \caption{Filtro pasa altas a $f = 50\,\text{Hz}$.}
-    \label{fig:f2_50hz}
-\end{figure}
-
-A $50\,\text{Hz}$, la frecuencia fundamental de la señal se encuentra ligeramente por arriba de la frecuencia de corte de $39.6\,\text{Hz}$. En la gráfica se observa que las partes planas de la onda cuadrada se reducen al eliminarse la componente DC, por lo que la señal de salida queda centrada y con transitorios en cada transición abrupta de voltaje (flancos de subida y bajada). Esto ocurre porque el filtro pasa altas bloquea las componentes de muy baja frecuencia y permite el paso de las componentes alternas y de mayor frecuencia. El resultado es una salida que conserva el carácter dinámico de la señal, pero sin el nivel medio constante.
-
-
-\subsection{Diferencias entre los filtros implementados}
-
-Ambos filtros implementados son de primer orden, por lo que su complejidad computacional es la misma: la salida depende de una muestra anterior de la entrada ($u(k-1)$) y una de la salida ($y(k-1)$). La diferencia principal está en la respuesta en frecuencia: el pasa bajas conserva la componente DC y suaviza los flancos al atenuar armónicos de alta frecuencia, mientras que el pasa altas bloquea la componente DC y enfatiza las transiciones al permitir el paso de las componentes alternas. En el dominio temporal esto se refleja en salidas más redondeadas para el pasa bajas y en señales centradas con transitorios marcados para el pasa altas.

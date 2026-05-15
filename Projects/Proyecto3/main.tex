@@ -1,0 +1,273 @@
+\documentclass[letterpaper,12pt]{article}
+
+% --- PAQUETES DE IDIOMA
+\usepackage[spanish,mexico]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+
+% --- PAQUETES MATEMÁTICOS --
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cancel}
+\usepackage{mathrsfs}
+
+% --- PAQUETES GRÁFICOS Y DE DISEÑO ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usetikzlibrary{shapes.geometric, shapes.multipart, shapes.symbols, positioning, arrows.meta, calc, shadows, decorations.pathreplacing,babel}
+
+
+% Definición de color para las líneas de tierra (verde)
+\definecolor{powergreen}{HTML}{008000}
+
+% --- LISTAS ---
+\usepackage{enumitem}
+
+% --- PAQUETES DE CÓDIGO ---
+\usepackage{listings}
+% Configuración del estilo de listings
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}   
+\definecolor{keyword}{rgb}{0.0,0.2,0.6}     
+\definecolor{comment}{rgb}{0.25,0.5,0.35}   
+\definecolor{string}{rgb}{0.6,0.0,0.0}      
+\definecolor{number}{rgb}{0.5,0.0,0.5}      
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+% Definición de colores para los LEDs
+\definecolor{led0}{HTML}{FF0000} % Rojo
+\definecolor{led1}{HTML}{FF7F00} % Naranja
+\definecolor{led2}{HTML}{FFFF00} % Amarillo
+\definecolor{led3}{HTML}{00FF00} % Verde
+\definecolor{led4}{HTML}{0000FF} % Azul
+\definecolor{led5}{HTML}{4B0082} % Índigo
+\definecolor{led6}{HTML}{9400D3} % Violeta
+\definecolor{led7}{HTML}{FF1493} % Rosa Intenso
+
+\lstset{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{codepurple},
+  commentstyle=\color{codegray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  frame=single,
+  rulecolor=\color{black},
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false,
+  literate={á}{{\'a}}1
+           {é}{{\'e}}1
+           {í}{{\'i}}1
+           {ó}{{\'o}}1
+           {ú}{{\'u}}1
+           {Á}{{\'A}}1
+           {É}{{\'E}}1
+           {Í}{{\'I}}1
+           {Ó}{{\'O}}1
+           {Ú}{{\'U}}1
+           {ñ}{{\~n}}1
+           {Ñ}{{\~N}}1
+           {¿}{{\textquestiondown}}1
+           {¡}{{\textexclamdown}}1
+}
+
+% Definición del lenguaje Python para listings
+\lstdefinelanguage[LAB]{Python}{
+    morekeywords={False, None, True, and, as, assert, async, await, break,
+                                class, continue, def, del, elif, else, except, finally,
+                                for, from, global, if, import, in, is, lambda, nonlocal,
+                                not, or, pass, raise, return, try, while, with, yield,
+                                machine, Pin, PWM, ADC, Timer, sleep_ms, sleep_us},
+    morecomment=[l]{\#},
+    morestring=[b]",
+    morestring=[b]',
+    sensitive=true
+}
+
+% --- ESTILOS PARA DIAGRAMAS DE FLUJO (TIKZ) ---
+\tikzset{
+  startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
+  process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
+  decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
+  arrow/.style={thick,->,>=stealth}
+}
+
+% Macro para dibujar la Raspberry Pi Pico y sus nodos
+\newcommand{\picoboard}{
+    \draw[thick] (0,0.5) rectangle (4,-9.5);
+    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico};
+
+    % Pines Superiores
+    \draw[red, thick] (0.8, 0.5) -- (0.8, 0.8) coordinate (P41); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P41) {41};
+    \draw[red, thick] (2.0, 0.5) -- (2.0, 0.8) coordinate (P42); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P42) {42};
+    \draw[red, thick] (3.2, 0.5) -- (3.2, 0.8) coordinate (P43); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P43) {43};
+    \node[below, font=\tiny\sffamily] at (0.8, 0.5) {SW CLK};
+    \node[below, font=\tiny\sffamily] at (2.0, 0.5) {SW GND};
+    \node[below, font=\tiny\sffamily] at (3.2, 0.5) {SW DIO};
+
+    % GND Inferior
+    \draw[red, thick] (2, -9.5) -- (2, -10.2) coordinate (PGND);
+    \node[above, font=\tiny\sffamily] at (2, -9.5) {GND};
+    \node[below, font=\tiny\sffamily] at (2, -10.2) {3,8,13,18 \quad 23,28,38};
+
+    % Pines del lado Izquierdo
+    \foreach \i/\pin/\num in {
+        1/GP0/1, 2/GP1/2, 
+        4/GP2/4, 5/GP3/5, 6/GP4/6, 7/GP5/7, 
+        9/GP6/9, 10/GP7/10, 11/GP8/11, 12/GP9/12, 
+        14/GP10/14, 15/GP11/15, 16/GP12/16, 17/GP13/17, 
+        19/GP14/19, 20/GP15/20
+    } {
+        \draw[red, thick] (0, -\i*0.45) -- (-0.4, -\i*0.45) coordinate (P\num);
+        \node[right, font=\tiny\sffamily] at (0, -\i*0.45) {\pin};
+        \node[above left, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+
+    % Pines del lado Derecho
+    \foreach \i/\pin/\num in {
+        1/VBUS/40, 2/VSS/39, 
+        4/3V3\_EN/37, 5/3V3/36, 6/ADC\_VREF/35, 7/GP28\_A2/34, 8/AGND/33, 
+        9/GP27\_A1/32, 10/GP26\_A0/31, 11/RUN/30, 12/GP22/29, 
+        14/GP21/27, 15/GP20/26, 16/GP19/25, 17/GP18/24, 
+        19/GP17/22, 20/GP16/21
+    } {
+        \draw[red, thick] (4, -\i*0.45) -- (4.4, -\i*0.45) coordinate (P\num);
+        \node[left, font=\tiny\sffamily] at (4, -\i*0.45) {\pin};
+        \node[above right, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+}
+
+
+
+
+
+
+\definecolor{azulresultado}{HTML}{0072C6}
+\definecolor{rojoacarreo}{HTML}{FF0000}
+
+% Colores para la tabla
+\definecolor{headblue}{HTML}{4F81BD}
+\definecolor{subheadblue}{HTML}{B8CCE4}
+\definecolor{datablockblue}{HTML}{DCE6F1}
+
+% --- RUTAS DE IMÁGENES ---
+\graphicspath{{img/}{portada_img/}}
+
+\definecolor{armblue}{RGB}{0, 113, 188}
+
+% --- CONFIGURACIÓN DE PÁGINA (GEOMETRÍA) ---
+\usepackage[
+    left=25mm, 
+    right=25mm,
+    top=35mm,
+    bottom=30mm,
+    headheight=77pt, 
+    papersize={21.59cm,27.94cm}
+]{geometry}
+
+% --- FORMATO DE TEXTO ---
+\renewcommand{\baselinestretch}{1.25} 
+\usepackage{parskip} 
+\usepackage{lipsum}  
+
+% --- VARIABLES GLOBALES ---
+\newcommand{\materia}{}
+
+% --- ENCABEZADOS Y PIES DE PÁGINA ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} 
+\fancyhead[L]{\includegraphics[height=1.5cm]{portada_img/der.png}}
+\fancyhead[R]{\includegraphics[height=1.5cm]{portada_img/izq.png}}
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.4pt} 
+\renewcommand{\footrulewidth}{0pt}  
+
+% --- BIBLIOGRAFÍA ---
+\usepackage[backend=biber, style=apa, sortcites, url=true]{biblatex}
+\addbibresource{referencias.bib}
+
+% --- HIPERVÍNCULOS ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan
+}
+
+\begin{document}
+
+    \input{portada.tex}
+
+    \newpage
+    \setcounter{page}{1}
+
+    \section{Objetivo:}
+    Desarrollar filtros pasa bajas y pasa altas utilizando la raspberry pi pico 2w, para así comprender el proceso de diseño, implementación y análisis de filtros digitales en un microcontrolador.
+    
+    
+    \section{Desarrollo:}
+    \input{desarrollo.tex}
+
+    \newpage
+    \section{Resultados:}
+    \input{resultados.tex}
+
+    \newpage
+    \section{Conclusiones:}
+
+    \begin{itemize}
+        \item \textbf{Espinoza Matamoros Percival Ulises:}
+        
+        A partir de la realización de esta práctica pude retomar conceptos vistos en asignaturas anteriores, de forma que a partir de diseñar un filtro  y a partir de esta obtener sus funciones de transferencia, al tener que implementar el filtro en la Raspberry Pi Pico, pude aprender y comprender la importancia así como la necesidad de discretizar la función de transferencia, para así poder implementarla en un microcontrolador, donde por medio de una señal cuadrada de entrada se pudo observar el comportamiento del filtro, comprobando asi que el filtro se comporta de la forma esperada, es decir, que se atenúan las frecuencias bajas para el caso del filtro pasa altas, y se atenúan las frecuencias altas para el caso del filtro pasa bajas. Por otro lado al implementar estos dos filtros se pudo observar que el filtro de primer orden tiene una respuesta más lenta, es decir, que tarda más en estabilizarse, mientras que el filtro de segundo orden tiene una respuesta más rápida, es decir, que tarda menos en estabilizarse. De forma que en la raspberry pi pico se pueden implementar filtros digitales de forma sencilla, y con un buen desempeño, siempre y cuando se tenga una buena discretización de la función de transferencia y se realicen los cálculos correspondientes de forma correcta.
+        
+        \item \textbf{Flores Colin Victor Jaziel:}
+        Gracias a esta práctica, pude comprobar cómo el orden de un filtro puede definir de manera crítica el comportamiento de la señal de salida y es que quedó evidenciado que, a mayor orden, la atenuación ejercida es superior: mientras el filtro de primer orden presenta una transición más suave y lenta, el de segundo orden ofrece una respuesta mucho más breve y abrupta y este fenómeno se manifestó claramente al observar la respuesta del sistema, a pesar de que en nuestro montaje experimental el filtro de primer orden se configuró como pasa bajas y el de segundo orden como pasa altas.
+        
+        La implementación en MicroPython fue de suma importancia para facilitar el análisis de cómo el orden impacta directamente en la complejidad del algoritmo y cuando obtuvimos las ecuaciones en diferencias, observé que un filtro de primer orden es computacionalmente ligero, pues solo requiere sólo un valor atrás tanto de la entrada como de la salida ($u(k-1)$ y $y(k-1)$). En contraste, el de segundo orden demanda el doble de información histórica y operaciones matemáticas adicionales. Esto me permitió concluir que el diseño de filtros digitales depende de las necesidades que hay que resolver y los recursos de procesamiento disponibles en el microcontrolador.
+
+
+        \item \textbf{García Cortés Adolfo de Jesús:}
+        
+        Esta práctica ayudó a repasar lo aprendido en clases pasadas sobre señales y a aplicarlo en un dispositivo real. Al diseñar los filtros RC, quedó claro que para pasarlos de la teoría analógica a la Raspberry Pi Pico, era obligatorio convertirlos a formato digital mediante matemáticas (usando la transformada bilineal). De esta forma se obtuvo la ecuación necesaria para programarlos.
+
+        Probar los filtros con una señal cuadrada fue muy útil porque, por su naturaleza, este tipo de señal está formada por la suma de muchas frecuencias distintas. Esto dejó ver claramente qué hace cada filtro: el pasa-bajas dejó pasar las señales lentas y frenó las rápidas, mientras que el pasa-altas hizo exactamente lo contrario.
+
+        Al comparar los filtros, se notó una diferencia importante: el filtro de primer orden bloquea las frecuencias no deseadas de una forma suave, pero el de segundo orden las corta de manera mucho más brusca. Esto también afecta la programación, ya que el de primer orden es más sencillo al solo necesitar el valor anterior de la entrada y la salida ($u(k-1)$ y $y(k-1)$). En cambio, el de segundo orden necesita los dos valores anteriores, lo que le exige más cálculos a la placa.
+
+        Por último, quedó demostrado que la Raspberry Pi Pico funciona muy bien para crear filtros digitales, siempre y cuando las conversiones matemáticas y la velocidad para tomar los datos sean las correctas. Los resultados físicos fueron iguales a lo que decía la teoría, lo que confirma que tanto el diseño como el código en MicroPython se hicieron bien.
+
+
+
+        \item \textbf{Lara Hernandez Angel Husiel:}
+        La realización de esta práctica me permitió integrar los conceptos teóricos de los filtros analógicos RC con las herramientas de procesamiento digital de señales. Al implementar los algoritmos en la Raspberry Pi Pico, comprendí que la transformación de una función de transferencia del dominio de Laplace al dominio discreto mediante la transformada bilineal es un paso fundamental para que el microcontrolador pueda interpretar el comportamiento físico deseado y esto lo puede apreciar de mejor manera durante las pruebas con la señal cuadrada donde note cómo cada filtro extrae componentes distintas de la señal: el suavizado de las transiciones en el pasa bajas y el aislamiento de los flancos en el pasa altas.
+
+        Después de obtener las gráficas y hacer la comparación entre el primer y segundo orden pude visualizar la atenuacuión que ofrece cada tipo de filtro. Pude constatar que, aunque el filtro de segundo orden es más eficiente para aislar bandas de frecuencia específicas gracias a su corte más drástico, requiere una programación más cuidadosa de las ecuaciones en diferencias para asegurar la estabilidad del sistema. En esta práctica aprendí que un buen diseño matemático con una buena correcta implementación en hardware permite emular componentes analógicos con gran precisión, aprovechando la flexibilidad que ofrecen herramientas como Thony de MicroPython.
+        
+        \item \textbf{Lugo Manzano Rodrigo:}
+        
+        A lo largo de esta práctica, pude recordar lo ya aprendido en algunas asignaturas pasadas y ver cómo la teoría de circuitos analógicos se traslada al mundo digital mediante herramientas matemáticas. Pude observar cómo la señal cuadrada de entrada responde a los filtros dependiendo de su frecuencia, notando claramente cómo el pasa bajas suaviza la onda al eliminar los armónicos rápidos, mientras que el pasa altas aísla los cambios bruscos de los flancos. También fue evidente que subir a un segundo orden resulta en un corte de frecuencias mucho más estricto frente a la transición suave del primer orden, sin embargo, un reto  y aprendizaje importante también estuvo en la implementación física. Trasladar las ecuaciones en diferencias al microcontrolador requirió de una buena optimización para no perder el ritmo de la frecuencia de muestreo establecida. Para lograrlo, fue importante aprovechar la arquitectura de doble núcleo de la Raspberry Pi Pico 2W. Al aislar la ejecución matemática en el Núcleo 1, garantizamos que el filtro calculara cada muestra exactamente cada $125\,\mu\text{s}$, mientras que el Núcleo 0 se encargaba de la comunicación serial de forma no bloqueante. Esto me demostró que en el diseño no basta con tener un modelo matemático perfecto, sino que la eficiencia del código, la sincronización de los núcleos y el manejo adecuado de los recursos del hardware igual son partes importantes para lograr un procesamiento de señales digitales estable.
+        
+    \end{itemize}
+
+    \newpage
+
+    % Impresión Referencias
+    \nocite{*}
+    \printbibliography[heading=bibintoc, title={Referencias}]
+\end{document}

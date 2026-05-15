@@ -1,595 +1,644 @@
-% ============================================================
-% DESARROLLO - Diseño de Filtros Digitales IIR
-% ============================================================
-
-Los parámetros del sistema son:
+\textbf{Parámetros iniciales:}
 
 \begin{itemize}
-    \item \textbf{Frecuencia de muestreo:} $f_s = 8000$ Hz
-    \item \textbf{Período de muestreo:} $T = \dfrac{1}{f_s} = \dfrac{1}{8000} = 1.25 \times 10^{-4}$ s $= 125\;\mu$s
-    \item \textbf{Frecuencia de Nyquist:} $f_N = \dfrac{f_s}{2} = 4000$ Hz
-    \item \textbf{Entrada analógica:} GP26 (ADC0)
-    \item \textbf{Generación de señal de prueba:} GP3 (PWM, onda cuadrada)
+    \item Frecuencia de muestreo: $F_s = 8000$ Hz
+    \item Periodo de muestreo: $T = \frac{1}{F_s} = \frac{1}{8000} = 125\;\mu$s
+    \item Frecuencia de corte pasa bajas: $f_c = 85$ Hz
+    \item Frecuencia de corte pasa altas: $f_c = 480$ Hz
+    \item Frecuencia central (pasa banda): $f_o = 580$ Hz
+    \item Ancho de banda (pasa banda): $BW = 45$ Hz
+    \item Número de muestras por captura: 500
+    \item Tipo de filtro: Butterworth IIR
 \end{itemize}
 
-Para el uso de los hilos en la pico: el \textbf{Núcleo 1} ejecuta la ecuación en diferencias del filtro 
-activo con temporización precisa según el periodo configurado, mientras que el \textbf{Núcleo 0} 
-procesa todas las entradas que se van recibiendo.
-
-% ============================================================
-\subsection{Filtro Pasa Bajas de Primer Orden (IIR Butterworth)}
-% ============================================================
+% ==================================================================
+\subsection{Diseño del Filtro Pasa Bajas de Primer Orden}
+% ==================================================================
 
 
-Se selecciona una frecuencia de corte $f_c \approx 79.6$ Hz para el filtro pasa bajas. 
-Esto por:
+El prototipo analógico Butterworth de primer orden tiene la función de transferencia:
 
-\begin{enumerate}
-    \item \textbf{Criterio de Nyquist:} La frecuencia de corte debe satisfacer $f_c < f_N = 4000$ Hz, con $f_c \approx 79.6$ Hz.
-
-    \item \textbf{Relación $f_c/f_s$:} La relación $f_c/f_s = 79.6/8000 = 0.00995$ es muy pequeña; la distorsión por frequency warping es despreciable y se corrige con la pre-distorsión.
-
-\end{enumerate}
-
-\textbf{Circuito eléctrico}
-
-El filtro pasa bajas analógico de primer orden se implementa con un circuito RC serie, donde la salida se toma sobre el capacitor:
-
-\begin{figure}[H]
-    \centering
-    \begin{circuitikz}[american, scale=1.0]
-        \draw (0,0) to[V, v=$V_{in}$] (0,3)
-              to[R, l=$R$, i>=$i(t)$] (4,3)
-              -- (4,3)
-              to[C, l_=$C$, v^=$V_{out}$] (4,0)
-              -- (0,0);
-        \draw (4,3) to[short, -o] (5.5,3);
-        \draw (4,0) to[short, -o] (5.5,0);
-        \node[right] at (5.5,3) {$+$};
-        \node[right] at (5.5,0) {$-$};
-    \end{circuitikz}
-    \caption{Circuito RC pasa bajas de primer orden.}
-    \label{fig:rc_lowpass}
-\end{figure}
-
-\textbf{calculo de componentes:}
-
-La frecuencia de corte del circuito RC está dada por:
 \begin{equation}
-    f_c = \frac{1}{2\pi RC} \quad \Longrightarrow \quad \omega_c = \frac{1}{RC} = 2\pi f_c
-\end{equation}
-
-Seleccionando $C = 100$ nF (serie E24), se calcula la resistencia necesaria para obtener $f_c \approx 79.6$ Hz:
-\begin{equation}
-    R = \frac{1}{2\pi f_c C} = \frac{1}{2\pi (79.6)(100 \times 10^{-9})} = \frac{1}{5.000 \times 10^{-5}} = 20000\;\Omega \approx 20.0\;\text{k}\Omega
-\end{equation}
-
-Se utiliza una resistencia de $R = 20\;\text{k}\Omega$ (serie E24), lo cual resulta en una frecuencia de corte real de:
-\begin{equation}
-    f_{c,\text{real}} = \frac{1}{2\pi (20000)(100 \times 10^{-9})} = 79.6\;\text{Hz}
-\end{equation}
-
-La diferencia es nula a nivel de redondeo.
-
-\subsubsection{Obtención de la función de transferencia $H(s)$}
-
-Aplicando la ley de Kirchhoff al circuito RC en el dominio de Laplace:
-\begin{equation}
-    V_{in}(s) = R \cdot I(s) + \frac{1}{sC} \cdot I(s) = I(s)\left(R + \frac{1}{sC}\right)
-\end{equation}
-
-El voltaje de salida sobre el capacitor es:
-\begin{equation}
-    V_{out}(s) = \frac{1}{sC} \cdot I(s)
-\end{equation}
-
-Despejando la corriente de la primera ecuación y sustituyendo:
-\begin{equation}
-    H(s) = \frac{V_{out}(s)}{V_{in}(s)} = \frac{\dfrac{1}{sC}}{R + \dfrac{1}{sC}} = \frac{1}{sRC + 1}
-\end{equation}
-
-Multiplicando numerador y denominador por $\omega_c = 1/(RC)$:
-\begin{equation}
-    \boxed{H(s) = \frac{\omega_c}{s + \omega_c}, \qquad \omega_c = 2\pi(79.6) = 500.0\;\text{rad/s}}
-    \label{eq:lp_hs}
-\end{equation}
-
-Esta es la función de transferencia de un filtro Butterworth pasa bajas de primer orden, con ganancia unitaria en DC ($H(0)=1$) y atenuación de $-3$ dB en $\omega = \omega_c$.
-
-\subsubsection{Discretización mediante la transformada bilineal}
-
-\paragraph{Paso 1: Pre-distorsión de frecuencia.}
-
-La transformada bilineal introduce una distorsión no lineal entre las frecuencias analógica y digital. 
-Para garantizar que la frecuencia de corte sea exactamente la misma y se mantenga, 
-se calcula la frecuencia analógica pre-distorsionada:
-\begin{equation}
-    \Omega_a = \tan\left(\frac{\pi f_c}{f_s}\right) = \tan\left(\frac{\pi \cdot 79.6}{8000}\right) = \tan(0.03124\;\text{rad})
-\end{equation}
-
-Evaluando:
-\begin{equation}
-    \Omega_a = 0.03125
-    \label{eq:omega_a_lp}
+    H(s) = \frac{\omega_c}{s + \omega_c}
+    \label{eq:lp_analog}
 \end{equation}
 
 
-\begin{equation}
-    H(s) = \frac{\Omega_a}{s + \Omega_a}
-\end{equation}
-
-\paragraph{Paso 2: Sustitución de la variable bilineal.}
+Se calcula la frecuencia de corte pre-distorsionada para compensar el efecto de la transformación bilineal:
 
 \begin{equation}
-    s = \frac{z - 1}{z + 1}
+    \Omega_c = 2 F_s \tan\!\left(\frac{\pi f_c}{F_s}\right) = 2(8000)\tan\!\left(\frac{\pi \cdot 85}{8000}\right) = 16000\,\tan(0.03337)
 \end{equation}
 
-Sustituyendo en $H(s)$:
 \begin{equation}
-    H(z) = \frac{\Omega_a}{\dfrac{z-1}{z+1} + \Omega_a}
+    \Omega_c = 16000 \times 0.033386 = 534.18 \;\text{rad/s}
 \end{equation}
 
-\textbf{simplificando:}
+\textbf{Aplicación de la Transformación Bilineal}
+
+Sustituyendo $s = 2F_s\cdot\frac{z-1}{z+1}$ en $H(s)$ con $\omega_c$ reemplazado por $\Omega_c$:
+
+\begin{equation}
+    H(z) = \frac{\Omega_c}{2F_s \cdot \frac{z-1}{z+1} + \Omega_c}
+\end{equation}
 
 Multiplicando numerador y denominador por $(z+1)$:
+
 \begin{equation}
-    H(z) = \frac{\Omega_a (z + 1)}{(z - 1) + \Omega_a(z + 1)}
+    H(z) = \frac{\Omega_c(z+1)}{2F_s(z-1) + \Omega_c(z+1)}
 \end{equation}
 
 Expandiendo el denominador:
+
+\begin{equation}
+    H(z) = \frac{\Omega_c(z+1)}{(2F_s + \Omega_c)\,z + (\Omega_c - 2F_s)}
+\end{equation}
+
+Dividiendo todo entre $(2F_s + \Omega_c)$:
+
+\begin{equation}
+    H(z) = \frac{\frac{\Omega_c}{2F_s + \Omega_c}(z + 1)}{z - \frac{2F_s - \Omega_c}{2F_s + \Omega_c}}
+\end{equation}
+
+\textbf{Cálculo de los Coeficientes}
+
 \begin{align}
-    (z - 1) + \Omega_a(z + 1) &= z - 1 + \Omega_a z + \Omega_a \nonumber \\
-    &= z(1 + \Omega_a) + (\Omega_a - 1)
+    A_0 = A_1 &= \frac{\Omega_c}{2F_s + \Omega_c} = \frac{534.18}{16000 + 534.18} = \frac{534.18}{16534.18} \approx 0.03230 \\[6pt]
+    A_2 &= 0 \\[6pt]
+    B_1 &= \frac{2F_s - \Omega_c}{2F_s + \Omega_c} = \frac{16000 - 534.18}{16534.18} = \frac{15465.82}{16534.18} \approx 0.93540 \\[6pt]
+    B_2 &= 0
 \end{align}
 
-Dividiendo numerador y denominador entre $(1 + \Omega_a)$:
+\textbf{Ganancia en DC}
+
+En DC ($z = 1$):
+
 \begin{equation}
-    H(z) = \frac{\dfrac{\Omega_a}{1+\Omega_a}\;(z + 1)}{z + \dfrac{\Omega_a - 1}{1 + \Omega_a}} = \frac{\dfrac{\Omega_a}{1+\Omega_a}\;(z + 1)}{z - \dfrac{1 - \Omega_a}{1 + \Omega_a}}
+    H(1) = \frac{A_0 + A_1}{1 - B_1} = \frac{0.03230 + 0.03230}{1 - 0.93540} = \frac{0.06460}{0.06460} = 1.0 \;\checkmark
 \end{equation}
 
-\paragraph{Paso 3: Identificación con la forma estándar.}
+Esto confirma que el filtro tiene ganancia unitaria en DC, como se espera de un pasa bajas.
 
-Comparando con la forma canónica $H(z) = \dfrac{A_0 z + A_1}{z - B_1}$:
+\subsubsection{Función de Transferencia:}
 
-\begin{align}
-    A_0 = A_1 &= \frac{\Omega_a}{1 + \Omega_a} = \frac{0.03125}{1 + 0.03125} = \frac{0.03125}{1.03125} = 0.0303 \\[6pt]
-    B_1 &= \frac{1 - \Omega_a}{1 + \Omega_a} = \frac{1 - 0.03125}{1 + 0.03125} = \frac{0.96875}{1.03125} = 0.9394
-\end{align}
-
-Por lo tanto, la función de transferencia discreta es:
 \begin{equation}
-    \boxed{H(z) = \frac{0.0303\;(z + 1)}{z - 0.9394} = \frac{0.0303\,z + 0.0303}{z - 0.9394}}
-    \label{eq:lp_hz}
+    \boxed{H(z) = \frac{0.03230\,z + 0.03230}{z - 0.93540} = \frac{0.03230(1 + z^{-1})}{1 - 0.93540\,z^{-1}}}
+    \label{eq:lp_Hz}
 \end{equation}
 
-\subsubsection{Ecuación en diferencias}
-
-A partir de $H(z) = Y(z)/U(z)$:
-\begin{equation}
-    Y(z)\,(z - B_1) = U(z)\,(A_0\,z + A_1)
-\end{equation}
-
-Dividiendo ambos lados entre $z$:
-\begin{equation}
-    Y(z) - B_1\,z^{-1}\,Y(z) = A_0\,U(z) + A_1\,z^{-1}\,U(z)
-\end{equation}
-
-Aplicando la transformada $z$ inversa (donde $z^{-1}$ representa un retardo de una muestra):
-\begin{equation}
-    \boxed{y(k) = A_0 \cdot u(k) + A_1 \cdot u(k-1) + B_1 \cdot y(k-1)}
-    \label{eq:lp_diff}
-\end{equation}
-
-Sustituyendo los valores numéricos:
-\begin{equation}
-    y(k) = 0.0303 \cdot u(k) + 0.0303 \cdot u(k-1) + 0.9394 \cdot y(k-1)
-\end{equation}
-
-\textbf{Coeficientes:}
-
-\begin{table}[H]
-    \centering
-    \caption{Coeficientes del filtro pasa bajas de primer orden ($f_c \approx 79.6$ Hz, $f_s = 8000$ Hz).}
-    \label{tab:lp_coeff}
-    \begin{tabular}{|c|c|c|}
-        \hline
-        \rowcolor{headblue}\textcolor{white}{\textbf{Coeficiente}} & \textcolor{white}{\textbf{Expresión}} & \textcolor{white}{\textbf{Valor numérico}} \\
-        \hline
-        $A_0$ & $\dfrac{\Omega_a}{1 + \Omega_a}$ & $0.0303$ \\[10pt]
-        \hline
-        $A_1$ & $\dfrac{\Omega_a}{1 + \Omega_a}$ & $0.0303$ \\[10pt]
-        \hline
-        $A_2$ & --- & $0.0$ \\[4pt]
-        \hline
-        $B_1$ & $\dfrac{1 - \Omega_a}{1 + \Omega_a}$ & $0.9394$ \\[10pt]
-        \hline
-        $B_2$ & --- & $0.0$ \\[4pt]
-        \hline
-    \end{tabular}
-\end{table}
-
-\textbf{Verificación en DC ($z = 1$):}
-\begin{equation}
-    H(1) = \frac{A_0 + A_1}{1 - B_1} = \frac{0.0303 + 0.0303}{1 - 0.9394} = \frac{0.0606}{0.0606} = 1.0 
-\end{equation}
-
-De este modo, se verifica que la componente DC no sufre atenuación.
-
-\subsubsection{Diagrama de flujo de señal}
+\textbf{Diagrama de Bloques}
 
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        block/.style={draw, fill=blue!10, minimum width=1.2cm, minimum height=0.7cm, font=\footnotesize},
-        sum/.style={draw, circle, fill=yellow!20, minimum size=0.6cm, inner sep=0pt, font=\small},
-        >=latex
+        block/.style={rectangle, draw, fill=blue!10, minimum width=1.2cm, minimum height=0.8cm, font=\small},
+        sum/.style={circle, draw, fill=yellow!20, minimum size=0.6cm, font=\small},
+        delay/.style={rectangle, draw, fill=gray!15, minimum width=1cm, minimum height=0.7cm, font=\small},
+        line/.style={draw, thick, ->, >=stealth}
     ]
-        % Main signal path
-        \node (in) at (0,0) {$u(k)$};
-        \node[block] (A0) at (2.5,0) {$\times A_0$};
-        \node[sum] (S) at (5,0) {$+$};
-        \node (out) at (7.5,0) {$y(k)$};
+        \node (input) at (0,0) {$U(k)$};
+        \node[block] (a0) at (2, 0) {$A_0$};
+        \node[sum] (s1) at (4, 0) {$+$};
+        \node (output) at (7, 0) {$Y(k)$};
 
-        % u delay line
-        \node[block] (Z1) at (0,-2) {$z^{-1}$};
-        \node[block] (A1) at (2.5,-2) {$\times A_1$};
+        \node[delay] (z1u) at (2, -1.5) {$z^{-1}$};
+        \node[block] (a1) at (2, -3) {$A_1$};
 
-        % y feedback
-        \node[block] (Z2) at (7.5,-2) {$z^{-1}$};
-        \node[block] (B1) at (5,-2) {$\times B_1$};
+        \node[delay] (z1y) at (5.5, -1.5) {$z^{-1}$};
+        \node[block] (b1) at (5.5, -3) {$B_1$};
+        \node[sum] (s2) at (4, -3) {$+$};
 
-        % Connections: feedforward
-        \draw[->] (in) -- (A0);
-        \draw[->] (A0) -- (S);
-        \draw[->] (S) -- (out);
+        \draw[line] (input) -- (a0);
+        \draw[line] (a0) -- (s1);
+        \draw[line] (s1) -- node[above] {} (output);
 
-        % u delay
-        \draw[->] (in) -- (Z1);
-        \draw[->] (Z1) -- (A1);
-        \draw[->] (A1) -- (S);
+        \draw[thick] (0.8, 0) -- (0.8, -1.5);
+        \draw[line] (0.8, -1.5) -- (z1u);
+        \draw[line] (z1u) -- (a1);
+        \draw[line] (a1) -- (s2);
+        \draw[line] (s2) -- (s1);
 
-        % y feedback
-        \draw[->] (out) -- (Z2);
-        \draw[->] (Z2) -- (B1);
-        \draw[->] (B1) -- (S);
+        \draw[thick] (6, 0) -- (6, -1.5);
+        \draw[line] (6, -1.5) -- (z1y);
+        \draw[line] (z1y) -- (b1);
+        \draw[line] (b1) -- (s2);
     \end{tikzpicture}
-    \caption{Diagrama de flujo de señal del filtro pasa bajas de primer orden (Forma Directa I).}
-    \label{fig:lp_signal_flow}
+    \caption{Diagrama de bloques del filtro pasa bajas de primer orden (Forma Directa I).}
+    \label{fig:bloques_lp}
 \end{figure}
 
-% ============================================================
-\newpage
-\subsection{Diseño del Filtro Pasa Altas (Circuito RC)}
-% ============================================================
-
-Se selecciona una frecuencia de corte $f_c \approx 39.6$ Hz para el filtro pasa altas. 
-Para esto, se tomo en cuenta lo siguiente:
-
-\begin{enumerate}
-    \item \textbf{Criterio de Nyquist:} Se cumple $f_c \ll f_N$ para el muestreo definido, garantizando estabilidad y correcta representación digital.
-
-    \item \textbf{Relación:} La relación $f_c T_{HP} = (39.6)(1\times 10^{-3}) = 0.0396$ se ubica en el rango donde la distorsión por la transformada bilineal es baja y controlable.
-
-\end{enumerate}
-
-\textbf{Circuito:}
-
-El filtro pasa altas se implementa con un circuito \textbf{RC serie}, tomando la salida sobre la resistencia.
-
-\begin{figure}[H]
-    \centering
-    \begin{circuitikz}[american, scale=1.0]
-        \draw (0,0) to[V, v=$V_{in}$] (0,3)
-              to[C, l=$C$, i>=$i(t)$] (4,3)
-              to[R, l=$R$, v^=$V_{out}$] (4,0)
-              -- (0,0);
-        \draw (4,3) to[short, -o] (5.5,3);
-        \draw (4,0) to[short, -o] (5.5,0);
-        \node[right] at (5.5,3) {$+$};
-        \node[right] at (5.5,0) {$-$};
-    \end{circuitikz}
-    \caption{Circuito RC pasa altas (salida sobre $R$).}
-    \label{fig:rc_highpass}
-\end{figure}
-
-\textbf{calculo de los componentes:}
-
-La frecuencia de corte del circuito RC está dada por:
-
-\begin{equation}
-    f_c = \frac{1}{2\pi RC} \quad \Longrightarrow \quad \omega_c = \frac{1}{RC} = 2\pi f_c
-\end{equation}
-
-Seleccionando $C = 100$ nF (serie E24), se calcula la resistencia necesaria para obtener $f_c \approx 39.6$ Hz:
-\begin{equation}
-    R = \frac{1}{2\pi f_c C} = \frac{1}{2\pi (39.6)(100 \times 10^{-9})} = \frac{1}{2.487 \times 10^{-5}} = 40210\;\Omega \approx 40.2\;\text{k}\Omega
-\end{equation}
-
-Se utiliza una resistencia de $R = 40.2\;\text{k}\Omega$ (valor teórico), lo cual resulta en una frecuencia de corte real de:
-\begin{equation}
-    f_{c,\text{real}} = \frac{1}{2\pi (40200)(100 \times 10^{-9})} \approx 39.6\;\text{Hz}
-\end{equation}
-
-
-\subsubsection{Obtención de la función de transferencia $H(s)$}
-
-Aplicando la LVK al circuito RC en el dominio de Laplace:
-\begin{equation}
-    V_{in}(s) = \frac{1}{sC}\,I(s) + R\,I(s) = I(s)\left(\frac{1}{sC} + R\right)
-\end{equation}
-
-La salida se toma sobre la resistencia:
-\begin{equation}
-    V_{out}(s) = R \cdot I(s)
-\end{equation}
-
-La función de transferencia es:
-\begin{equation}
-    H(s) = \frac{V_{out}(s)}{V_{in}(s)} = \frac{R}{\dfrac{1}{sC} + R}
-\end{equation}
-
-Multiplicando numerador y denominador por $sC$:
-\begin{equation}
-    H(s) = \frac{sRC}{sRC + 1}
-\end{equation}
-
-Dividiendo entre $RC$:
-\begin{equation}
-    \boxed{H(s) = \frac{s}{s + \omega_c}, \qquad \omega_c = 2\pi(39.6) = 248.7\;\text{rad/s}}
-    \label{eq:hp_hs}
-\end{equation}
-
-La ganancia es cero en DC ($H(0)=0$, bloquea la componente continua) y unitaria en alta frecuencia ($\lim_{s\to\infty}H(s)=1$), confirmando el comportamiento pasa altas.
-
-\subsubsection{Discretización mediante la transformada bilineal (Tustin)}
-
-\paragraph{Paso 1: Pre-distorsión de frecuencia.}
-
-Para la discretización se usa un periodo de muestreo $T_{HP} = 1\;\text{ms}$.
-
-\begin{equation}
-    \Omega_a = \tan\left(\pi f_c T_{HP}\right) = \tan\left(\pi (39.6)(1\times 10^{-3})\right) = \tan(0.12436) = 0.125
-    \label{eq:omega_a_hp}
-\end{equation}
-
-\begin{equation}
-    H(s) = \frac{s}{s + \Omega_a}
-\end{equation}
-
-\paragraph{Paso 2: Sustitución bilineal $s = \dfrac{z-1}{z+1}$.}
-
-\begin{equation}
-    H(z) = \frac{\left(\dfrac{z-1}{z+1}\right)}{\left(\dfrac{z-1}{z+1}\right) + \Omega_a}
-\end{equation}
-
-\textbf{Simplificacion:}
-
-Multiplicando numerador y denominador por $(z+1)$:
-\begin{equation}
-    H(z) = \frac{(z-1)}{(z-1) + \Omega_a\,(z+1)}
-\end{equation}
-
-Expandiendo el denominador:
-\begin{align}
-    (z-1) + \Omega_a(z+1) &= z - 1 + \Omega_a z + \Omega_a \nonumber \\
-    &= z(1 + \Omega_a) + (\Omega_a - 1)
-\end{align}
-
-Dividiendo numerador y denominador entre $(1 + \Omega_a)$:
-\begin{equation}
-    H(z) = \frac{\dfrac{1}{1+\Omega_a}\,(z - 1)}{z + \dfrac{\Omega_a - 1}{1 + \Omega_a}} = \frac{\dfrac{1}{1+\Omega_a}\,(z - 1)}{z - \dfrac{1 - \Omega_a}{1 + \Omega_a}}
-\end{equation}
-
-\paragraph{Paso 3: Identificación con la forma estándar.}
-
-Comparando con la forma canónica $H(z) = \dfrac{A_0 z + A_1}{z - B_1}$:
-
-\begin{align}
-    A_0 &= \frac{1}{1 + \Omega_a} = \frac{1}{1 + 0.125} = \frac{1}{1.125} = 0.8889 \\[6pt]
-    A_1 &= -\frac{1}{1 + \Omega_a} = -0.8889 \\[6pt]
-    B_1 &= \frac{1 - \Omega_a}{1 + \Omega_a} = \frac{1 - 0.125}{1 + 0.125} = \frac{0.875}{1.125} = 0.7778
-\end{align}
-
-La función de transferencia discreta resulta:
-\begin{equation}
-    \boxed{H(z) = \frac{0.8889\,z - 0.8889}{z - 0.7778}}
-    \label{eq:hp_hz}
-\end{equation}
-
-\subsubsection{Ecuación en diferencias}
-
-A partir de $H(z) = Y(z)/U(z)$:
-\begin{equation}
-    Y(z)\,(z - B_1) = U(z)\,(A_0\,z + A_1)
-\end{equation}
-
-Dividiendo ambos lados entre $z$ y aplicando la transformada $z$ inversa:
-\begin{equation}
-    y(k) - B_1\,y(k-1) = A_0\,u(k) + A_1\,u(k-1)
-\end{equation}
-
-Reorganizando:
-\begin{equation}
-    \boxed{y(k) = A_0\,u(k) + A_1\,u(k-1) + B_1\,y(k-1)}
-    \label{eq:hp_diff}
-\end{equation}
-
-Sustituyendo los valores numéricos:
-\begin{equation}
-    y(k) = 0.8889\,u(k) - 0.8889\,u(k-1) + 0.7778\,y(k-1)
-\end{equation}
-
-\textbf{coeficientes:}
+\subsubsection{Frecuencias de entradas en matlab:}
 
 \begin{table}[H]
     \centering
-    \caption{Coeficientes del filtro pasa altas ($f_c \approx 39.6$ Hz).}
-    \label{tab:hp_coeff}
-    \begin{tabular}{|c|c|c|}
+    \caption{Frecuencias de prueba para el filtro pasa bajas ($f_c = 85$ Hz)}
+    \begin{tabular}{|c|c|l|}
         \hline
-        \rowcolor{headblue}\textcolor{white}{\textbf{Coeficiente}} & \textcolor{white}{\textbf{Expresión}} & \textcolor{white}{\textbf{Valor numérico}} \\
+        \rowcolor{subheadblue}\textbf{Frecuencia} & \textbf{Relación con $f_c$} & \textbf{Comportamiento esperado} \\
         \hline
-        $A_0$ & $\dfrac{1}{1 + \Omega_a}$ & $0.8889$ \\[10pt]
+        20 Hz & $f \ll f_c$ & Paso sin atenuación \\
         \hline
-        $A_1$ & $-\dfrac{1}{1 + \Omega_a}$ & $-0.8889$ \\[10pt]
+        50 Hz & $f < f_c$ & Paso con mínima atenuación, curva exponencial visible \\
         \hline
-        $A_2$ & --- & $0.0$ \\[4pt]
+        85 Hz & $f = f_c$ & Atenuación de $-3$ dB (70.7\%) \\
         \hline
-        $B_1$ & $\dfrac{1 - \Omega_a}{1 + \Omega_a}$ & $0.7778$ \\[10pt]
+        200 Hz & $f > f_c$ & Atenuación significativa \\
         \hline
-        $B_2$ & --- & $0.0$ \\[4pt]
+        500 Hz & $f \gg f_c$ & Atenuación fuerte \\
         \hline
     \end{tabular}
 \end{table}
 
-\newpage
+% ==================================================================
+\subsection{Diseño del Filtro Pasa Altas de Primer Orden}
+% ==================================================================
 
-\begin{enumerate}
-    \item \textbf{En DC ($z = 1$):}
-    \begin{equation}
-        H(1) = \frac{A_0 + A_1}{1 - B_1} = \frac{0.8889 - 0.8889}{1 - 0.7778} = \frac{0}{0.2222} = 0 
-    \end{equation}
-    Esto confirma que el filtro pasa altas bloquea completamente la componente DC.
 
-    \item \textbf{En Nyquist ($z = -1$):}
-    \begin{equation}
-        H(-1) = \frac{A_0 - A_1}{1 + B_1} = \frac{0.8889 + 0.8889}{1 + 0.7778} = \frac{1.7778}{1.7778} = 1.0 
-    \end{equation}
-    Esto confirma que la ganancia es unitaria en la frecuencia de Nyquist.
+El prototipo analógico Butterworth pasa altas de primer orden:
 
-    \item \textbf{Suma de coeficientes del numerador:}
-    \begin{equation}
-        A_0 + A_1 = 0.8889 - 0.8889 = 0
-    \end{equation}
-    garantiza $H(1)=0$.
-\end{enumerate}
+\begin{equation}
+    H(s) = \frac{s}{s + \omega_c}
+    \label{eq:hp_analog}
+\end{equation}
 
-\subsubsection{Diagrama de flujo de señal}
+Para el filtro pasa altas se selecciona $f_c = 480$ Hz. La frecuencia pre-distorsionada es:
+
+\begin{equation}
+    \Omega_c = 2 F_s \tan\!\left(\frac{\pi \cdot 480}{8000}\right) = 16000\,\tan(0.18850) = 16000 \times 0.19089 = 3054.24 \;\text{rad/s}
+\end{equation}
+
+Sustituyendo en la transformación bilineal:
+
+\begin{equation}
+    H(z) = \frac{2F_s \cdot \frac{z-1}{z+1}}{2F_s \cdot \frac{z-1}{z+1} + \Omega_c}
+\end{equation}
+
+Multiplicando por $(z+1)$:
+
+\begin{equation}
+    H(z) = \frac{2F_s(z-1)}{2F_s(z-1) + \Omega_c(z+1)} = \frac{2F_s(z-1)}{(2F_s + \Omega_c)\,z + (\Omega_c - 2F_s)}
+\end{equation}
+
+Dividiendo entre $(2F_s + \Omega_c)$:
+
+\begin{equation}
+    H(z) = \frac{\frac{2F_s}{2F_s + \Omega_c}(z - 1)}{z - \frac{2F_s - \Omega_c}{2F_s + \Omega_c}}
+\end{equation}
+
+\textbf{Cálculo de los Coeficientes}
+
+\begin{align}
+    A_0 &= \frac{2F_s}{2F_s + \Omega_c} = \frac{16000}{19054.24} \approx 0.83970 \\[6pt]
+    A_1 &= -A_0 = -0.83970 \\[6pt]
+    A_2 &= 0 \\[6pt]
+    B_1 &= \frac{2F_s - \Omega_c}{2F_s + \Omega_c} = 0.67940 \\[6pt]
+    B_2 &= 0
+\end{align}
+
+\textbf{Ganancia en DC y Nyquist}
+
+En DC ($z = 1$):
+\begin{equation}
+    H(1) = \frac{A_0 + A_1}{1 - B_1} = \frac{0.83970 - 0.83970}{1 - 0.67940} = \frac{0}{0.32060} = 0 \;\checkmark
+\end{equation}
+
+En Nyquist ($z = -1$):
+\begin{equation}
+    H(-1) = \frac{A_0(-1) + A_1}{-1 - (-B_1)} = \frac{-0.83970 - 0.83970}{-1 - 0.67940} = \frac{-1.67940}{-1.67940} = 1.0 \;\checkmark
+\end{equation}
+
+\textbf{Función de Transferencia Final}
+
+\begin{equation}
+    \boxed{H(z) = \frac{0.83970\,z - 0.83970}{z - 0.67940} = \frac{0.83970(1 - z^{-1})}{1 - 0.67940\,z^{-1}}}
+    \label{eq:hp_Hz}
+\end{equation}
+
+\textbf{Diagrama de Bloques}
 
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        block/.style={draw, fill=blue!10, minimum width=1.2cm, minimum height=0.7cm, font=\footnotesize},
-        sum/.style={draw, circle, fill=yellow!20, minimum size=0.6cm, inner sep=0pt, font=\small},
-        >=latex
+        block/.style={rectangle, draw, fill=red!10, minimum width=1.2cm, minimum height=0.8cm, font=\small},
+        sum/.style={circle, draw, fill=yellow!20, minimum size=0.6cm, font=\small},
+        delay/.style={rectangle, draw, fill=gray!15, minimum width=1cm, minimum height=0.7cm, font=\small},
+        line/.style={draw, thick, ->, >=stealth}
     ]
-        % Main signal path
-        \node (in) at (0,0) {$u(k)$};
-        \node[block] (A0) at (2.5,0) {$\times A_0$};
-        \node[sum] (S) at (5,0) {$+$};
-        \node (out) at (7.5,0) {$y(k)$};
+        \node (input) at (0,0) {$U(k)$};
+        \node[block] (a0) at (2, 0) {$A_0$};
+        \node[sum] (s1) at (4, 0) {$+$};
+        \node (output) at (7, 0) {$Y(k)$};
 
-        % Input delay
-        \node[block] (Z1u) at (0,-2) {$z^{-1}$};
-        \node[block] (A1) at (2.5,-2) {$\times A_1$};
+        \node[delay] (z1u) at (2, -1.5) {$z^{-1}$};
+        \node[block] (a1) at (2, -3) {$-A_0$};
 
-        % Output delay (feedback)
-        \node[block] (Z1y) at (7.5,-2) {$z^{-1}$};
-        \node[block] (B1) at (5,-2) {$\times B_1$};
+        \node[delay] (z1y) at (5.5, -1.5) {$z^{-1}$};
+        \node[block] (b1) at (5.5, -3) {$B_1$};
+        \node[sum] (s2) at (4, -3) {$+$};
 
-        % Feedforward connections
-        \draw[->] (in) -- (A0);
-        \draw[->] (A0) -- (S);
-        \draw[->] (S) -- (out);
+        \draw[line] (input) -- (a0);
+        \draw[line] (a0) -- (s1);
+        \draw[line] (s1) -- node[above] {} (output);
 
-        % Input delay
-        \draw[->] (in) -- (Z1u);
-        \draw[->] (Z1u) -- (A1);
-        \draw[->] (A1) -- (S);
+        \draw[thick] (0.8, 0) -- (0.8, -1.5);
+        \draw[line] (0.8, -1.5) -- (z1u);
+        \draw[line] (z1u) -- (a1);
+        \draw[line] (a1) -- (s2);
+        \draw[line] (s2) -- (s1);
 
-        % Feedback delay
-        \draw[->] (out) -- (Z1y);
-        \draw[->] (Z1y) -- (B1);
-        \draw[->] (B1) -- (S);
+        \draw[thick] (6, 0) -- (6, -1.5);
+        \draw[line] (6, -1.5) -- (z1y);
+        \draw[line] (z1y) -- (b1);
+        \draw[line] (b1) -- (s2);
     \end{tikzpicture}
-    \caption{Diagrama de flujo de señal del filtro pasa altas (Forma Directa I).}
-    \label{fig:hp_signal_flow}
+    \caption{Diagrama de bloques del filtro pasa altas de primer orden (Forma Directa I).}
+    \label{fig:bloques_hp}
 \end{figure}
 
-\newpage
-% ============================================================
-\subsection{Resumen de resultados de ambos filtros}
-% ============================================================
+\textbf{Frecuencias de entradas en matlab:}
 
-En esta subsección se sintetizan los resultados finales obtenidos para cada filtro, de acuerdo con los cálculos y la implementación en el código.
+\begin{table}[H]
+    \centering
+    \caption{Frecuencias de prueba para el filtro pasa altas ($f_c = 480$ Hz)}
+    \begin{tabular}{|c|c|l|}
+        \hline
+        \rowcolor{subheadblue}\textbf{Frecuencia} & \textbf{Relación con $f_c$} & \textbf{Comportamiento esperado} \\
+        \hline
+        50 Hz & $f \ll f_c$ & Atenuación fuerte \\
+        \hline
+        200 Hz & $f < f_c$ & Atenuación significativa \\
+        \hline
+        480 Hz & $f = f_c$ & Atenuación de $-3$ dB (70.7\%) \\
+        \hline
+        1000 Hz & $f > f_c$ & Paso con mínima atenuación \\
+        \hline
+        2000 Hz & $f \gg f_c$ & Paso sin atenuación \\
+        \hline
+    \end{tabular}
+\end{table}
 
-\textbf{Filtro pasa bajas }
+% ==================================================================
+\subsection{Filtro Pasa Banda de Segundo Orden}
+% ==================================================================
+
+\textbf{Parámetros}
 
 \begin{itemize}
-    \item Frecuencia de corte: $f_c \approx 79.6$ Hz, con $f_s = 8000$ Hz.
-    \item Pre-distorsión: $\Omega_a = 0.03125$.
-    \item Coeficientes: $A_0 = A_1 = 0.0303$, $B_1 = 0.9394$.
-    \item Ecuación en diferencias: $y(k) = 0.0303\,u(k) + 0.0303\,u(k-1) + 0.9394\,y(k-1)$.
-    \item Verificación: $H(1)=1$ (ganancia unitaria en DC).
+    \item Frecuencia central: $f_o = 580$ Hz
+    \item Ancho de banda: $BW = 45$ Hz
+    \item Frecuencias de corte: $f_{c1} = f_o - BW/2 = 557.5$ Hz, \quad $f_{c2} = f_o + BW/2 = 602.5$ Hz
 \end{itemize}
 
-\textbf{Filtro pasa altas }
+Se aplica pre-warping a ambas frecuencias de corte:
 
-\begin{itemize}
-    \item Frecuencia de corte: $f_c \approx 39.6$ Hz, con $T_{HP} = 1\;\text{ms}$.
-    \item Pre-distorsión: $\Omega_a = 0.125$.
-    \item Coeficientes: $A_0 = 0.8889$, $A_1 = -0.8889$, $B_1 = 0.7778$.
-    \item Ecuación en diferencias: $y(k) = 0.8889\,u(k) - 0.8889\,u(k-1) + 0.7778\,y(k-1)$.
-    \item Verificación: $H(1)=0$ (bloqueo DC) y $H(-1)=1$ (ganancia unitaria en Nyquist).
-\end{itemize}
+\begin{align}
+    \Omega_1 &= 2F_s\,\tan\!\left(\frac{\pi f_{c1}}{F_s}\right) = 16000\,\tan\!\left(\frac{\pi \cdot 557.5}{8000}\right) = 16000\,\tan(0.21893) \\[4pt]
+    &= 16000 \times 0.22237 = 3557.9 \;\text{rad/s} \\[8pt]
+    \Omega_2 &= 2F_s\,\tan\!\left(\frac{\pi f_{c2}}{F_s}\right) = 16000\,\tan\!\left(\frac{\pi \cdot 602.5}{8000}\right) = 16000\,\tan(0.23658) \\[4pt]
+    &= 16000 \times 0.24203 = 3872.5 \;\text{rad/s}
+\end{align}
 
+\begin{align}
+    \Omega_0 &= \sqrt{\Omega_1 \cdot \Omega_2} = \sqrt{3557.9 \times 3872.5} = \sqrt{13\,779\,000} \approx 3712.0 \;\text{rad/s} \\[6pt]
+    \Omega_0^2 &\approx 13\,778\,944 \\[6pt]
+    BW_w &= \Omega_2 - \Omega_1 = 3872.5 - 3557.9 = 314.6 \;\text{rad/s}
+\end{align}
 
+\textbf{Función de Transferencia del Pasa Banda}
 
-% ============================================================
-\newpage
-\subsection{Implementación en MicroPython}
-% ============================================================
+El prototipo analógico Butterworth pasa banda de segundo orden:
 
-\subsubsection{Documentación del código}
+\begin{equation}
+    H(s) = \frac{BW_w \cdot s}{s^2 + BW_w \cdot s + \Omega_0^2}
+\end{equation}
 
-El programa comienza importando las bibliotecas necesarias para interactuar con el hardware de la Raspberry Pi Pico 2W. De la biblioteca \texttt{machine} se traen las clases \texttt{Pin}, \texttt{ADC} y \texttt{PWM}, que permiten configurar pines digitales, leer señales analógicas y generar ondas con modulación de ancho de pulso, respectivamente. También se importa el módulo \texttt{\_thread}, que es la herramienta que ofrece MicroPython para trabajar con los dos núcleos del procesador RP2350 de forma simultánea, y el módulo \texttt{time}, que se utiliza para medir tiempos y hacer pausas con precisión de microsegundos. Además se importan \texttt{sys} y \texttt{select}, necesarios para implementar la lectura del puerto serial de forma no bloqueante.
+Aplicando la transformación bilineal $s = K\,\frac{z-1}{z+1}$ con $K = 2F_s = 16000$:
 
-A continuación se definen los parámetros fundamentales del sistema. Para el pasa bajas se usa \texttt{FS\_LP = 8000}~Hz con \texttt{PERIOD\_US\_LP = 125}~$\mu$s. Para el pasa altas se definen sus propias constantes \texttt{FS\_HP} y \texttt{PERIOD\_US\_HP} con su temporización correspondiente. Estos valores se guardan en constantes para que sean fáciles de modificar si en algún momento se quisiera cambiar la tasa de muestreo de cada filtro. También se definen \texttt{PRINT\_SKIP\_LP = 2} y \texttt{PRINT\_SKIP\_HP = 1}, que indican cada cuántas muestras se envían datos al puerto serial para su visualización; esto es necesario porque imprimir todas las muestras desbordaría el buffer USB y provocaría que los comandos dejaran de responder.
+\begin{equation}
+    H(z) = \frac{BW_w \cdot K \cdot \frac{z-1}{z+1}}{\left(K\,\frac{z-1}{z+1}\right)^{\!2} + BW_w \cdot K \cdot \frac{z-1}{z+1} + \Omega_0^2}
+\end{equation}
 
-Después viene la configuración del hardware. El pin GP26 se configura como entrada analógica a través de la clase \texttt{ADC}, ya que es uno de los pines que tiene convertidor analógico-digital integrado en la Pico. El pin GP3 se configura como salida PWM para generar la onda cuadrada que sirve como señal de prueba; se le asigna una frecuencia inicial de 50~Hz y un ciclo de trabajo del 50\%, lo que produce una onda simétrica.
+Multiplicando numerador y denominador por $(z+1)^2$:
 
-Los coeficientes de los dos filtros se declaran como constantes globales. Para el filtro pasa bajas de primer orden, diseñado con $f_c \approx 79.6$~Hz, los coeficientes son $A_0 = A_1 = 0.0303$ y $B_1 = 0.9394$, obtenidos mediante la transformada bilineal como se mostró en la sección anterior. Para el filtro pasa altas con $f_c \approx 39.6$~Hz, los coeficientes son $A_0 = 0.8889$, $A_1 = -0.8889$ y $B_1 = 0.7778$, con $A_2 = 0$ y $B_2 = 0$. Estos valores se almacenan con los decimales necesarios para mantener una precisión adecuada en los cálculos de punto flotante.
+\begin{equation}
+    H(z) = \frac{BW_w \cdot K\,(z^2 - 1)}{K^2(z-1)^2 + BW_w \cdot K\,(z^2-1) + \Omega_0^2(z+1)^2}
+\end{equation}
 
-El estado compartido entre los dos núcleos se almacena en una lista mutable de Python llamada \texttt{st}, que contiene once elementos: dos banderas de control (si el filtro está corriendo y cuál filtro está activo), las variables de estado de ambos filtros (entradas y salidas anteriores), y tres valores para la comunicación con el Núcleo~0 (la última entrada leída, la última salida calculada, y una bandera que indica si hay datos nuevos listos para imprimir). Se eligió una lista mutable porque en el RP2350, el Núcleo~1 no puede acceder de manera confiable a las variables globales del módulo principal; al pasar la lista como argumento a la función del hilo, ambos núcleos pueden leer y escribir los mismos datos sin problema, ya que la lista se pasa por referencia. Para hacer el código más legible, se definen constantes con los nombres de cada índice de la lista.
+\subsubsection{Expansión del Denominador}
 
-La parte central del programa es la función \texttt{filter\_core}, que se ejecuta en el Núcleo~1 del procesador. Esta función recibe como argumentos todo lo que necesita para operar: la lista de estado compartido, el objeto del ADC, el módulo de tiempo, todos los coeficientes de ambos filtros, los periodos de muestreo y los saltos de impresión. De esta forma, la función no hace ninguna referencia a nombres globales del módulo, lo que evita el error de visibilidad que tiene el RP2350 con los hilos. Dentro de un ciclo infinito, mientras la bandera de ejecución esté activa, la función registra el tiempo de inicio, lee el valor del ADC y lo normaliza a $[0,1]$, y evalúa la ecuación en diferencias del filtro seleccionado. Cada cierto número de muestras (determinado por \texttt{PRINT\_SKIP\_LP} o \texttt{PRINT\_SKIP\_HP}, según el filtro), guarda los valores de entrada y salida en la lista compartida y activa la bandera de datos nuevos para que el Núcleo~0 los imprima. Al final de cada iteración, calcula cuánto tiempo tardó el procesamiento y espera el tiempo restante para completar exactamente el periodo configurado.
+\begin{align}
+    K^2(z-1)^2 &= K^2\,z^2 - 2K^2\,z + K^2 \\
+    BW_w \cdot K\,(z^2-1) &= BW_w \cdot K\,z^2 - BW_w \cdot K \\
+    \Omega_0^2(z+1)^2 &= \Omega_0^2\,z^2 + 2\Omega_0^2\,z + \Omega_0^2
+\end{align}
 
-La función \texttt{filter\_core} se lanza en el Núcleo~1 mediante la instrucción \texttt{\_thread.start\_new\_thread}, pasando como argumentos la lista de estado, el objeto del ADC, el módulo de tiempo, los coeficientes de ambos filtros, el periodo y el salto de impresión. De este modo, ambos núcleos del RP2350 trabajan de manera simultánea sin interferirse: el Núcleo~1 se dedica exclusivamente al cálculo del filtro, y nunca accede al puerto serial.
+Sumando término a término:
 
-El Núcleo~0 se encarga de toda la comunicación serial. Para poder recibir comandos y al mismo tiempo enviar los datos del filtro al Serial Plotter, se utiliza el mecanismo de \texttt{select.poll()}, que permite verificar si hay datos disponibles en la entrada estándar sin quedarse bloqueado esperando. El ciclo principal del Núcleo~0 hace tres cosas en cada iteración: primero revisa si llegó algún carácter por el puerto serial y, si es así, lo agrega a un buffer hasta recibir un salto de línea, momento en que procesa el comando completo; después revisa si la bandera de datos nuevos está activa en la lista compartida y, si lo está, imprime los valores de entrada y salida en el formato \texttt{entrada,salida} que espera el Serial Plotter; y por último hace una pausa breve de 200~microsegundos antes de repetir. Los comandos disponibles son: \texttt{START} activa el filtrado; \texttt{STOP} lo detiene, reinicia las variables de estado del filtro activo y vuelve a mostrar el menú; \texttt{LP} selecciona el filtro pasa bajas y reinicia sus variables; \texttt{HP} hace lo mismo para el filtro pasa altas; \texttt{FREQ} seguido de un número cambia la frecuencia de la onda cuadrada de prueba; y \texttt{STATUS} muestra en pantalla qué filtro está seleccionado, si está activo o detenido, y las frecuencias del sistema y de la onda de prueba.
+\begin{equation}
+    D(z) = \underbrace{(K^2 + BW_w K + \Omega_0^2)}_{\alpha}\,z^2 + \underbrace{(-2K^2 + 2\Omega_0^2)}_{\beta}\,z + \underbrace{(K^2 - BW_w K + \Omega_0^2)}_{\gamma}
+\end{equation}
 
-\subsubsection{Código fuente}
+Sustituyendo valores numéricos ($K = 16000$, $K^2 = 256\,000\,000$):
 
-\lstinputlisting[
-    language={[LAB]Python},
-    caption={Código MicroPython del sistema de filtros digitales IIR para Raspberry Pi Pico 2W.},
-    label={lst:filtros_code}
-]{code/filtros_iir.py}
+\begin{align}
+    \alpha &= 256\,000\,000 + 5\,033\,600 + 13\,778\,944 = 274\,812\,544 \\
+    \beta  &= -512\,000\,000 + 27\,557\,888 = -484\,442\,112 \\
+    \gamma &= 256\,000\,000 - 5\,033\,600 + 13\,778\,944 = 264\,745\,344
+\end{align}
 
-\subsubsection{Diagrama de conexión física}
+\textbf{Coeficientes del Filtro Discreto}
 
-Para probar el sistema, la señal de prueba generada por el pin GP3 (PWM) se conecta directamente al pin GP26 (ADC0) mediante un cable puente. De esta forma, la onda cuadrada producida por el propio microcontrolador entra al convertidor analógico-digital sin necesidad de componentes externos, lo que permite verificar el funcionamiento de los filtros digitales de manera sencilla.
+Dividiendo numerador y denominador entre $\alpha$:
+
+\begin{align}
+    A_0 &= \frac{BW_w \cdot K}{\alpha} = \frac{314.6 \times 16000}{274\,812\,544} = \frac{5\,033\,600}{274\,812\,544} \approx 0.01832 \\[6pt]
+    A_1 &= 0 \\[6pt]
+    A_2 &= -A_0 = -0.01832 \\[6pt]
+    B_1 &= -\frac{\beta}{\alpha} = -\frac{-484\,442\,112}{274\,812\,544} = \frac{484\,442\,112}{274\,812\,544} \approx 1.76283 \\[6pt]
+    B_2 &= -\frac{\gamma}{\alpha} = -\frac{264\,745\,344}{274\,812\,544} \approx -0.96337
+\end{align}
+
+\textbf{Verificación}
+
+En DC ($z = 1$):
+\begin{equation}
+    H(1) = \frac{A_0(1) + 0 + A_2(1)}{1 - B_1 - B_2} = \frac{0.01832 - 0.01832}{1 - 1.76283 + 0.96337} = \frac{0}{0.20054} = 0 \;\checkmark
+\end{equation}
+
+En Nyquist ($z = -1$):
+\begin{equation}
+    H(-1) = \frac{A_0 + A_2}{1 + B_1 - B_2} = \frac{0}{1 + 1.76283 + 0.96337} = 0 \;\checkmark
+\end{equation}
+
+El filtro pasa banda rechaza correctamente tanto las señales DC como las de frecuencia Nyquist.
+
+\subsubsection{Función de Transferencia Final}
+
+\begin{equation}
+    \boxed{H(z) = \frac{0.01832\,z^2 - 0.01832}{z^2 - 1.76283\,z + 0.96337} = \frac{0.01832(1 - z^{-2})}{1 - 1.76283\,z^{-1} + 0.96337\,z^{-2}}}
+    \label{eq:bp_Hz}
+\end{equation}
+
+\textbf{Diagrama de Bloques}
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[scale=1.0]
+    \begin{tikzpicture}[
+        block/.style={rectangle, draw, fill=green!10, minimum width=1.2cm, minimum height=0.7cm, font=\footnotesize},
+        sum/.style={circle, draw, fill=yellow!20, minimum size=0.55cm, font=\small},
+        delay/.style={rectangle, draw, fill=gray!15, minimum width=0.9cm, minimum height=0.6cm, font=\footnotesize},
+        line/.style={draw, thick, ->, >=stealth}
+    ]
+        \node (input) at (0,0) {$U(k)$};
+        \node[block] (a0) at (2, 0) {$A_0$};
+        \node[sum] (s1) at (3.8, 0) {$+$};
+        \node (output) at (7.5, 0) {$Y(k)$};
+
+        % Rama U(k-2)
+        \node[delay] (z1u) at (0.5, -1.5) {$z^{-1}$};
+        \node[delay] (z2u) at (0.5, -3) {$z^{-1}$};
+        \node[block] (a2) at (2, -3) {$A_2$};
+
+        % Ramas Y(k-1), Y(k-2)
+        \node[delay] (z1y) at (6, -1.5) {$z^{-1}$};
+        \node[block] (b1) at (6, -3) {$B_1$};
+        \node[delay] (z2y) at (6, -4.2) {$z^{-1}$};
+        \node[block] (b2) at (4.5, -4.2) {$B_2$};
+
+        \node[sum] (s2) at (3.8, -3) {$+$};
+
+        \draw[line] (input) -- (a0);
+        \draw[line] (a0) -- (s1);
+        \draw[line] (s1) -- (output);
+
+        \draw[thick] (0.5, 0) -- (z1u);
+        \draw[line] (z1u) -- (z2u);
+        \draw[line] (z2u) -- (a2);
+        \draw[line] (a2) -- (s2);
+        \draw[line] (s2) -- (s1);
+
+        \draw[thick] (6.8, 0) -- (6.8, -1.5);
+        \draw[line] (6.8, -1.5) -- (z1y);
+        \draw[line] (z1y) -- (b1);
+        \draw[line] (b1) -- (s2);
+        \draw[line] (z1y.south) -- (z2y);
+        \draw[line] (z2y) -- (b2);
+        \draw[line] (b2.west) -| (s2.south);
+
+        \node[font=\tiny, gray] at (0.5, -0.75) {$U(k{-}1)$};
+        \node[font=\tiny, gray] at (0.5, -2.25) {$U(k{-}2)$};
+    \end{tikzpicture}
+    \caption{Diagrama de bloques del filtro pasa banda de segundo orden (Forma Directa I). Nota: $A_1 = 0$, por lo que no hay rama para $U(k{-}1)$.}
+    \label{fig:bloques_bp}
+\end{figure}
+
+% ==================================================================
+\subsection{Coeficientes de todos los filtros;}
+% ==================================================================
+
+\begin{table}[H]
+    \centering
+    \caption{Coeficientes de los filtros IIR diseñados ($F_s = 8000$ Hz)}
+    \label{tab:coeficientes}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \rowcolor{headblue}\textcolor{white}{\textbf{Coeficiente}} & \textcolor{white}{\textbf{Pasa Bajas}} & \textcolor{white}{\textbf{Pasa Altas}} & \textcolor{white}{\textbf{Pasa Banda}} \\
+        \hline
+        $f_c$ o $f_o$ & 85 Hz & 480 Hz & 580 Hz \\
+        \hline
+        $BW$ & --- & --- & 45 Hz \\
+        \hline
+        $A_0$ & $0.03230$ & $0.83970$ & $0.01832$ \\
+        \hline
+        $A_1$ & $0.03230$ & $-0.83970$ & $0.0$ \\
+        \hline
+        $A_2$ & $0.0$ & $0.0$ & $-0.01832$ \\
+        \hline
+        $B_1$ & $0.93540$ & $0.67940$ & $1.76283$ \\
+        \hline
+        $B_2$ & $0.0$ & $0.0$ & $-0.96337$ \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Pasa Bajas} ($f_c = 85$ Hz): Primer orden, ganancia unitaria en DC, atenuación de $-3$~dB en $f_c$. Con $f_c$ baja, la señal de salida presenta una curva exponencial visible al filtrar ondas cuadradas. Probarlo con 50~Hz (paso con forma exponencial), 85~Hz ($-3$~dB) y 500~Hz (atenuación fuerte).
+    \item \textbf{Pasa Altas} ($f_c = 480$ Hz): Primer orden, rechazo total en DC, ganancia unitaria en Nyquist. Elimina componentes de baja frecuencia, dejando solo transitorios (flancos) de la onda cuadrada. Probarlo con 50~Hz (atenuación), 480~Hz ($-3$~dB) y 2000~Hz (paso).
+    \item \textbf{Pasa Banda} ($f_o = 580$ Hz, $BW = 45$ Hz): Segundo orden, selectivo en frecuencia. Extrae la componente a 580~Hz de la señal, produciendo una salida sinusoidal. Probarlo con 580~Hz (paso), 50~Hz (atenuación) y 2000~Hz (atenuación).
+\end{itemize}
+
+% ==================================================================
+\subsection{Diagrama de Conexión del Circuito}
+% ==================================================================
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.85, transform shape]
         \picoboard
 
-        % Cable puente de GP3 (P5) a GP26_A0 (P31)
-        \draw[blue, thick, rounded corners=8pt]
-            (P5) -- (-1.5, -2.25)
-            -- (-1.5, -5.5)
-            -- (5.5, -5.5)
-            -- (5.5, -4.5)
-            -- (P31);
+        % HC-05 Bluetooth Module
+        \node[draw, thick, fill=blue!10, minimum width=2.5cm, minimum height=2cm, align=center, font=\small\sffamily] (bt) at (-4, -1.35) {HC-05\\Bluetooth\\460800 baud};
 
-        % Etiquetas del cable
-        \node[left, font=\footnotesize\sffamily, blue] at (-1.5, -3.8) {Cable puente};
+        % Conexiones HC-05 a Pico
+        \draw[blue, thick, ->] (bt.east) ++(0, 0.4) -- (P1) node[midway, above, font=\tiny\sffamily] {TX $\to$ GP0 (RX)};
+        \draw[red!70!black, thick, <-] (bt.east) ++(0, -0.4) -- (P2) node[midway, below, font=\tiny\sffamily] {RX $\leftarrow$ GP1 (TX)};
 
-        % Anotaciones de los pines
-        \node[left, font=\scriptsize\sffamily, fill=white, inner sep=1pt] at (-0.8, -2.25) {GP3 (PWM)};
-        \node[right, font=\scriptsize\sffamily, fill=white, inner sep=1pt] at (4.8, -4.5) {GP26 (ADC0)};
+        % Cable Pin3 -> Pin26 (ADC) - Ruta limpia por abajo
+        \draw[green!60!black, ultra thick, dashed]
+            (P5) -- ++(-0.6, 0) -- ++(0, -8.5) -- ++(6.2, 0) -- ++(0, 6.25) -- (P31);
+
+        % Etiqueta del cable
+        \node[draw, fill=green!10, font=\tiny\sffamily, align=center, rounded corners] at (2, -11.2) {Cable: GP3 $\to$ GP26};
+
+        % GND connections
+        \draw[black, thick] (bt.south) |- ([yshift=-0.8cm]PGND) node[pos=0.75, above, font=\tiny\sffamily] {GND} -- (PGND);
+
+        % Etiquetas
+        \node[font=\scriptsize\sffamily, blue, align=center] at (-4, -3.5) {Hacia PC\\via Bluetooth};
+
+        % Onda cuadrada label
+        \node[font=\tiny\sffamily, orange, align=center] at (-2, -2.7) {Onda cuadrada\\(toggle manual)};
+
+        % ADC label
+        \node[draw, fill=purple!10, font=\tiny\sffamily, align=center, rounded corners] at (6.5, -3.8) {ADC\\Entrada\\analógica};
+        \draw[purple, thick, ->] (5.8, -4.0) -- (P31);
+
     \end{tikzpicture}
-    \caption{Conexión física: cable puente entre GP3 (salida PWM) y GP26 (entrada ADC) en la Raspberry Pi Pico 2W.}
-    \label{fig:conexion_pico}
+    \caption{Diagrama de conexión del circuito: Raspberry Pi Pico 2W con módulo HC-05 y lazo de retroalimentación.}
+    \label{fig:circuito}
 \end{figure}
+
+\textbf{Funcionamiento del circuito:}
+\begin{enumerate}
+    \item MATLAB envía los coeficientes del filtro $(A_0, A_1, A_2, B_1, B_2)$ y la frecuencia de la señal de prueba a través de Bluetooth.
+    \item La Pico configura la frecuencia de la onda cuadrada generada por toggle manual en el hilo del Core~2.
+    \item Al recibir el comando de captura (\texttt{0x52}), el Core~1 ejecuta la ecuación en diferencias a 8~kHz durante 500 muestras.
+    \item La onda cuadrada generada en el Pin~3 se conecta externamente al Pin~26 (ADC), sirviendo como señal de entrada.
+    \item Los vectores de entrada $U(k)$ y salida $Y(k)$ se envían de vuelta a MATLAB para su visualización.
+\end{enumerate}
+
+% ==================================================================
+\subsection{Protocolo de Comunicación UART}
+% ==================================================================
+
+La comunicación entre MATLAB y la Raspberry Pi Pico se realiza mediante UART a 460800 baudios a través del módulo HC-05. Se definen dos tipos de tramas:
+
+MATLAB envía una trama de 25 bytes con la siguiente estructura:
+
+\begin{table}[H]
+    \centering
+    \caption{Estructura de la trama de coeficientes}
+    \begin{tabular}{|c|c|c|l|}
+        \hline
+        \rowcolor{subheadblue}\textbf{Byte(s)} & \textbf{Campo} & \textbf{Formato} & \textbf{Descripción} \\
+        \hline
+        0 & Encabezado & \texttt{0x55} (``U'') & Identificador de trama \\
+        \hline
+        1--4 & $A_0$ & float32 LE & Coeficiente de $U(k)$ \\
+        \hline
+        5--8 & $A_1$ & float32 LE & Coeficiente de $U(k{-}1)$ \\
+        \hline
+        9--12 & $A_2$ & float32 LE & Coeficiente de $U(k{-}2)$ \\
+        \hline
+        13--16 & $B_1$ & float32 LE & Coeficiente de $Y(k{-}1)$ \\
+        \hline
+        17--20 & $B_2$ & float32 LE & Coeficiente de $Y(k{-}2)$ \\
+        \hline
+        21--24 & FREQ & float32 LE & Frecuencia de prueba (Hz) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+MATLAB envía el byte \texttt{0x52} para iniciar la captura de datos.
+
+% ==================================================================
+\subsection{Explicación del Código:}
+% ==================================================================
+
+
+\begin{lstlisting}[language={[LAB]Python}, caption={Código MicroPython del simulador de filtros IIR}, label={lst:main_code}]
+import machine
+machine.freq(300_000_000)  # Overclock a 300 MHz
+
+from machine import Pin, ADC, UART
+from time import sleep_ms, sleep_us, ticks_us, ticks_diff, ticks_add
+import _thread
+import struct
+
+ADC0 = ADC(Pin(26))
+Pin3 = Pin(3, Pin.OUT)
+UART0 = UART(0, baudrate=460800, tx=Pin(0), rx=Pin(1))
+
+conversion_factor = 3.3 / 65535
+MUESTRAS = 1000
+ENTRADAS = [0]*MUESTRAS
+SALIDAS  = [0]*MUESTRAS
+En_Bytes = bytearray(4000)
+
+CTE_A0, CTE_A1, CTE_A2 = 0.0303, 0.0303, 0.0
+CTE_B1, CTE_B2 = 0.9394, 0.0
+FREQ = 50
+PERIODO = 1/FREQ
+HALF = int((PERIODO*1000000)/2)
+
+def Onda_Cuadrada():
+    while True:
+        Pin3.on()
+        sleep_us(HALF)
+        Pin3.off()
+        sleep_us(HALF)
+
+@micropython.native
+def capturar(a0, a1, a2, b1, b2):
+    uk = uk1 = uk2 = 0.0
+    yk = yk1 = yk2 = 0.0
+    adc = ADC0.read_u16
+    cf  = conversion_factor
+    ent = ENTRADAS
+    sal = SALIDAS
+    _tu = ticks_us
+    _td = ticks_diff
+    _ta = ticks_add
+    _su = sleep_us
+
+    t_next = _tu()
+    for i in range(500):
+        yk = a0*uk + a1*uk1 + a2*uk2 + b1*yk1 + b2*yk2
+        uk2 = uk1
+        uk1 = uk
+        yk2 = yk1
+        yk1 = yk
+        uk = adc() * cf
+        ent[i] = uk
+        sal[i] = yk
+        t_next = _ta(t_next, 125)
+        dt = _td(t_next, _tu())
+        if dt > 0:
+            _su(dt)
+
+_thread.start_new_thread(Onda_Cuadrada, ())
+
+while True:
+    if UART0.any() > 0:
+        sleep_ms(100)
+        LLAVE = UART0.read()
+        if LLAVE and LLAVE[0] == 0x55:
+            # Decodificar 6 flotantes IEEE 754 LE
+            CTE_A0 = struct.unpack('<f', LLAVE[1:5])[0]
+            CTE_A1 = struct.unpack('<f', LLAVE[5:9])[0]
+            CTE_A2 = struct.unpack('<f', LLAVE[9:13])[0]
+            CTE_B1 = struct.unpack('<f', LLAVE[13:17])[0]
+            CTE_B2 = struct.unpack('<f', LLAVE[17:21])[0]
+            FREQ   = struct.unpack('<f', LLAVE[21:25])[0]
+            HALF   = int((1/FREQ * 1000000) / 2)
+        if LLAVE and 0x52 in LLAVE:
+            capturar(CTE_A0, CTE_A1, CTE_A2, CTE_B1, CTE_B2)
+            for i in range(500):
+                struct.pack_into('f', En_Bytes, i*8, ENTRADAS[i])
+                struct.pack_into('f', En_Bytes, i*8+4, SALIDAS[i])
+            for j in range(0, 4000, 50):
+                UART0.write(En_Bytes[j:j+50])
+                sleep_ms(60)
+\end{lstlisting}
+

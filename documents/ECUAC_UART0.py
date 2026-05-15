@@ -1,380 +1,108 @@
-
-#######################################################################
-#######################################################################
-####                                                               ####
-####          UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO              ####
-####                  FACULTAD DE INGENIERÍA                       ####
-####            DEPARTAMENTO DE CONTROL Y ROBÓTICA                 ####
-####                                                               ####
-#######################################################################
-#######################################################################
-####                                                               ####
-####       M. EN I. JOSÉ ANTONIO DE JESÚS ARREDONDO GARZA          ####
-####                 EMAIL: jarredon@unam.mx                       ####
-####                          MAYO 2023                            ####
-####                                                               ####
-#######################################################################
-#######################################################################
-
-from machine import Pin, Timer               # Importa librería de Pines.
-from time import sleep, sleep_ms, sleep_us   # Importa librerías de retardos.
-from machine import ADC,UART                 # Importa librerías del A/D y la UART.
-import       _thread                         # Librería para poder utilizar
-                                             # los 2 nucleos.
-
-#OXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOX#
-# Convertir float a Hexadecimal  #
-#OXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOX#
-
+from machine import Pin, ADC, UART, PWM
+from time import sleep_ms, sleep_us, ticks_us, ticks_diff
+import _thread
 import struct
 
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
-# Hacer que la CPU trabaje a 240 Mhz #
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX#
+ADC0 = ADC(Pin(26))
+UART0 = UART(0, baudrate=460800, tx=Pin(0), rx=Pin(1))
 
-machine.freq(270000000)
+Pin3 = PWM(Pin(3))
+Pin3.freq(50)
+Pin3.duty_u16(32768)
 
+conversion_factor = 3.3 / 65535
+MUESTRAS = 1000
+ENTRADAS = [0.0] * MUESTRAS
+SALIDAS = [0.0] * MUESTRAS
 
-########################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-########################################################################                                        
-####                                                                ####                                        
-####          CONFIGURA EL CANAL ADC0 DEL CONVERTIDOR A/D.          ####
-####                                                                ####
-########################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-########################################################################
+CTE_A0 = 0.0303
+CTE_A1 = 0.0303
+CTE_A2 = 0.0
+CTE_B1 = 0.9394
+CTE_B2 = 0.0
+FREQ = 50.0
+nueva_freq = False
 
-ADC0 = ADC(Pin(26))                 # Define el objeto ADC (GPI26)
-                                    # canal 0.
-P25  = Pin(25, Pin.OUT)             # Pin nativo de la tarjeta
-                                    # como testigo.
-Pin3  = Pin(3,  Pin.OUT)            # Pin de acción paralela (que generará
-                                    # la onda cuadrada).
-
-
-#######################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-#######################################################################################
-####                                                                               ####                           
-####    CONFIGURA LA UART0 @ 460800 BAUDS, 8 BITS, 1 START, 1 STOP, ASOCIADOS A    ####
-####    LOS PINES: GPIO0 = Tx y GPIO1 = Rx                                         ####
-####                                                                               ####
-#######################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-#######################################################################################
-                           
-UART0 = UART(0, baudrate = 460800, tx = Pin(0), rx = Pin(1))   # Para un HC05 460800 bauds
-
-
-
-############################################################################
-####OXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOx####
-############################################################################
-####                                                                    ####
-####          VARIABLES DEL PROGRAMA PRINCIPAL EN MICROPYTHON           ####
-####                                                                    ####
-############################################################################
-####OXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOXOx####
-############################################################################
-
-
-COUNTER = 0                         # Contador de muestras.
-conversion_factor = 3.3 / (65535)   # Factor de conversión para
-                                    # que el A/D esté entre
-                                    # valores de 0 a 3.3 Volts.
-MUESTRAS = 1000                     # Número de muestras.
-ENTRADAS = [0]*MUESTRAS             # Variable que contendrá la
-                                    # lectura del A/D (CANAL 0).
-                                    # NOTA: esta variable contendrá
-                                    #       el npumero de muestras
-                                    #       (que en este caso serán
-                                    #        500).
-SALIDAS  = [0]*MUESTRAS             # Variable que contendrá las
-                                    # salidas de Vo(k)´s.
-                                    # NOTA: esta variable contendrá
-                                    #       el npumero de muestras
-                                    #       (que en este caso serán
-                                    #        500).
-En_Bytes = bytearray(8000)          # Declara la variable que
-                                    # contendrá el número de
-                                    # muestras.
-                                    # NOTA: un número en notación
-                                    #       de punto flotante está
-                                    #       compuesto de 4 bytes
-                                    #       (32 bits).
-                                    
-To_CTE_A0 = bytearray(4)            # Variable receptora en ENDIAN de A0
-To_CTE_A1 = bytearray(4)            # Variable receptora en ENDIAN de A1
-To_CTE_A2 = bytearray(4)            # Variable receptora en ENDIAN de A2
-To_CTE_B1 = bytearray(4)            # Variable receptora en ENDIAN de B1
-To_CTE_B2 = bytearray(4)            # Variable receptora en ENDIAN de B2
-To_FREQ   = bytearray(4)            # Variable receptora en ENDIAN de
-                                    # la frecuencia a generar.
-
-
-
-##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##
-##            Coeficientes de la Función de Transferencia               ##
-## H(z) = (0.007792936291)*[Z^2+0Z-1]/[Z^2-1.88734819717Z+0.9844141274] ##
-##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##
-
-CTE_A0  = +0.0303
-CTE_A1  = +0.0303
-CTE_A2  = +0.0
-CTE_B1  = +0.9394
-CTE_B2  = +0.0
-FREQ    = 50                   # Frecuencia default es 50 HZ.
-PERIODO = (1/FREQ)
-HALF    = 10000
-
-##XXXXXXXXXXXXXXXXXXXXXXXXXX##
-## Condiciones Iniciales de ##
-## las Entradas y Salidas.  ##
-##XXXXXXXXXXXXXXXXXXXXXXXXXX##
-UK     = 0.0           # u(k1)
-UK1    = 0.0           # u(k-1)
-UK2    = 0.0           # u(k-2)
-YK     = 0.0           # y(k)
-YK1    = 0.0           # y(k-1)
-YK2    = 0.0           # y(k-2)
-Read   = 0.0
-
-
-
-############################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-############################################################################################
-####                                                                                    ####
-####   DEFINE LA RUTINA PARA GENERAR UNA ONDA CON CUADRADA EN EL SEGUNDO NÚCLEO DE LA   ####
-####   LA RASPBERRY PI PICO.                                                            ####
-####   NOTA: en este caso la frecuencia esta dada como f = (1/20mSeg) = 50 Hz           ####                             ####
-####                                                                                    ####
-############################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-############################################################################################
-
-def Onda_Cuadrada():
+def hilo_generador():
+    global nueva_freq
+    freq_actual = 50
     while True:
-        Pin3.on()                             # Pon en "1" al Pin GPIO3 de laa RP2.
-        sleep_us(HALF)                        # Retardo de 0.01 Seg.
-        Pin3.off()                            # Pon en "0" al Pin GPIO3 de la RP2.
-        sleep_us(HALF)                         # Retardo de 0.01 Seg.
+        if nueva_freq:
+            f = FREQ
+            if f >= 1:
+                Pin3.freq(int(f))
+                Pin3.duty_u16(32768)
+                freq_actual = f
+            nueva_freq = False
+        sleep_ms(10)
 
+_thread.start_new_thread(hilo_generador, ())
 
-
-##########################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-##########################################################################################
-####                                                                                  ####
-####    RUTINA PRINCIPAL QUE ES LA RESPONSABLE DE INICIAR EL "THREAD" EN 2DO PLANO    ####
-####    PARA GENERAR LA ONDA CUADRADA Y LA IMPLEMENTACIÓN EN 1ER PLANO DE LA          ####
-####    ECUACIÓN EN DIFERENCIAS.                                                      ####
-####                                                                                  ####
-####    NOTA: EL 1ER PLANO DE ESTA RUTINA IMPLEMENTA A LA ECUACIÓN EN DIFERENCIAS     ####
-####          CON UNA FRECUENCIA DE MUESTREO DE 8 KHZ.                                ####
-####                                                                                  ####
-##########################################################################################
-####XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX####
-##########################################################################################
-
-_thread.start_new_thread(Onda_Cuadrada,())  # Inicia el "thread" de la onda cuadrada.
-
-
-##-------------------------------------##
-## Aquí inicia la implementación de la ##
-## Ecuación en Diferencias.            ##
-##-------------------------------------##
 while True:
-    P25.off()                               # Apaga el Led testigo.
-    
-    #****************************#
-    # ¿Hay algún byte pendiente? #
-    #****************************#
     if UART0.any() > 0:
-#        LLAVE = UART0.read(1)               # Lee el caracter recibido o caracteres
-                                            # recibidos.
-        LLAVE = UART0.read()                                    
-        
-        #x x x x x x x x x x x x x x x x x x x x x x x x #
-        #  Si se recibió una "U" (o sea un 0x55 => 85),  #
-        #  carga los nuevos coeficientes.                #
-        #x x x x x x x x x x x x x x x x x x x x x x x x #
-        
-        if LLAVE[0] == 0x55:
-            
+        sleep_ms(100)
+        LLAVE = UART0.read()
 
-            ###############################################################################
-            ##                                                                           ##
-            ##       ADQUISICIÓN DE LOS NUEVOS COEFICIENTES CON LOS QUE TRABAJARÁ        ##
-            ##       LA IMPLEMENTACIÓN ITERATIVA DE LA ECUACIÓN EN DIFERENCIAS.          ##
-            ##                                                                           ##
-            ###############################################################################
-            
-            #******************************#
-            # Adquisición del ENDIAN de A0 #
-            #******************************#
-            To_CTE_A0[0] = LLAVE[1]
-            To_CTE_A0[1] = LLAVE[2]
-            To_CTE_A0[2] = LLAVE[3]
-            To_CTE_A0[3] = LLAVE[4]            
-                
-            #******************************#
-            # Adquisición del ENDIAN de A1 #
-            #******************************#
-            To_CTE_A1[0] = LLAVE[5]
-            To_CTE_A1[1] = LLAVE[6]
-            To_CTE_A1[2] = LLAVE[7]
-            To_CTE_A1[3] = LLAVE[8] 
-                
-            #******************************#
-            # Adquisición del ENDIAN de A2 #
-            #******************************#
-            To_CTE_A2[0] = LLAVE[9]
-            To_CTE_A2[1] = LLAVE[10]
-            To_CTE_A2[2] = LLAVE[11]
-            To_CTE_A2[3] = LLAVE[12] 
-                
-            #******************************#
-            # Adquisición del ENDIAN de B1 #
-            #******************************#
-            To_CTE_B1[0] = LLAVE[13]
-            To_CTE_B1[1] = LLAVE[14]
-            To_CTE_B1[2] = LLAVE[15]
-            To_CTE_B1[3] = LLAVE[16] 
-                
-            #******************************#
-            # Adquisición del ENDIAN de B2 #
-            #******************************#
-            To_CTE_B2[0] = LLAVE[17]
-            To_CTE_B2[1] = LLAVE[18]
-            To_CTE_B2[2] = LLAVE[19]
-            To_CTE_B2[3] = LLAVE[20]
-            
-            #****************************************#
-            # Adquisición de la Frecuencia a Generar #
-            #****************************************#
-            To_FREQ[0] = LLAVE[21]
-            To_FREQ[1] = LLAVE[22]
-            To_FREQ[2] = LLAVE[23]
-            To_FREQ[3] = LLAVE[24]                
-                
-            #######################################################################
-            ##                                                                   ##
-            ##     CONVERSIONES DE LAS CONSTANTES DE "ENDIAN" A "float" REAL     ##
-            ##                                                                   ##
-            #######################################################################
-            
-            CTE = struct.unpack('<f', bytes(To_CTE_A0))
-            CTE_A0 = CTE[0]
-            print("A0 = ", CTE_A0)
-            CTE = struct.unpack('<f', bytes(To_CTE_A1))
-            CTE_A1 = CTE[0]
-            print("A1 = ", CTE_A1)
-            CTE = struct.unpack('<f', bytes(To_CTE_A2))
-            CTE_A2 = CTE[0]
-            print("A2 = ", CTE_A2)
-            CTE = struct.unpack('<f', bytes(To_CTE_B1))
-            CTE_B1 = CTE[0]
-            print("B1 = ", CTE_B1)
-            CTE = struct.unpack('<f', bytes(To_CTE_B2))
-            CTE_B2 = CTE[0]
-            print("B2 = ", CTE_B2)
-            
-            ##############################################################
-            ##   OBTENCIÓN DEL PERIODO DE LA SEÑAL PARA LA GENERACIÓN   ##
-            ##   DE LA ONDA CUADRADA.                                   ##
-            ##############################################################
-            
-            CTE     = struct.unpack('<f', bytes(To_FREQ))  # Convierte Frecuencia de
-                                                           # ENDIAN a float.
-            FREQ    = CTE[0]                               # Separa Frecuencia.
-            PERIODO = (1/FREQ)                             # Calcula Periodo.
-            HALF    = int((PERIODO*1000000)/2)             # Convierte el periodo en
-                                                           # unidades de microsegundos
-                                                           # divídelo entre 2 y
-                                                           # conviértelo a enteros.
+        if LLAVE is None:
+            continue
 
-            
-            
+        if len(LLAVE) >= 25 and LLAVE[0] == 0x55:
+            CTE_A0 = struct.unpack('<f', LLAVE[1:5])[0]
+            CTE_A1 = struct.unpack('<f', LLAVE[5:9])[0]
+            CTE_A2 = struct.unpack('<f', LLAVE[9:13])[0]
+            CTE_B1 = struct.unpack('<f', LLAVE[13:17])[0]
+            CTE_B2 = struct.unpack('<f', LLAVE[17:21])[0]
+            FREQ = struct.unpack('<f', LLAVE[21:25])[0]
+            nueva_freq = True
 
+            print("Coeficientes recibidos:")
+            print("  A0 = {}".format(CTE_A0))
+            print("  A1 = {}".format(CTE_A1))
+            print("  A2 = {}".format(CTE_A2))
+            print("  B1 = {}".format(CTE_B1))
+            print("  B2 = {}".format(CTE_B2))
+            print("  FREQ = {} Hz".format(FREQ))
 
+        if 0x52 in LLAVE:
+            a0 = CTE_A0
+            a1 = CTE_A1
+            a2 = CTE_A2
+            b1 = CTE_B1
+            b2 = CTE_B2
 
-        ###############################################################################
-        ##   OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO    ##
-        ###############################################################################
-        ##                                                                           ##
-        ##    Captura 500 muestras a una tasa de muestreo Fs = 8Khz provenientes     ##
-        ##    de la iteraciones sucesivas de Vo(k).                                  ##
-        ##                                                                           ##
-        ###############################################################################
-        ##   OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO  OJO    ##
-        ###############################################################################
-            
-            
-        #x x x x x x x x x x x x x x x x x x x x x #
-        #  Si se recibió una "R" (o sea un 0x52),  #
-        #  ejecuta el programa de la H(z)..        #
-        #x x x x x x x x x x x x x x x x x x x x x #
-            
-        if LLAVE[0] == 0x52:
-            P25.on()                        # Led Testigo de Actividad. 
-                                      
-            for i in range(0,500):
-                
-                #* * * * * * * * * * * * * * * * * * * * #
-                #  Armado de la ecuación en diferencias  #
-                #* * * * * * * * * * * * * * * * * * * * #
-                
-                YK = CTE_A0*UK+CTE_A1*UK1+CTE_A2*UK2+CTE_B1*YK1+CTE_B2*YK2
-                
-                #x x x x x x x x x x x x x x x x x x x x x x#
-                #  Actualiza I/O para la próxima iteración  #
-                #x x x x x x x x x x x x x x x x x x x x x x#
-                
-                UK2 = UK1                                    # U(k-1) ----> U(k-2)           
-                UK1 = UK                                     # U(k)   ----> U(k-1)
-                YK2 = YK1                                    # Y(k-1) ----> U(k-2)
-                YK1 = YK                                     # Y(k)   ----> Y(k-1)
-                
-                Read = ADC0.read_u16() * conversion_factor   # Toma lectura del canal 0
-                                                             # del ADC en volts reales.
-                UK = Read                                    # Asigna el nuevo valor U(k).
-                ENTRADAS[i] = UK                             # Compila las entradas.
-                SALIDAS[i]  = YK                             # Compila las salidas.
-                sleep_us(66)                                 # Retardo de 125 uSeg.
-                                                             # OJO  OJO  OJO  OJO  OJO
-                
-                
-            P25.off()                                        # Apaga Led Testigo
-                
+            uk = 0.0
+            uk1 = 0.0
+            uk2 = 0.0
+            yk = 0.0
+            yk1 = 0.0
+            yk2 = 0.0
 
-            ##* * * * * * * * * * * * * * * * * * * * * * *##
-            ##  Compilación Inicial de Entradas y Salidas  ##
-            ##* * * * * * * * * * * * * * * * * * * * * * *##
-            
-            En_Bytes  = bytearray(struct.pack("f",ENTRADAS[0])) 
-            En_Bytes  = En_Bytes + bytearray(struct.pack("f",SALIDAS[0]))
-            
-            for k in range(1,500):
-                
-                #x x x x x x x x x x x x x x x x x x x#
-                #  Agregado de muestras subsecuentes  #
-                #x x x x x x x x x x x x x x x x x x x#
-                
-                En_Bytes = En_Bytes + bytearray(struct.pack("f", ENTRADAS[k]))
-                En_Bytes = En_Bytes + bytearray(struct.pack("f", SALIDAS[k]))
-                
-            ##* * * * * * * * * * * * * * * * * * * * * * * * * * * ##
-            ##  Transmisión de las Entradas y Salidas por la UART0  ##
-            ##* * * * * * * * * * * * * * * * * * * * * * * * * * * ##
-                
-            UART0.write(En_Bytes)
+            for i in range(500):
+                t_inicio = ticks_us()
+
+                yk = a0 * uk + a1 * uk1 + a2 * uk2 + b1 * yk1 + b2 * yk2
+
+                uk2 = uk1
+                uk1 = uk
+                yk2 = yk1
+                yk1 = yk
+
+                uk = ADC0.read_u16() * conversion_factor
+                ENTRADAS[i] = uk
+                SALIDAS[i] = yk
+
+                while ticks_diff(ticks_us(), t_inicio) < 125:
+                    pass
+
+            En_Bytes = bytearray(struct.pack('f', ENTRADAS[0]))
+            En_Bytes += bytearray(struct.pack('f', SALIDAS[0]))
+            for k in range(1, 500):
+                En_Bytes += bytearray(struct.pack('f', ENTRADAS[k]))
+                En_Bytes += bytearray(struct.pack('f', SALIDAS[k]))
+
+            for j in range(0, len(En_Bytes), 50):
+                UART0.write(En_Bytes[j:j + 50])
+                sleep_ms(60)
+
             En_Bytes = bytearray()
-            
-            ##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##
-            ## NOTA MUY IMPORTANTE: Si no se hacía este intercalado de entradas/salidas, ##
-            ## se observó que se presentaba un corrimiento en frecuencia indeseable al   ##
-            ## desplegar las señales en el paquete MATLAB.                               ##
-            ##XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX##
 
