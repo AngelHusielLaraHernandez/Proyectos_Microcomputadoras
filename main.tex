@@ -252,6 +252,13 @@
 
         \item \textbf{Lara Hernandez Angel Husiel:}
 
+        El diseño de los filtros mediante la transformada bilineal con pre-distorsión de frecuencias demostró ser un método sólido para trasladar el comportamiento analógico al dominio discreto sin que los coeficientes perdieran precisión. Calcular cada término a mano fue lo que permitió entender de dónde viene realmente cada valor que se carga al microcontrolador, algo que difícilmente se aprecia cuando todo lo resuelve una función directa de MATLAB. La implementación en la Raspberry Pi Pico 2W añadió una capa adicional de complejidad al tener que garantizar un periodo de muestreo estable de 125~$\mu$s, distribuir tareas entre los dos núcleos del procesador y diseñar un protocolo de comunicación Bluetooth que no saturara el canal al momento de transmitir los datos capturados.
+
+        La comunicación entre el módulo HC-05 y MATLAB operando a 460{,}800 baudios resultó ser un factor determinante en la estabilidad del sistema. Esa velocidad de transmisión tuvo que equilibrarse con las pausas de 60~ms entre bloques de datos para evitar que el buffer del módulo se desbordara, lo que de no haberse considerado habría provocado pérdida de muestras y resultados incoherentes en las gráficas. El hecho de que el canal inalámbrico pudiera mantenerse estable durante las capturas, actualizando coeficientes y frecuencia en tiempo real sin interrumpir el procesamiento, confirmó que el diseño del protocolo de comunicación fue adecuado para las exigencias del sistema.
+        
+        Es por esto, que ya en matlab, tenemos el primer filtro, que en el pasa bajas produjo una salida que sigue lentamente a la onda cuadrada con curvas exponenciales cuya velocidad depende directamente de qué tan cerca está la frecuencia de prueba de la frecuencia de corte, mientras que el pasa altas reaccionó únicamente a las transiciones, generando picos que decaen hacia cero entre un flanco y otro. En el dominio de la frecuencia esto se confirmó con espectros que mostraron con claridad qué armónicos de la señal cuadrada sobrevivían al filtro y cuáles quedaban eliminados. La correspondencia entre lo que se veía en el tiempo y lo que aparecía en el espectro fue la verificación más directa de que el sistema funcionó correctamente de extremo a extremo.
+
+
         \item \textbf{Lugo Manzano Rodrigo:}
         
 
