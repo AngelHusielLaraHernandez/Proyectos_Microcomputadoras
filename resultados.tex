@@ -100,4 +100,28 @@ En la última prueba a $200\text{ Hz}$, aunque nos acercamos un poco más a la f
 
 \subsection{Filtro Pasa Banda ($f_o = 580$ Hz, $BW = 45$ Hz)}
 
+Para la implementación del filtro pasa banda, se enviaron al sistema los coeficientes calculados para obtener una frecuencia central de $580\text{ Hz}$ con un ancho de banda de $45\text{ Hz}$, estos coeficientes fueron $A_0 = 0.01832$, $A_1 = 0.0$, $A_2 = -0.01832 $, $B_1 = 1.76283 $ $B_2 = -0.96337$ y de igual forma que en los casos anteriores la comunicación con el módulo HC-05 fue satisfactoria, permitiendo la carga de los parámetros y la sintonización del filtro en tiempo real, según se verifica en la imagen de abajo donde se muestra la consola.
 
+\begin{figure}[H]
+    \centering\includegraphics[width=1\textwidth]{img/filtropasobandas/PasaBanda_Consola.png}
+    \caption{Consola de MATLAB mostrando la carga de los coeficientes para el filtro pasa banda y la recepción de las distintas frecuencias de prueba.}\label{fig:pbanda_consola}\end{figure}
+    
+Dado que la frecuencia central de diseño de $580\text{ Hz}$ está fuera del rango de las frecuencias de prueba utilizadas anteriormente, por lo tanto el filtro se comporta de manera selectiva frente a la entrada. A continuación, analizamos el comportamiento del filtro ante diferentes señales.
+
+\subsubsection{Prueba con $f = 50$ Hz ($f < f_o$)}
+
+Al aplicar una frecuencia de $50\text{ Hz}$, la cual se encuentra significativamente por debajo de la frecuencia de corte inferior de la banda de paso, observamos que el filtro atenúa drásticamente la señal. Como se aprecia en la figura, la salida $Y(k)$ presenta una amplitud mínima, confirmando que las componentes de baja frecuencia son bloqueadas eficazmente por la sección pasa altas del filtro, dejando pasar únicamente una mínima fracción de la señal original.
+
+\begin{figure}[H]
+    \centering\includegraphics[width=1\textwidth]{img/filtropasobandas/PasaBanda_Res1.png}
+    \caption{Respuesta del filtro pasa banda a 50 Hz. Se observa una fuerte atenuación, ya que la frecuencia de entrada está muy alejada de la banda de paso.}\label{fig:pbanda_50hz}
+\end{figure}
+    
+\subsubsection{Prueba con $f = 100$ Hz ($f \approx f_o$)}
+
+Al incrementar la frecuencia a $100\text{ Hz}$, aunque todavía nos encontramos lejos de la frecuencia central de diseño, el filtro comienza a mostrar una respuesta ligeramente menos atenuada que en la prueba anterior. A pesar de estar en la zona de transición, la salida $Y(k)$ nos muestra la selectividad del sistema, permitiendo el paso de una mayor amplitud de la señal de entrada a medida que nos acercamos a la banda de paso.
+
+\begin{figure}[H]
+    \centering\includegraphics[width=1\textwidth]{img/filtropasobandas/PasaBanda_Res2.png}
+    \caption{Respuesta del filtro pasa banda a 100 Hz. Se observa una atenuación menor en comparación a la prueba de 50 Hz al acercarse progresivamente a la frecuencia central.}\label{fig:pbanda_100hz}
+\end{figure}
