@@ -237,6 +237,18 @@
         \item \textbf{Flores Colin Victor Jaziel:}
 
         \item \textbf{García Cortés Adolfo de Jesús:}
+        
+        En conclusión, gracias al desarrollo de la práctica se logró implementar filtros digitales IIR Butterworth de manera funcional utilizando la Raspberry Pi Pico 2W. Al probar los códigos, se logro comprobar que el comportamiento real de los filtros coincidió con lo esperado teóricamente, obteniendo respuestas correctas para los filtros pasa bajas, pasa altas y pasa banda.
+
+        La transformación bilineal y la técnica de \textit{pre-warping} ayudaron a mantener correctamente las frecuencias de corte definidas en el diseño del filtro. Gracias a esto, el filtro pasa bajas suavizó la señal, el pasa altas detectó cambios rápidos y el pasa banda dejó pasar únicamente un rango específico de frecuencias.
+
+        El uso de los dos núcleos de la Raspberry Pi Pico 2W permitió separar tareas, de manera que un núcleo generaba la señal de prueba mientras el otro realizaba el filtrado y el envío de datos, evitando problemas de ejecución.
+
+        Además, se logró mantener una frecuencia de muestreo estable de 8\,kHz usando un control preciso del tiempo con \texttt{ticks\_us}, lo que permitió que el filtro trabajara de manera continua y uniforme.
+
+        Por otro lado, la comunicación con el módulo Bluetooth HC-05 funcionó correctamente gracias al envío de datos en pequeños bloques, evitando pérdidas de información durante la transmisión.
+
+        En general, esta práctica permitió aplicar conocimientos de procesamiento digital de señales, programación en MicroPython, comunicación serial y programación multinúcleo, demostrando cómo los filtros digitales pueden implementarse de manera práctica y eficiente.
 
         \item \textbf{Lara Hernandez Angel Husiel:}
 
