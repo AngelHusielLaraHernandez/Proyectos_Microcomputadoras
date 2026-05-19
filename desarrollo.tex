@@ -642,3 +642,208 @@ while True:
                 sleep_ms(60)
 \end{lstlisting}
 
+\subsubsection{Configuración del Hardware}
+
+\begin{lstlisting}[language=Python, caption={Configuración de la frecuencia del reloj}]
+import machine
+machine.freq(300_000_000)  # Overclock a 300 MHz
+\end{lstlisting}
+
+Se incrementa la frecuencia del procesador de 125 MHz (valor por defecto) a 300 MHz para mejorar la velocidad y precisión de los cálculos y del control de tiempo en la función \texttt{capturar()} a 8 kHz.
+
+\begin{lstlisting}[language=Python, caption={Limpieza de PWM residual}]
+# Limpiar cualquier PWM residual en Pin 3
+try:
+    from machine import PWM
+    _p = PWM(Pin(3))
+    _p.deinit()
+except:
+    pass
+\end{lstlisting}
+
+Limpia cualquier señal PWM que pudiera haber quedado configurada en el Pin 3 de ejecuciones anteriores. Esto evita conflictos porque el mismo pin se usará como salida digital GPIO.
+
+\begin{lstlisting}[language=Python, caption={Inicialización de periféricos y comunicación}]
+ADC0 = ADC(Pin(26))       # Entrada analógica en GP26
+Pin3 = Pin(3, Pin.OUT)     # Salida digital para la onda cuadrada
+UART0 = UART(0, baudrate=460800, tx=Pin(0), rx=Pin(1))  # Comunicación Bluetooth
+\end{lstlisting}
+
+\begin{itemize}
+    \item \textbf{\texttt{ADC0}:} Convierte la señal analógica de entrada (proveniente del Pin 3 conectado externamente al Pin 26).
+    \item \textbf{\texttt{Pin3}:} Genera la onda cuadrada que sirve como señal de prueba.
+    \item \textbf{\texttt{UART0}:} Canal de comunicación serie con el módulo HC-05 a 460,800 baudios.
+\end{itemize}
+
+
+\subsubsection{Variables Globales}
+
+\begin{lstlisting}[language=Python, caption={Definición de factores de conversión y buffers}]
+conversion_factor = 3.3 / 65535   # Convierte lecturas ADC (0-65535) a voltios (0-3.3 V)
+MUESTRAS = 1000
+ENTRADAS = [0] * MUESTRAS         # Buffer para almacenar U(k)
+SALIDAS  = [0] * MUESTRAS         # Buffer para almacenar Y(k)
+En_Bytes = bytearray(4000)        # Espacio en memoria para enviar los datos por USB
+\end{lstlisting}
+
+Los buffers \texttt{ENTRADAS} y \texttt{SALIDAS} guardan temporalmente los datos obtenidos durante la captura antes de enviarlos. Por otro lado, \texttt{En\_Bytes} reserva un espacio fijo en memoria para transmitir los datos por USB, evitando retrasos o interrupciones durante la ejecución del sistema en tiempo real.
+
+
+\begin{lstlisting}[language=Python, caption={Coeficientes del filtro y temporización de la onda cuadrada}]
+# Coeficientes iniciales (pasa bajas, fc \approx 85 Hz)
+CTE_A0, CTE_A1, CTE_A2 = 0.0303, 0.0303, 0.0
+CTE_B1, CTE_B2 = 0.9394, 0.0
+FREQ = 50           # Frecuencia inicial de la onda cuadrada (Hz)
+PERIODO = 1/FREQ
+HALF = int((PERIODO * 1_000_000) / 2)  # Semiperíodo en microsegundos
+\end{lstlisting}
+
+
+\begin{itemize}
+    \item \textbf{\texttt{CTE\_A0}, \texttt{CTE\_A1}, \texttt{CTE\_A2}, \texttt{CTE\_B1}, \texttt{CTE\_B2}:} Coeficientes iniciales para la implementación de un filtro digital paso bajo con una frecuencia de corte ($f_c$) de aproximadamente 85 Hz.
+    \item \textbf{\texttt{FREQ}:} Define la frecuencia inicial de la onda cuadrada, establecida por defecto en 50 Hz.
+    \item \textbf{\texttt{PERIODO} y \texttt{HALF}:} Determinan matemáticamente el período de la señal y el semiperíodo (\texttt{HALF}) convertido a microsegundos, necesario para controlar con precisión los tiempos de conmutación del pin digital.
+\end{itemize}
+
+\subsubsection{Función Onda\_Cuadrada() - Núcleo 2 (hilo secundario)}
+
+\begin{lstlisting}[language=Python, caption={Generación de señal en el hilo secundario}]
+def Onda_Cuadrada():
+    while True:
+        Pin3.on()
+        sleep_us(HALF)
+        Pin3.off()
+        sleep_us(HALF)
+\end{lstlisting}
+
+Genera una onda cuadrada con un ciclo de trabajo del 50\,\% en el \texttt{Pin3}. Esta función se ejecuta en el Núcleo 2 (\textit{Core 2}) de la Raspberry Pi Pico 2W usando la biblioteca \texttt{\_thread}, por lo que trabaja de manera independiente al programa principal.
+
+El valor de \texttt{HALF}, que define el semiperíodo de la señal, se actualiza automáticamente cuando MATLAB envía una nueva frecuencia. Como \texttt{HALF} es una variable global que se revisa continuamente, la frecuencia de la onda puede cambiarse en tiempo real sin detener la ejecución del hilo secundario.
+
+\subsubsection{Función \texttt{capturar()} - Motor del Filtro Digital}
+
+\begin{lstlisting}[language=Python, caption={Declaración y decorador de la función principal}]
+@micropython.native
+def capturar(a0, a1, a2, b1, b2):
+\end{lstlisting}
+
+La instrucción \texttt{@micropython.native} hace que la función se ejecute como código máquina nativo en lugar de código interpretado, aumentando considerablemente su velocidad de ejecución.
+
+\begin{lstlisting}[language=Python, caption={Inicialización de variables de estado}]
+    # Inicialización de estados del filtro (condiciones iniciales = 0)
+    uk = uk1 = uk2 = 0.0    # Muestras de entrada actuales y anteriores
+    yk = yk1 = yk2 = 0.0    # Muestras de salida actuales y anteriores
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Optimización mediante referencias locales}]
+    # Referencias locales para máximo rendimiento (evitar búsqueda de atributos globales)
+    adc = ADC0.read_u16
+    cf  = conversion_factor
+    ent = ENTRADAS
+    sal = SALIDAS
+    _tu = ticks_us
+    _td = ticks_diff
+    _ta = ticks_add
+    _su = sleep_us
+\end{lstlisting}
+
+Este método de guardar referencias en variables locales es una optimización importante en MicroPython, ya que acceder a variables locales es aproximadamente $4\times$ más rápido que acceder a variables globales o atributos de objetos.
+
+
+\begin{lstlisting}[language=Python, caption={Bucle principal de procesamiento del filtro}]
+    t_next = _tu()           # Marca de tiempo del inicio
+    for i in range(500):
+        # 1. APLICAR LA ECUACIÓN EN DIFERENCIAS 
+        yk = a0*uk + a1*uk1 + a2*uk2 + b1*yk1 + b2*yk2
+        
+        # 2. ACTUALIZAR ESTADOS (desplazamiento de registros de retardo)
+        uk2 = uk1
+        uk1 = uk
+        yk2 = yk1
+        yk1 = yk
+        
+        # 3. LEER NUEVA MUESTRA DEL ADC
+        uk = adc() * cf        # Convierte a voltios
+        
+        # 4. GUARDAR EN BUFFERS
+        ent[i] = uk
+        sal[i] = yk
+        
+        # 5. CONTROL DE TEMPORIZACIÓN (periodo exacto de 125 microsegundos = 8 kHz)
+        t_next = _ta(t_next, 125)
+        dt = _td(t_next, _tu())
+        if dt > 0:
+            _su(dt)            # Esperar el tiempo restante del periodo
+\end{lstlisting}
+
+La ecuación en diferencias implementada es la forma general:
+
+$$Y(k) = A_0 \cdot U(k) + A_1 \cdot U(k-1) + A_2 \cdot U(k-2) + B_1 \cdot Y(k-1) + B_2 \cdot Y(k-2)$$
+
+El control del tiempo es muy importante: en lugar de usar un \texttt{sleep\_us(125)} fijo (lo que podría generar errores por el tiempo que tarda el programa en ejecutarse), el sistema calcula cuánto tiempo falta para la siguiente muestra y solo espera ese intervalo restante. De esta manera, se mantiene un periodo de muestreo estable de 125 $\mu$s.
+
+\subsubsection{Bucle Principal - Protocolo de Comunicación}
+
+\begin{lstlisting}[language=Python, caption={Inicialización del hilo secundario y bucle principal}]
+_thread.start_new_thread(Onda_Cuadrada, ())   # Lanzar generador de onda en Core 2
+
+while True:
+    if UART0.any() > 0:
+        sleep_ms(100)          #  Espera a que se reciban todos los datos
+        LLAVE = UART0.read()
+\end{lstlisting}
+
+\newpage
+\textbf{Recepción de Coeficientes (datos \texttt{0x55})}
+
+\begin{lstlisting}[language=Python, caption={Decodificación de los datos de coeficientes}]
+        if LLAVE and LLAVE[0] == 0x55:
+            # Decodificar 6 floats IEEE 754 little-endian (4 bytes cada uno)
+            CTE_A0 = struct.unpack('<f', LLAVE[1:5])[0]
+            CTE_A1 = struct.unpack('<f', LLAVE[5:9])[0]
+            CTE_A2 = struct.unpack('<f', LLAVE[9:13])[0]
+            CTE_B1 = struct.unpack('<f', LLAVE[13:17])[0]
+            CTE_B2 = struct.unpack('<f', LLAVE[17:21])[0]
+            FREQ   = struct.unpack('<f', LLAVE[21:25])[0]
+            HALF   = int((1/FREQ * 1_000_000) / 2)    # Actualizar semiperiodo
+\end{lstlisting}
+
+Los 25 bytes recibidos tienen la siguiente estructura:
+
+\begin{table}[hbt!]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Byte(s)} & \textbf{Dato} & \textbf{Descripción} \\ \hline
+0 & \texttt{0x55} & Código de inicio del mensaje \\ \hline
+1--4 & \texttt{A0} & Valor decimal de tipo \texttt{float32} \\ \hline
+5--8 & \texttt{A1} & Valor decimal de tipo \texttt{float32} \\ \hline
+9--12 & \texttt{A2} & Valor decimal de tipo \texttt{float32} \\ \hline
+13--16 & \texttt{B1} & Valor decimal de tipo \texttt{float32} \\ \hline
+17--20 & \texttt{B2} & Valor decimal de tipo \texttt{float32} \\ \hline
+21--24 & \texttt{FREQ} & Frecuencia en formato \texttt{float32} \\ \hline
+\end{tabular}
+\caption{Distribución de los datos recibidos y su significado.}
+\label{tab:trama_0x55}
+\end{table}
+
+
+\textbf{Inicio de la Captura de Datos (\texttt{0x52})}
+
+\begin{lstlisting}[language=Python, caption={Ejecución de captura y envío de datos}]
+        if LLAVE and 0x52 in LLAVE:
+            # Realizar la captura usando los coeficientes actuales
+            capturar(CTE_A0, CTE_A1, CTE_A2, CTE_B1, CTE_B2)
+            
+            # Guardar U(k) y Y(k) en formato float32
+            for i in range(500):
+                struct.pack_into('f', En_Bytes, i*8,   ENTRADAS[i])
+                struct.pack_into('f', En_Bytes, i*8+4, SALIDAS[i])
+                
+            # Enviar los datos en bloques de 50 bytes
+            for j in range(0, 4000, 50):
+                UART0.write(En_Bytes[j:j+50])
+                sleep_ms(60)    # Espera para evitar sobrecargar el HC-05
+\end{lstlisting}
+
+La transmisión se realiza en bloques de 50 bytes con una pausa de 60 ms entre cada uno. Esto se hace para evitar que el módulo Bluetooth HC-05 se sature y pierda datos al recibir toda la información demasiado rápido.
