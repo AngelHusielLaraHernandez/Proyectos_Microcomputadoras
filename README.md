@@ -1,66 +1,59 @@
-# Proyecto: Filtros digitales IIR con Raspberry Pi Pico 2W
+# Proyecto Final - Microcomputadoras
 
-Este repositorio contiene el reporte en LaTeX y el codigo MicroPython para implementar y analizar filtros IIR en una Raspberry Pi Pico 2W. El documento incluye el diseno matematico, las ecuaciones en diferencias y el analisis de resultados con senal cuadrada.
+## Archivos de la libreria micropython-ili9341 necesarios
 
-## Contenido principal
+De la carpeta `micropython-ili9341/`, copiar los siguientes archivos
+a la raiz del Raspberry Pi Pico 2W:
 
-- main.tex: documento principal que integra portada, desarrollo, resultados y conclusiones.
-- desarrollo.tex: derivacion de filtros pasa bajas y pasa altas, bilineal, coeficientes y ecuaciones en diferencias. Incluye un resumen de resultados.
-- resultados.tex: tablas y figuras de comportamiento esperado y pruebas con onda cuadrada.
-- portada.tex y referencias.bib: portada y bibliografia.
-- img/ y portada_img/: imagenes del reporte.
-- code/filtros_iir.py: firmware MicroPython para el filtrado en la Pico 2W.
+### Archivo obligatorio
 
-## Contenido adicional
+| Archivo       | Descripcion                                      |
+|---------------|--------------------------------------------------|
+| `ili9341.py`  | Driver principal del display ILI9341 (SPI, 320x240) |
 
-- documents/: scripts y ejemplos de apoyo (MicroPython, MATLAB y utilidades).
-- Projects/Proyecto1 y Projects/Proyecto2: proyectos independientes con su propio main.tex, codigo e imagenes.
+### Archivos opcionales (solo si se necesitan)
 
-## Diseno actual de filtros (alineado con el codigo)
+| Archivo            | Descripcion                                 |
+|--------------------|---------------------------------------------|
+| `xglcd_font.py`    | Soporte para fuentes personalizadas XGLCD   |
+| `xpt2046.py`       | Driver para pantalla tactil XPT2046         |
+| `touch_keyboard.py`| Teclado virtual en pantalla tactil           |
 
-- Pasa bajas 1er orden (RC), fs = 8000 Hz:
-	- fc ≈ 79.6 Hz
-	- A0 = A1 = 0.0303, B1 = 0.9394
-- Pasa altas 1er orden (RC), fs = 8000 Hz:
-	- fc = 500 Hz
-	- A0 = 0.8341, A1 = -0.8341, B1 = 0.6682
+### Para el proyecto GALAGA solo se necesita
 
-Las ecuaciones en diferencias se documentan en desarrollo.tex y se implementan en code/filtros_iir.py.
-
-## Uso del codigo MicroPython
-
-1. Conectar GP3 (PWM) a GP26 (ADC0) con un cable puente.
-2. Cargar code/filtros_iir.py en la Pico 2W.
-3. Usar comandos por puerto serial:
-	 - START / STOP
-	 - LP / HP
-	 - FREQ <hz>
-	 - STATUS
-4. El programa imprime datos en formato "entrada,salida" para el Serial Plotter.
-
-## Compilacion del reporte
-
-Requiere una distribucion LaTeX con biber y latexmk.
-
-```bash
-latexmk -pdf -interaction=nonstopmode main.tex
+```
+ili9341.py
 ```
 
-Limpieza de auxiliares:
+Este archivo contiene todas las funciones necesarias:
+- `Display(spi, cs, dc, rst, width, height, rotation)` - Inicializacion
+- `display.clear(color)` - Limpiar pantalla
+- `display.draw_sprite(buf, x, y, w, h)` - Dibujar sprites
+- `display.draw_pixel(x, y, color)` - Dibujar pixel individual
+- `display.fill_hrect(x, y, w, h, color)` - Rectangulo relleno
+- `display.draw_text8x8(x, y, text, color, bg)` - Texto con fuente integrada 8x8
+- `display.draw_hline(x, y, w, color)` - Linea horizontal
+- `display.draw_vline(x, y, h, color)` - Linea vertical
 
-```bash
-latexmk -c
+## Estructura del proyecto
+
 ```
-
-Compilacion manual (si no usas latexmk):
-
-```bash
-pdflatex main.tex
-biber main
-pdflatex main.tex
-pdflatex main.tex
+ProyectoTeoria/
+|   |-- README.md            # Instrucciones del juego
+|   |-- main.py              # Punto de entrada
+|   |-- game.py              # Logica principal del juego
+|   |-- player.py            # Clase del jugador
+|   |-- enemy.py             # Clase de enemigos
+|   |-- bullet.py            # Clase de balas
+|   |-- asteroid.py          # Asteroide, Guardian, DiveBomber
+|   |-- button.py            # Manejo de botones con debounce
+|   |-- buzzer.py            # Sonido PWM
+|   |-- colours.py           # Constantes de color RGB565
+|   |-- sprites/
+|       |-- __init__.py
+|       |-- sprites.py       # Datos de sprites en bytearray
+|-- micropython-ili9341/     # Libreria del display
+|-- JunkboxArcade/           # Codigo fuente original en C++
+|-- document/                # Documento LaTeX del proyecto
+|-- data/                    # Datasheets
 ```
-
-## Notas de consistencia
-
-- resultados.tex y algunas conclusiones en main.tex aun describen el diseno previo (LP de 500 Hz y HP de 800 Hz, 2do orden). Si necesitas coherencia total con el diseno actual, se recomienda actualizar esas secciones.

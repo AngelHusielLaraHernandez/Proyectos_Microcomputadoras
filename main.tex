@@ -219,7 +219,6 @@
 
     \section{Objetivo:}
 
-    Diseñar e implementar un simulador de funciones de transferencia discretas de primer y segundo orden mediante una Raspberry Pi Pico 2W programada en MicroPython, capaz de aplicar filtros IIR (pasa bajas, pasa altas y pasa banda) en tiempo real a una señal de entrada muestreada a 8~kHz, comunicándose con MATLAB a través de un enlace Bluetooth HC-05 para la recepción de coeficientes y el envío ded datos de entrada/salida para su visualización y análisis espectral.
 
     \section{Desarrollo:}
     \input{desarrollo.tex}
@@ -234,44 +233,17 @@
     \begin{itemize}
         \item \textbf{Espinoza Matamoros Percival Ulises:}
         
-        Al implementar el simulador de funciones de transferencia discretas específicamente para filtros IIR Butterworth en la Raspberry Pi Pico 2W, se logró retomar los conocimientos obtenidos en la práctica anterior, específicamente sobre el proceso de discretización mediante la transformación bilineal, en esta práctica se retomaron conceptos de señales y sistemas así como de sistemas de comunicaciones para poder diseñar los filtros adecuadamente y que estos funcionaran correctamente. El sistema implementado demuestra la capacidad de la Raspberry Pi Pico 2W para realizar procesamiento digital de señales en tiempo real, manteniendo una frecuencia de muestreo constante de 8[kHz], donde para esto con un núcleo se genera la señal cuadrada de prueba y con el otro núcleo se realiza el filtrado y la gestión de datos, posteriormente los datos son enviados a MATLAB a través del módulo Bluetooth HC-05, ofreciendo así una mayor flexibilidad para el análisis y visualización de los resultados, como gráficas en el dominio de la frecuencia y del tiempo, lo que permitió validar la precisión de los filtros implementados.
-        
-        Es por esto que gracias a la realización de esta práctica logró aprender la importancia y funcionalidad de los filtros digitales IIR, desde su implementación en un microcontrolador como la rasberry pi pico 2w por medio de discretizar la función de trasferencia de cada filtro, hasta la importancia de mantener una frecuencia de muestreo estable para garantizar un filtrado efectivo, la capacidad de procesamiento que ofrece la Raspberry Pi Pico 2W al tener dos núcleos para distribuir tareas, así como la importancia de los protocolos de comunicación para garantizar la integridad de los datos al transmitirlos a través de Bluetooth, permitiendo así diseñar e implementar sistemas más complejos que requieran una optima recuperación y análisis de señales en tiempo real.
-
         \item \textbf{Flores Colin Victor Jaziel:}
         
-        El objetivo de diseñar e implementar un simulador de funciones de transferencia discretas se cumplió satisfactoriamente ya que logramos con éxito el procesamiento digital de señales con la implementación en la Raspberry Pi Pico 2W, apoyada por MicroPython, demostró que es posible realizar filtrado en tiempo real manteniendo la rigurosidad matemática requerida para la transformación de modelos continuos a discretos. El diseño del sistema tuvó un enfoque sistémico para garantizar que la frecuencia de muestreo de $8\,\text{kHz}$ se mantuviera constante ante la carga computacional del filtrado y la gestión del tráfico de datos.La integración entre MATLAB y el hardware a través del protocolo Bluetooth HC-05 fue importante validar el desempeño del simulador y al modificar los parámetros, este enlace inalámbrico transformó una implementación estática en una herramienta de análisis versátil, para contrastar de forma inmediata el comportamiento en el dominio del tiempo con el análisis espectral en la interfaz gráfica. La visualización clara de la respuesta de cada tipo de filtro pasa bajas, pasa altas y pasa banda, ante una señal de entrada, confirmó la precisión de los parámetros calculados mediante la transformación bilineal.
-        Esta práctica me permitió consolidar la teoría de sistemas discretos dentro de una arquitectura real. El proyecto no solo validó la eficacia de los filtros Butterworth implementados, sino que tambien se destacó la importancia de optimizar la ejecución multinúcleo y la sincronización de datos para evitar la latencia y la pérdida de información, cumpliendo así con los estándares de diseño propuestos para el control y análisis de señales en tiempo real.
-
+ 
         \item \textbf{García Cortés Adolfo de Jesús:}
         
-        En conclusión, gracias al desarrollo de la práctica se logró implementar filtros digitales IIR Butterworth de manera funcional utilizando la Raspberry Pi Pico 2W. Al probar los códigos, se logro comprobar que el comportamiento real de los filtros coincidió con lo esperado teóricamente, obteniendo respuestas correctas para los filtros pasa bajas, pasa altas y pasa banda.
-
-        La transformación bilineal y la técnica de \textit{pre-warping} ayudaron a mantener correctamente las frecuencias de corte definidas en el diseño del filtro. Gracias a esto, el filtro pasa bajas suavizó la señal, el pasa altas detectó cambios rápidos y el pasa banda dejó pasar únicamente un rango específico de frecuencias.
-
-        El uso de los dos núcleos de la Raspberry Pi Pico 2W permitió separar tareas, de manera que un núcleo generaba la señal de prueba mientras el otro realizaba el filtrado y el envío de datos, evitando problemas de ejecución.
-
-        Además, se logró mantener una frecuencia de muestreo estable de 8\,kHz usando un control preciso del tiempo con \texttt{ticks\_us}, lo que permitió que el filtro trabajara de manera continua y uniforme.
-
-        Por otro lado, la comunicación con el módulo Bluetooth HC-05 funcionó correctamente gracias al envío de datos en pequeños bloques, evitando pérdidas de información durante la transmisión.
-
-        En general, esta práctica permitió aplicar conocimientos de procesamiento digital de señales, programación en MicroPython, comunicación serial y programación multinúcleo, demostrando cómo los filtros digitales pueden implementarse de manera práctica y eficiente.
 
         \item \textbf{Lara Hernandez Angel Husiel:}
 
-        El diseño de los filtros mediante la transformada bilineal con pre-distorsión de frecuencias demostró ser un método sólido para trasladar el comportamiento analógico al dominio discreto sin que los coeficientes perdieran precisión. Calcular cada término a mano fue lo que permitió entender de dónde viene realmente cada valor que se carga al microcontrolador, algo que difícilmente se aprecia cuando todo lo resuelve una función directa de MATLAB. La implementación en la Raspberry Pi Pico 2W añadió una capa adicional de complejidad al tener que garantizar un periodo de muestreo estable de 125~$\mu$s, distribuir tareas entre los dos núcleos del procesador y diseñar un protocolo de comunicación Bluetooth que no saturara el canal al momento de transmitir los datos capturados.
-
-        La comunicación entre el módulo HC-05 y MATLAB operando a 460{,}800 baudios resultó ser un factor determinante en la estabilidad del sistema. Esa velocidad de transmisión tuvo que equilibrarse con las pausas de 60~ms entre bloques de datos para evitar que el buffer del módulo se desbordara, lo que de no haberse considerado habría provocado pérdida de muestras y resultados incoherentes en las gráficas. El hecho de que el canal inalámbrico pudiera mantenerse estable durante las capturas, actualizando coeficientes y frecuencia en tiempo real sin interrumpir el procesamiento, confirmó que el diseño del protocolo de comunicación fue adecuado para las exigencias del sistema.
-        
-        Es por esto, que ya en matlab, tenemos el primer filtro, que en el pasa bajas produjo una salida que sigue lentamente a la onda cuadrada con curvas exponenciales cuya velocidad depende directamente de qué tan cerca está la frecuencia de prueba de la frecuencia de corte, mientras que el pasa altas reaccionó únicamente a las transiciones, generando picos que decaen hacia cero entre un flanco y otro. En el dominio de la frecuencia esto se confirmó con espectros que mostraron con claridad qué armónicos de la señal cuadrada sobrevivían al filtro y cuáles quedaban eliminados. La correspondencia entre lo que se veía en el tiempo y lo que aparecía en el espectro fue la verificación más directa de que el sistema funcionó correctamente de extremo a extremo.
-
         \item \textbf{Lugo Manzano Rodrigo:}
         
-        Esta practica me permitió pasar varios conceptos teóricos, incluso algunos aprendidos en asignaturas anteriores, aplicandolos en la práctica como el procesamiento digital de señales hacia una implementación funcional en hardware. Diseñar estos filtros Butterworth de primer y segundo orden mediante la transformación bilineal fue el primer paso, pero también uno de los retos estuvó en resolver los desafíos técnicos en la ejecución en tiempo real. Para asegurar un periodo de muestreo constante de 125 microsegundos a una frecuencia de 8 kHz, fue importante aplicar una temporización en MicroPython utilizando funciones como ticks\_us y ticks\_diff, evitando el desfasamiento temporal acumulativo que sucede con retardos fijos. Asimismo, la optimización mediante el decorador @micropython.native e inicializar referencias locales dentro de la función de captura nos permitio incrementar la velocidad de procesamiento de la ecuación en diferencias en el núcleo principal.
 
-        La distribución de tareas en esta arquitectura multinúcleo resultó útil para la estabilidad general del simulador, asignar de forma independiente la generación de la onda cuadrada al segundo núcleo mediante la biblioteca thread garantizó que la conmutación digital de los flancos no interfiriera con la carga computacional del filtrado. Toda esta infraestructura se integró con la etapa de comunicación inalámbrica a través del módulo HC-05, donde la configuración UART a 460800 baudios y la transmisión segmentada en bloques de 50 bytes con pausas de 60 milisegundos previnieron el desbordamiento del buffer al enviar los arreglos de datos hacia MATLAB. Lo realizado en esta práctica me enseñó la importancia de la sincronización de procesos y la optimización de código, demostrando que una gestión del tiempo y la memoria permite diseñar herramientas de análisis espectral eficientes y dinámicas.
-        
-        
 
     \end{itemize}
 

@@ -1,0 +1,283 @@
+\documentclass[letterpaper,12pt]{article}
+
+% --- PAQUETES DE IDIOMA
+\usepackage[spanish,mexico]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+
+% --- PAQUETES MATEMÁTICOS --
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{cancel}
+\usepackage{mathrsfs}
+
+% --- PAQUETES GRÁFICOS Y DE DISEÑO ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usetikzlibrary{shapes.geometric, shapes.multipart, shapes.symbols, positioning, arrows.meta, calc, shadows, decorations.pathreplacing,babel}
+
+
+% Definición de color para las líneas de tierra (verde)
+\definecolor{powergreen}{HTML}{008000}
+
+% --- LISTAS ---
+\usepackage{enumitem}
+
+% --- PAQUETES DE CÓDIGO ---
+\usepackage{listings}
+% Configuración del estilo de listings
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}   
+\definecolor{keyword}{rgb}{0.0,0.2,0.6}     
+\definecolor{comment}{rgb}{0.25,0.5,0.35}   
+\definecolor{string}{rgb}{0.6,0.0,0.0}      
+\definecolor{number}{rgb}{0.5,0.0,0.5}      
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+% Definición de colores para los LEDs
+\definecolor{led0}{HTML}{FF0000} % Rojo
+\definecolor{led1}{HTML}{FF7F00} % Naranja
+\definecolor{led2}{HTML}{FFFF00} % Amarillo
+\definecolor{led3}{HTML}{00FF00} % Verde
+\definecolor{led4}{HTML}{0000FF} % Azul
+\definecolor{led5}{HTML}{4B0082} % Índigo
+\definecolor{led6}{HTML}{9400D3} % Violeta
+\definecolor{led7}{HTML}{FF1493} % Rosa Intenso
+
+\lstset{
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue}\bfseries,
+  stringstyle=\color{codepurple},
+  commentstyle=\color{codegray}\itshape,
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  frame=single,
+  rulecolor=\color{black},
+  breaklines=true,
+  tabsize=4,
+  showstringspaces=false,
+  literate={á}{{\'a}}1
+           {é}{{\'e}}1
+           {í}{{\'i}}1
+           {ó}{{\'o}}1
+           {ú}{{\'u}}1
+           {Á}{{\'A}}1
+           {É}{{\'E}}1
+           {Í}{{\'I}}1
+           {Ó}{{\'O}}1
+           {Ú}{{\'U}}1
+           {ñ}{{\~n}}1
+           {Ñ}{{\~N}}1
+           {¿}{{\textquestiondown}}1
+           {¡}{{\textexclamdown}}1
+}
+
+% Definición del lenguaje Python para listings
+\lstdefinelanguage[LAB]{Python}{
+    morekeywords={False, None, True, and, as, assert, async, await, break,
+                                class, continue, def, del, elif, else, except, finally,
+                                for, from, global, if, import, in, is, lambda, nonlocal,
+                                not, or, pass, raise, return, try, while, with, yield,
+                                machine, Pin, PWM, ADC, Timer, sleep_ms, sleep_us},
+    morecomment=[l]{\#},
+    morestring=[b]",
+    morestring=[b]',
+    sensitive=true
+}
+
+% --- ESTILOS PARA DIAGRAMAS DE FLUJO (TIKZ) ---
+\tikzset{
+  startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
+  process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
+  decision/.style={diamond, aspect=2, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
+  arrow/.style={thick,->,>=stealth}
+}
+
+% Macro para dibujar la Raspberry Pi Pico y sus nodos
+\newcommand{\picoboard}{
+    \draw[thick] (0,0.5) rectangle (4,-9.5);
+    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico};
+
+    % Pines Superiores
+    \draw[red, thick] (0.8, 0.5) -- (0.8, 0.8) coordinate (P41); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P41) {41};
+    \draw[red, thick] (2.0, 0.5) -- (2.0, 0.8) coordinate (P42); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P42) {42};
+    \draw[red, thick] (3.2, 0.5) -- (3.2, 0.8) coordinate (P43); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P43) {43};
+    \node[below, font=\tiny\sffamily] at (0.8, 0.5) {SW CLK};
+    \node[below, font=\tiny\sffamily] at (2.0, 0.5) {SW GND};
+    \node[below, font=\tiny\sffamily] at (3.2, 0.5) {SW DIO};
+
+    % GND Inferior
+    \draw[red, thick] (2, -9.5) -- (2, -10.2) coordinate (PGND);
+    \node[above, font=\tiny\sffamily] at (2, -9.5) {GND};
+    \node[below, font=\tiny\sffamily] at (2, -10.2) {3,8,13,18 \quad 23,28,38};
+
+    % Pines del lado Izquierdo
+    \foreach \i/\pin/\num in {
+        1/GP0/1, 2/GP1/2, 
+        4/GP2/4, 5/GP3/5, 6/GP4/6, 7/GP5/7, 
+        9/GP6/9, 10/GP7/10, 11/GP8/11, 12/GP9/12, 
+        14/GP10/14, 15/GP11/15, 16/GP12/16, 17/GP13/17, 
+        19/GP14/19, 20/GP15/20
+    } {
+        \draw[red, thick] (0, -\i*0.45) -- (-0.4, -\i*0.45) coordinate (P\num);
+        \node[right, font=\tiny\sffamily] at (0, -\i*0.45) {\pin};
+        \node[above left, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+
+    % Pines del lado Derecho
+    \foreach \i/\pin/\num in {
+        1/VBUS/40, 2/VSS/39, 
+        4/3V3\_EN/37, 5/3V3/36, 6/ADC\_VREF/35, 7/GP28\_A2/34, 8/AGND/33, 
+        9/GP27\_A1/32, 10/GP26\_A0/31, 11/RUN/30, 12/GP22/29, 
+        14/GP21/27, 15/GP20/26, 16/GP19/25, 17/GP18/24, 
+        19/GP17/22, 20/GP16/21
+    } {
+        \draw[red, thick] (4, -\i*0.45) -- (4.4, -\i*0.45) coordinate (P\num);
+        \node[left, font=\tiny\sffamily] at (4, -\i*0.45) {\pin};
+        \node[above right, font=\tiny\sffamily, inner sep=1pt] at (P\num) {\num};
+    }
+}
+
+
+
+
+
+
+\definecolor{azulresultado}{HTML}{0072C6}
+\definecolor{rojoacarreo}{HTML}{FF0000}
+
+% Colores para la tabla
+\definecolor{headblue}{HTML}{4F81BD}
+\definecolor{subheadblue}{HTML}{B8CCE4}
+\definecolor{datablockblue}{HTML}{DCE6F1}
+
+% --- RUTAS DE IMÁGENES ---
+\graphicspath{{img/}{portada_img/}}
+
+\definecolor{armblue}{RGB}{0, 113, 188}
+
+% --- CONFIGURACIÓN DE PÁGINA (GEOMETRÍA) ---
+\usepackage[
+    left=25mm, 
+    right=25mm,
+    top=35mm,
+    bottom=30mm,
+    headheight=77pt, 
+    papersize={21.59cm,27.94cm}
+]{geometry}
+
+% --- FORMATO DE TEXTO ---
+\renewcommand{\baselinestretch}{1.25} 
+\usepackage{parskip} 
+\usepackage{lipsum}  
+
+% --- VARIABLES GLOBALES ---
+\newcommand{\materia}{}
+
+% --- ENCABEZADOS Y PIES DE PÁGINA ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} 
+\fancyhead[L]{\includegraphics[height=1.5cm]{portada_img/der.png}}
+\fancyhead[R]{\includegraphics[height=1.5cm]{portada_img/izq.png}}
+\fancyfoot[C]{\thepage} 
+\renewcommand{\headrulewidth}{0.4pt} 
+\renewcommand{\footrulewidth}{0pt}  
+
+% --- BIBLIOGRAFÍA ---
+\usepackage[backend=biber, style=apa, sortcites, url=true]{biblatex}
+\addbibresource{referencias.bib}
+
+% --- HIPERVÍNCULOS ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan
+}
+
+\begin{document}
+
+    \input{portada.tex}
+
+    \newpage
+    \setcounter{page}{1}
+
+    \section{Objetivo:}
+
+    Diseñar e implementar un simulador de funciones de transferencia discretas de primer y segundo orden mediante una Raspberry Pi Pico 2W programada en MicroPython, capaz de aplicar filtros IIR (pasa bajas, pasa altas y pasa banda) en tiempo real a una señal de entrada muestreada a 8~kHz, comunicándose con MATLAB a través de un enlace Bluetooth HC-05 para la recepción de coeficientes y el envío ded datos de entrada/salida para su visualización y análisis espectral.
+
+    \section{Desarrollo:}
+    \input{desarrollo.tex}
+
+    \newpage
+    \section{Resultados:}
+    \input{resultados.tex}
+
+    \newpage
+    \section{Conclusiones:}
+
+    \begin{itemize}
+        \item \textbf{Espinoza Matamoros Percival Ulises:}
+        
+        Al implementar el simulador de funciones de transferencia discretas específicamente para filtros IIR Butterworth en la Raspberry Pi Pico 2W, se logró retomar los conocimientos obtenidos en la práctica anterior, específicamente sobre el proceso de discretización mediante la transformación bilineal, en esta práctica se retomaron conceptos de señales y sistemas así como de sistemas de comunicaciones para poder diseñar los filtros adecuadamente y que estos funcionaran correctamente. El sistema implementado demuestra la capacidad de la Raspberry Pi Pico 2W para realizar procesamiento digital de señales en tiempo real, manteniendo una frecuencia de muestreo constante de 8[kHz], donde para esto con un núcleo se genera la señal cuadrada de prueba y con el otro núcleo se realiza el filtrado y la gestión de datos, posteriormente los datos son enviados a MATLAB a través del módulo Bluetooth HC-05, ofreciendo así una mayor flexibilidad para el análisis y visualización de los resultados, como gráficas en el dominio de la frecuencia y del tiempo, lo que permitió validar la precisión de los filtros implementados.
+        
+        Es por esto que gracias a la realización de esta práctica logró aprender la importancia y funcionalidad de los filtros digitales IIR, desde su implementación en un microcontrolador como la rasberry pi pico 2w por medio de discretizar la función de trasferencia de cada filtro, hasta la importancia de mantener una frecuencia de muestreo estable para garantizar un filtrado efectivo, la capacidad de procesamiento que ofrece la Raspberry Pi Pico 2W al tener dos núcleos para distribuir tareas, así como la importancia de los protocolos de comunicación para garantizar la integridad de los datos al transmitirlos a través de Bluetooth, permitiendo así diseñar e implementar sistemas más complejos que requieran una optima recuperación y análisis de señales en tiempo real.
+
+        \item \textbf{Flores Colin Victor Jaziel:}
+        
+        El objetivo de diseñar e implementar un simulador de funciones de transferencia discretas se cumplió satisfactoriamente ya que logramos con éxito el procesamiento digital de señales con la implementación en la Raspberry Pi Pico 2W, apoyada por MicroPython, demostró que es posible realizar filtrado en tiempo real manteniendo la rigurosidad matemática requerida para la transformación de modelos continuos a discretos. El diseño del sistema tuvó un enfoque sistémico para garantizar que la frecuencia de muestreo de $8\,\text{kHz}$ se mantuviera constante ante la carga computacional del filtrado y la gestión del tráfico de datos.La integración entre MATLAB y el hardware a través del protocolo Bluetooth HC-05 fue importante validar el desempeño del simulador y al modificar los parámetros, este enlace inalámbrico transformó una implementación estática en una herramienta de análisis versátil, para contrastar de forma inmediata el comportamiento en el dominio del tiempo con el análisis espectral en la interfaz gráfica. La visualización clara de la respuesta de cada tipo de filtro pasa bajas, pasa altas y pasa banda, ante una señal de entrada, confirmó la precisión de los parámetros calculados mediante la transformación bilineal.
+        Esta práctica me permitió consolidar la teoría de sistemas discretos dentro de una arquitectura real. El proyecto no solo validó la eficacia de los filtros Butterworth implementados, sino que tambien se destacó la importancia de optimizar la ejecución multinúcleo y la sincronización de datos para evitar la latencia y la pérdida de información, cumpliendo así con los estándares de diseño propuestos para el control y análisis de señales en tiempo real.
+
+        \item \textbf{García Cortés Adolfo de Jesús:}
+        
+        En conclusión, gracias al desarrollo de la práctica se logró implementar filtros digitales IIR Butterworth de manera funcional utilizando la Raspberry Pi Pico 2W. Al probar los códigos, se logro comprobar que el comportamiento real de los filtros coincidió con lo esperado teóricamente, obteniendo respuestas correctas para los filtros pasa bajas, pasa altas y pasa banda.
+
+        La transformación bilineal y la técnica de \textit{pre-warping} ayudaron a mantener correctamente las frecuencias de corte definidas en el diseño del filtro. Gracias a esto, el filtro pasa bajas suavizó la señal, el pasa altas detectó cambios rápidos y el pasa banda dejó pasar únicamente un rango específico de frecuencias.
+
+        El uso de los dos núcleos de la Raspberry Pi Pico 2W permitió separar tareas, de manera que un núcleo generaba la señal de prueba mientras el otro realizaba el filtrado y el envío de datos, evitando problemas de ejecución.
+
+        Además, se logró mantener una frecuencia de muestreo estable de 8\,kHz usando un control preciso del tiempo con \texttt{ticks\_us}, lo que permitió que el filtro trabajara de manera continua y uniforme.
+
+        Por otro lado, la comunicación con el módulo Bluetooth HC-05 funcionó correctamente gracias al envío de datos en pequeños bloques, evitando pérdidas de información durante la transmisión.
+
+        En general, esta práctica permitió aplicar conocimientos de procesamiento digital de señales, programación en MicroPython, comunicación serial y programación multinúcleo, demostrando cómo los filtros digitales pueden implementarse de manera práctica y eficiente.
+
+        \item \textbf{Lara Hernandez Angel Husiel:}
+
+        El diseño de los filtros mediante la transformada bilineal con pre-distorsión de frecuencias demostró ser un método sólido para trasladar el comportamiento analógico al dominio discreto sin que los coeficientes perdieran precisión. Calcular cada término a mano fue lo que permitió entender de dónde viene realmente cada valor que se carga al microcontrolador, algo que difícilmente se aprecia cuando todo lo resuelve una función directa de MATLAB. La implementación en la Raspberry Pi Pico 2W añadió una capa adicional de complejidad al tener que garantizar un periodo de muestreo estable de 125~$\mu$s, distribuir tareas entre los dos núcleos del procesador y diseñar un protocolo de comunicación Bluetooth que no saturara el canal al momento de transmitir los datos capturados.
+
+        La comunicación entre el módulo HC-05 y MATLAB operando a 460{,}800 baudios resultó ser un factor determinante en la estabilidad del sistema. Esa velocidad de transmisión tuvo que equilibrarse con las pausas de 60~ms entre bloques de datos para evitar que el buffer del módulo se desbordara, lo que de no haberse considerado habría provocado pérdida de muestras y resultados incoherentes en las gráficas. El hecho de que el canal inalámbrico pudiera mantenerse estable durante las capturas, actualizando coeficientes y frecuencia en tiempo real sin interrumpir el procesamiento, confirmó que el diseño del protocolo de comunicación fue adecuado para las exigencias del sistema.
+        
+        Es por esto, que ya en matlab, tenemos el primer filtro, que en el pasa bajas produjo una salida que sigue lentamente a la onda cuadrada con curvas exponenciales cuya velocidad depende directamente de qué tan cerca está la frecuencia de prueba de la frecuencia de corte, mientras que el pasa altas reaccionó únicamente a las transiciones, generando picos que decaen hacia cero entre un flanco y otro. En el dominio de la frecuencia esto se confirmó con espectros que mostraron con claridad qué armónicos de la señal cuadrada sobrevivían al filtro y cuáles quedaban eliminados. La correspondencia entre lo que se veía en el tiempo y lo que aparecía en el espectro fue la verificación más directa de que el sistema funcionó correctamente de extremo a extremo.
+
+        \item \textbf{Lugo Manzano Rodrigo:}
+        
+        Esta practica me permitió pasar varios conceptos teóricos, incluso algunos aprendidos en asignaturas anteriores, aplicandolos en la práctica como el procesamiento digital de señales hacia una implementación funcional en hardware. Diseñar estos filtros Butterworth de primer y segundo orden mediante la transformación bilineal fue el primer paso, pero también uno de los retos estuvó en resolver los desafíos técnicos en la ejecución en tiempo real. Para asegurar un periodo de muestreo constante de 125 microsegundos a una frecuencia de 8 kHz, fue importante aplicar una temporización en MicroPython utilizando funciones como ticks\_us y ticks\_diff, evitando el desfasamiento temporal acumulativo que sucede con retardos fijos. Asimismo, la optimización mediante el decorador @micropython.native e inicializar referencias locales dentro de la función de captura nos permitio incrementar la velocidad de procesamiento de la ecuación en diferencias en el núcleo principal.
+
+        La distribución de tareas en esta arquitectura multinúcleo resultó útil para la estabilidad general del simulador, asignar de forma independiente la generación de la onda cuadrada al segundo núcleo mediante la biblioteca thread garantizó que la conmutación digital de los flancos no interfiriera con la carga computacional del filtrado. Toda esta infraestructura se integró con la etapa de comunicación inalámbrica a través del módulo HC-05, donde la configuración UART a 460800 baudios y la transmisión segmentada en bloques de 50 bytes con pausas de 60 milisegundos previnieron el desbordamiento del buffer al enviar los arreglos de datos hacia MATLAB. Lo realizado en esta práctica me enseñó la importancia de la sincronización de procesos y la optimización de código, demostrando que una gestión del tiempo y la memoria permite diseñar herramientas de análisis espectral eficientes y dinámicas.
+        
+        
+
+    \end{itemize}
+
+    \newpage
+
+    % Impresión Referencias
+    \nocite{*}
+    \printbibliography[heading=bibintoc, title={Referencias}]
+\end{document}
