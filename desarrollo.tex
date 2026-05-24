@@ -1,3 +1,334 @@
+
+\subsection{Descripción General del Sistema}
+
+El proyecto se compone de dos unidades físicas 
+independientes que se comunican de forma inalámbrica: 
+la Consola, que contiene la pantalla TFT y el buzzer, 
+y el Mando, que integra el sensor IMU y los botones de control.
+La arquitectura de software sigue un modelo cliente-servidor 
+BLE donde el Mando actúa como periférico (servidor GATT) y 
+la Consola actúa como central (cliente GATT).
+
+\begin{table}[H]
+    \centering
+    \caption{Componentes de hardware del sistema}
+    \label{tab:hardware}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Módulo} & \textbf{Componente} & \textbf{Interfaz} & \textbf{Función} \\ \hline
+        Consola & Raspberry Pi Pico 2W & --- & CPU principal del juego \\ \hline
+        Consola & TFT ILI9341 320x240 & SPI0 (40 MHz) & Pantalla de juego \\ \hline
+        Consola & Buzzer Piezoeléctrico & PWM (GP15) & Efectos de sonido \\ \hline
+        Mando & Raspberry Pi Pico 2W & --- & CPU del controlador \\ \hline
+        Mando & MPU-6050 (IMU) & I2C0 (400 kHz) & Control de movimiento \\ \hline
+        Mando & Botón Disparo (GP4) & GPIO Pull-up & Disparar proyectil \\ \hline
+        Mando & Botón Pausa (GP5) & GPIO Pull-up & Pausar / menú \\ \hline
+    \end{tabular}
+\end{table}
+
+
+\subsection{Arquitectura de Software}
+
+El software de la Consola se organiza en módulos independientes que encapsulan la lógica de cada entidad del juego. El punto de entrada \texttt{main.py} lanza dos tareas asíncronas concurrentes mediante \texttt{uasyncio}: \texttt{ble\_central\_task()} para mantener la conexión con el mando, y \texttt{game\_task()} para ejecutar el bucle principal del juego. Esta arquitectura garantiza que la pérdida temporal de conexión BLE no congele la lógica de juego.
+
+\begin{table}[H]
+    \centering
+    \caption{Módulos de software de la Consola}
+    \label{tab:modulos_consola}
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \textbf{Módulo} & \textbf{Responsabilidad} \\ \hline
+        \texttt{main.py} & Inicialización de hardware (SPI, display, buzzer), lanzamiento de tareas \textit{async} BLE y juego. \\ \hline
+        \texttt{game.py} & Clase \texttt{Game}: bucle principal, lógica de juego, detección de colisiones, renderizado, gestión de niveles y menús. \\ \hline
+        \texttt{player.py} & Clase \texttt{Player}: posición, movimiento analógico basado en IMU, dibujo del sprite y animación de explosión. \\ \hline
+        \texttt{enemy.py} & Clase \texttt{Enemy}: posición en formación, animación alternada de sprites, puntuación por fila y explosión. \\ \hline
+        \texttt{asteroid.py} & Clases \texttt{Asteroid}, \texttt{Guardian} y \texttt{DiveBomber}: enemigos especiales con comportamientos de movimiento propios. \\ \hline
+        \texttt{bullet.py} & Clase \texttt{Bullet}: proyectiles del jugador y enemigos con velocidad, color y límites de pantalla configurables. \\ \hline
+        \texttt{buzzer.py} & Clase \texttt{Buzzer}: cola de tonos PWM no bloqueante con melodías y efectos de sonido para cada evento. \\ \hline
+        \texttt{virtual\_button.py} & Clase \texttt{VirtualButton}: desacopla la lógica de pulsación (\textit{pressed} / \textit{held}) del estado BLE recibido. \\ \hline
+        \texttt{colours.py} & Constantes de colores en formato RGB565 y paleta de colores por nivel. \\ \hline
+    \end{tabular}
+\end{table}
+
+
+\subsubsection{Módulo \texttt{main.py}: Orquestación y Conectividad}
+El archivo principal coordina la inicialización de periféricos (I2C, SPI) y administra el ciclo de vida de la aplicación mediante programación asíncrona (\texttt{uasyncio}).
+
+\subsubsection{Inicialización de Periféricos y Sensores}
+El Mando requiere inicializar el bus I2C para comunicarse con la Unidad de Medición Inercial (IMU) MPU-6050.
+\begin{lstlisting}[caption={Configuración del bus I2C y pines de entrada}]
+i2c = I2C(0, sda=Pin(8), scl=Pin(9), freq=400000)
+imu = MPU6050(i2c)
+
+btn_fire = Pin(4, Pin.IN, Pin.PULL_UP)
+btn_pause = Pin(5, Pin.IN, Pin.PULL_UP)
+\end{lstlisting}
+La frecuencia de 400 kHz (Fast Mode) asegura que la lectura de los acelerómetros no se convierta en un cuello de botella. Los botones utilizan resistencias \textit{Pull-Up} internas, evitando componentes externos adicionales.
+
+\subsubsection{Empaquetado de Datos Bluetooth (BLE)}
+Para transmitir la telemetría del mando a la consola, se empaquetan los datos en una estructura binaria ligera.
+\begin{lstlisting}[caption={Estructuración y transmisión de la trama de control}]
+ax = imu.accel.x
+ay = imu.accel.y
+
+fire_pressed = (btn_fire.value() == 0)
+pause_pressed = (btn_pause.value() == 0)
+
+payload = struct.pack('<ffbb', ax, ay, int(fire_pressed), int(pause_pressed))
+_char.write(payload)
+\end{lstlisting}
+La función \texttt{struct.pack('<ffbb', ...)} codifica dos valores de punto flotante de 32 bits (aceleración X e Y) y dos bytes enteros (estado de los botones) en formato \textit{Little-Endian}. Esta trama de 10 bytes minimiza el ancho de banda consumido por el enlace BLE.
+
+\subsection{Módulo \texttt{game.py}: Motor Principal del Videojuego}
+Con más de 600 líneas, este script concentra la máquina de estados, renderizado SPI y detección matemática de colisiones.
+
+\subsection{Renderizado Diferencial (Optimización SPI)}
+Para evitar parpadeos (\textit{flickering}) y saturación del bus SPI, el juego solo redibuja los píxeles estrictamente necesarios.
+\begin{lstlisting}[caption={Algoritmo de renderizado por deltas de posición}]
+def _render(self):
+    fh = self.display.fill_hrect
+    # Diferencia horizontal
+    dx = self.player.x - self.player._px
+    if dx > 0:
+        fh(self.player._px, self.player._py, dx, PLAYER_H, BLACK)
+    elif dx < 0:
+        fh(self.player.x + PLAYER_W, self.player._py, -dx, PLAYER_H, BLACK)
+    
+    # Dibujar la nueva posicion
+    self.player.draw(self.display)
+\end{lstlisting}
+En lugar de limpiar toda la pantalla, el motor calcula la diferencia matemática (\texttt{dx}) entre el fotograma actual y el anterior. Luego, rellena con un rectángulo negro (\texttt{fill\_hrect}) únicamente la estela dejada por el movimiento del sprite.
+
+\subsection{Efecto Parallax Dinámico (Estrellas)}
+El fondo se genera algorítmicamente sin cargar imágenes estáticas.
+\begin{lstlisting}[caption={Generación de estrellas y efecto de titileo (\textit{Flicker})}]
+def _update_and_draw_stars(self):
+    dp = self.display.draw_pixel
+    for s in self.stars:
+        dp(s[0], s[1], BLACK) # Borrar anterior
+        s[1] += s[2]          # Desplazar verticalmente
+        
+        # Efecto aleatorio de titileo usando operaciones de bits
+        if getrandbits(6) == 0:
+            flicker = (getrandbits(3) % 7) - 3
+            b = s[3] + flicker
+            s[4] = self._gray565(max(0, min(b * 8, 31)))
+        dp(s[0], s[1], s[4])
+\end{lstlisting}
+El arreglo de estrellas se procesa de forma vectorial. El uso de \texttt{getrandbits} agiliza el cálculo aleatorio.
+
+
+\subsection{Módulo \texttt{player.py}: Cinemática del Jugador}
+Administra la física de la nave controlada por el usuario.
+
+\subsubsection{Filtro de Ruido Mecánico (Zona Muerta)}
+\begin{lstlisting}[caption={Conversión analógico-digital de los vectores de aceleración}]
+def move_analog(self, force_x, force_y):
+    mov_x = int(force_x * 15)
+    mov_y = int(force_y * 15)
+    
+    if abs(force_y) > 0.15: # Filtro de Zona Muerta
+        self.x -= mov_y
+        if self.x < 0:
+            self.x = 0
+        if self.x > self._width - PLAYER_W:
+            self.x = self._width - PLAYER_W
+\end{lstlisting}
+El umbral de \texttt{0.15 G} permite ignorar pequeñas vibraciones o movimientos involuntarios de la mano del usuario que podrían generar lecturas incorrectas en la IMU.
+
+\subsection{Módulo \texttt{asteroid.py}: IA Numérica y Trayectorias}
+Controla enemigos con patrones de vuelo no estandarizados.
+
+\subsubsection{Generación de Rutas Sinusoidales}
+\begin{lstlisting}[caption={Vuelo paramétrico del DiveBomber basado en funciones trigonométricas}]
+def update(self, frame_count, interval, speed, enemies):
+    ...
+    self.y += speed
+    # Movimiento oscilatorio armónico acoplado al eje Y
+    self.x = self._width // 2 + int(20 * math.sin(3 * 2 * math.pi * self.y / self._height))
+\end{lstlisting}
+El enemigo especial no desciende en línea recta. Calcula su componente \texttt{x} evaluando la función \texttt{math.sin()} con base en su progreso vertical (\texttt{y}), generando un patrón ondulante difícil de evadir.
+
+\subsection{Módulo \texttt{enemy.py}: Animación y Gestión del Enjambre}
+Optimiza el consumo de memoria en la representación visual de decenas de alienígenas.
+
+\subsection{Alternancia de Texturas por Enmascaramiento de Bits}
+\begin{lstlisting}[caption={Lógica de cambio de \textit{Sprite} usando operaciones lógicas a nivel de bits}]
+def draw(self, display, frame_count):
+    if self.alive:
+        pair = _ALIEN_PAIRS[self.row % 3]
+        sprite = pair[0] if frame_count & 0x8 else pair[1]
+        display.draw_sprite(sprite, self.x, self.y, ALIEN_W, ALIEN_H)
+\end{lstlisting}
+En vez de utilizar variables booleanas de alternancia que requieren ciclos de RAM, la instrucción evalúa el octavo bit del contador de frames general (\texttt{frame\_count \& 0x8}). Cada 8 cuadros, el resultado de la compuerta AND cambia de 0 a 1, intercalando el sprite de forma natural y ultra eficiente.
+
+\subsection{Módulo \texttt{bullet.py}: Manejo Dinámico de Proyectiles}
+Define las reglas de existencia y destrucción balística.
+
+\begin{lstlisting}[caption={Gestión del ciclo de vida del proyectil}]
+def update(self):
+    self.y += self.dy
+    # Desactivar si supera las fronteras del framebuffer
+    if self.y < 0 or self.y > self._height:
+        self.active = False
+\end{lstlisting}
+El proyectil se vuelve inactivo tan pronto como abandona la geometría de la pantalla. Esto indica al bucle en \texttt{game.py} que debe eliminar la instancia de la lista principal para liberar la asignación dinámica de memoria (Previene memory leaks).
+
+
+\subsection{Módulo \texttt{buzzer.py}: Subsistema Acústico (PWM)}
+Opera el actuador piezoeléctrico mediante Modulación por Ancho de Pulso de forma no bloqueante.
+
+\begin{lstlisting}[caption={Encolamiento asíncrono y control del temporizador de hardware}]
+def _start_pwm(self, freq):
+    if self.pwm is not None:
+        self.pwm.deinit()
+    if freq > 0:
+        self.pwm = PWM(Pin(self.pin_num))
+        self.pwm.freq(freq)
+        self.pwm.duty_u16(512) # Ciclo de trabajo del 50%
+\end{lstlisting}
+Al enviar \texttt{duty\_u16(512)} a un PWM con resolución típica de 10 bits ($2^{10}=1024$), se genera una onda cuadrada simétrica perfecta (50\% High, 50\% Low) maximizando el volumen de salida acústico.
+
+
+\subsection{Módulo \texttt{virtual\_button.py}: Filtro Lógico de Entradas}
+Protección contra el rebote eléctrico de los microinterruptores.
+
+\begin{lstlisting}[caption={Detección de flanco ascendente (Debounce por Software)}]
+def is_pressed(self):
+    pressed_event = self._is_pressed and not self._was_pressed
+    if pressed_event:
+        self._was_pressed = True 
+    return pressed_event
+\end{lstlisting}
+Garantiza que una pulsación sostenida del usuario solo dispare una única acción lógica de lectura evaluando el estado del fotograma previo (\texttt{\_was\_pressed}).
+
+
+\subsection{Módulo \texttt{colours.py}: Perfiles de Renderizado}
+Codificación cromática directa para bus SPI.
+
+\begin{lstlisting}[caption={Declaración de paleta RGB565}]
+BLACK   = 0x0000
+RED     = 0xF800
+LIME    = 0x07E0
+BLUE    = 0x001F
+WHITE   = 0xFFFF
+\end{lstlisting}
+El estándar \texttt{ILI9341} lee colores de 16 bits (5 bits rojo, 6 bits verde, 5 bits azul). Predefinirlos como constantes hexadecimales ahorra la ejecución de la fórmula analítica en el microcontrolador.
+
+
+\subsection{Comunicación BLE}
+La comunicación entre el Mando y la Consola se implementa mediante Bluetooth Low Energy usando la biblioteca \texttt{aioble} de MicroPython. El Mando opera como periférico GATT y publica un servicio personalizado con UUID \texttt{12345678-1234-1234-1234-123456789abc}. Dentro de este servicio expone una característica de notificación con UUID complementario que transmite una estructura de 10 bytes empaquetados con \texttt{struct} a una tasa de 100 Hz (cada 10 ms).
+
+La trama BLE contiene: dos valores \texttt{float32} en \textit{little-endian} con las aceleraciones $ax$ y $ay$ del MPU-6050 (que corresponden a los ejes de inclinación del mando), y dos bytes con el estado booleano de los botones de disparo y pausa. La Consola, al recibir una notificación, deserializa la trama y actualiza un objeto \texttt{ControllerState} compartido que el bucle de juego lee en cada frame para actualizar el movimiento del jugador y los eventos de botón.
+
+\begin{lstlisting}[language=Python]
+# Trama BLE: '<ffbb' -> ax (float), ay (float), fire (byte), pause (byte)
+payload = struct.pack('<ffbb', ax, ay, int(fire_pressed), int(pause_pressed))
+_char.write(payload)
+await _char.notify(connection)
+\end{lstlisting}
+
+\subsection{Motor de Juego}
+
+\subsubsection{Bucle Principal y Renderizado}
+El bucle de juego se ejecuta a aproximadamente 30 fps (\textit{sleep} de 33 ms por iteración). En cada frame: se actualizan los estados de los botones virtuales, se aplica el movimiento analógico al jugador a partir de las aceleraciones del IMU, se procesan disparos, se actualizan todos los objetos activos, se detectan colisiones y finalmente se renderiza la escena. Para evitar parpadeo y minimizar la escritura SPI, el renderizado usa una estrategia de actualización diferencial: antes de cada frame se guardan las posiciones previas (\texttt{\_save\_positions}) y al dibujar solo se borra el rectángulo exacto del área anterior de cada sprite, pintándolo de negro antes de redibujar en la nueva posición.
+
+\subsubsection{Fondo Estrellado}
+El fondo del juego simula un campo de 30 estrellas con velocidades de desplazamiento vertical distintas (1, 2 o 3 píxeles por frame) y brillo variable, creando un efecto de paralaje y destello. Cada estrella almacena su posición, velocidad, brillo base y color en formato RGB565. Con una probabilidad de 1/64 por frame, el brillo de una estrella fluctúa aleatoriamente en $\pm 3$ unidades para simular el centelleo. Al salir de la pantalla por la parte inferior, la estrella se reinicia en la parte superior con una posición horizontal aleatoria.
+
+\subsubsection{Enemigos y Formación}
+La formación inicial consta de 24 enemigos distribuidos en 3 filas de 8 columnas, con separación de 24 píxeles horizontales y 20 píxeles verticales. El movimiento de la formación es por filas rotativas: en cada tick de movimiento se desplaza una fila, avanzando a la siguiente en el ciclo. Cuando cualquier enemigo vivo de la fila activa alcanza el borde de la pantalla, toda la formación desciende \texttt{ENEMY\_DROP} (10 px) y el sentido horizontal se invierte. La velocidad del tick de movimiento es inversamente proporcional al número de enemigos vivos, acelerando la formación conforme se eliminan enemigos.
+
+\subsubsection{Enemigos Especiales}
+El juego incluye tres tipos de enemigos especiales que aparecen periódicamente:
+\begin{itemize}
+    \item \textbf{Asteroid} (bola de fuego): cae en línea recta con leve deriva horizontal. Destruye enemigos de la formación al impactarlos. Al colisionar con el jugador le quita una vida.
+    \item \textbf{Guardian}: cae con movimiento descendente y deriva horizontal. Su efecto especial al colisionar con el jugador es sumar una vida (hasta el máximo de 3) en lugar de restarla, funcionando como power-up.
+    \item \textbf{DiveBomber}: se lanza desde la posición de un enemigo vivo de la fila 2 y sigue una trayectoria sinusoidal hacia abajo usando la función \texttt{math.sin}. Vale 50 puntos al ser destruido.
+\end{itemize}
+
+\subsubsection{Sistema de Disparos}
+El jugador puede disparar de dos formas: pulsación rápida (\texttt{is\_pressed}), que genera un proyectil por evento, y disparo automático sostenido (\texttt{is\_held}), que genera un proyectil cada 3 frames mientras el botón permanece presionado. Los proyectiles del jugador viajan hacia arriba a 5 píxeles por frame en color cyan, y los proyectiles enemigos viajan hacia abajo a 4 píxeles por frame en color naranja. La cadencia de disparo enemigo está controlada por \texttt{enemy\_rate\_of\_fire}, que disminuye con cada nivel para incrementar la dificultad.
+
+\subsubsection{Detección de Colisiones}
+Las colisiones se calculan por AABB (\textit{Axis-Aligned Bounding Box}) en cada frame sobre los siguientes pares de entidades: proyectiles del jugador contra enemigos de formación, proyectiles del jugador contra Guardian y DiveBomber, proyectiles enemigos contra el jugador, Asteroid y DiveBomber contra el jugador, Guardian contra el jugador (power-up), y Asteroid contra enemigos de formación. Una colisión jugador-enemigo directo también es posible si la formación desciende hasta la posición del jugador.
+
+\subsection{Sistema de Audio}
+El módulo Buzzer implementa una cola de reproducción no bloqueante para el buzzer piezoeléctrico conectado al pin GP15. En lugar de usar delays bloqueantes, el método \texttt{update()} es invocado en cada iteración del bucle de juego y del bucle del menú. Si hay una nota activa y su duración ha transcurrido, detiene el PWM e inicia la siguiente nota de la cola. Las melodías están predefinidas como secuencias de frecuencias y duraciones, cubriendo eventos como: disparo del jugador, explosión, disparo enemigo, impacto, recogida de power-up, muerte del jugador, cambio de nivel, inicio de partida y notas del menú.
+
+\subsection{Dificultad Progresiva}
+El juego implementa un sistema de 10 niveles de dificultad que se aplican cíclicamente (nivel 11 usa la configuración del nivel 1, etc.). Además, el jugador puede seleccionar uno de tres modos de dificultad desde el menú de pausa:
+\begin{itemize}
+    \item \textbf{Fácil:} velocidad de enemigos reducida al 60\%, intervalos de aparición y cadencia de disparo aumentados 50\%.
+    \item \textbf{Normal:} parámetros base definidos por la tabla de niveles.
+    \item \textbf{Difícil:} velocidad de enemigos aumentada 50\%, intervalos reducidos al 60\%, velocidades de asteroides y dive bombers incrementadas 50\%.
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \caption{Parámetros de dificultad por nivel (modo Normal)}
+    \label{tab:dificultad}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        \textbf{Nivel} & \textbf{Vel. Enemigo (frames)} & \textbf{Intervalo Asteroide} & \textbf{Vel. Asteroide} & \textbf{Int. DiveBomber} & \textbf{Vel. DiveBomber} \\ \hline
+        1 & 60 & 600 & 2 & 500 & 2 \\ \hline
+        2 & 50 & 400 & 3 & 480 & 3 \\ \hline
+        3 & 40 & 300 & 4 & 460 & 4 \\ \hline
+        4 & 30 & 200 & 5 & 440 & 5 \\ \hline
+        5 & 20 & 100 & 6 & 260 & 5 \\ \hline
+        6 & 10 & 80 & 7 & 240 & 6 \\ \hline
+        7 & 5 & 60 & 8 & 220 & 7 \\ \hline
+        8 & 3 & 60 & 9 & 60 & 8 \\ \hline
+        9 & 3 & 60 & 10 & 60 & 8 \\ \hline
+        10 & 3 & 60 & 11 & 60 & 9 \\ \hline
+    \end{tabular}%
+    }
+\end{table}
+
+\subsection{Menús y Pantallas}
+El flujo de pantallas del juego sigue la siguiente secuencia:
+\begin{itemize}
+    \item \textbf{Pantalla de inicio (Splash Screen):} muestra el nombre de la institución, la materia y los integrantes del equipo. Espera a que el jugador presione el botón de disparo para continuar.
+    \item \textbf{Pantalla de información:} muestra los sprites de todos los tipos de enemigos con su valor en puntos. El Guardian aparece con el indicador '+1 vida'.
+    \item \textbf{Bucle de juego:} la partida en sí. El botón de pausa abre el menú de pausa en cualquier momento.
+    \item \textbf{Menú de pausa:} permite continuar la partida, cambiar el modo de dificultad (cíclicamente entre Fácil, Normal y Difícil) o salir al menú principal. La navegación usa la inclinación del mando sobre el eje X.
+    \item \textbf{Pantalla de Game Over:} muestra el puntaje final y el nivel alcanzado. Espera a que el jugador presione disparo para reiniciar.
+\end{itemize}
+
+\subsection{Control Analógico por IMU}
+El movimiento del jugador se controla inclinando el mando físico. El MPU-6050 mide la aceleración en los ejes X e Y, que corresponden a la inclinación lateral y frontal del mando respectivamente. Estos valores se transmiten como \texttt{floats} por BLE y se aplican en el método \texttt{move\_analog()} del jugador, donde se multiplican por un factor de 15 píxeles para obtener el desplazamiento por frame. Se aplica una zona muerta del 15\% ($|\text{fuerza}| > 0.15$) para evitar deriva con el mando en reposo. El movimiento sobre el eje Y de la Pico controla la posición horizontal en pantalla, y el eje X controla la profundidad vertical (dentro de la mitad inferior de la pantalla).
+
+
+A continuación se presentan los diagramas de conexión de los dos módulos del sistema. Cada diagrama muestra el cableado completo entre la Raspberry Pi Pico 2W y sus periféricos, incluyendo los pines de alimentación, tierra y señales de datos. Las conexiones siguen un código de color para facilitar su identificación: rojo para 3.3 V, negro para GND, y colores distintos para cada señal de datos.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Diagrama de conexiones del modulo principal}
 
 \resizebox{\textwidth}{!}{
@@ -75,6 +406,43 @@
 \end{tikzpicture}
 }
 
+La consola concentra la pantalla TFT ILI9341 y el buzzer piezoeléctrico. La pantalla se conecta al bus SPI0 de la Pico 2W usando cuatro pines de datos (MOSI, MISO, SCK, CS) más dos pines de control (DC y RST). El buzzer se controla mediante la salida PWM del pin GP15. Tanto la pantalla como el buzzer comparten el plano de tierra de la Pico, y la pantalla recibe su alimentación y la iluminación del \textit{backlight} desde el pin 3V3.
+
+\begin{table}[H]
+    \centering
+    \caption{Conexiones del módulo principal (Consola)}
+    \label{tab:conexiones_consola}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Periférico} & \textbf{Pin Periférico} & \textbf{Pin Pico 2W} & \textbf{Descripción} \\ \hline
+        TFT ILI9341 & VCC & 3V3 (Pin 36) & Alimentación 3.3 V \\ \hline
+        TFT ILI9341 & GND & GND (Pin 38) & Tierra \\ \hline
+        TFT ILI9341 & CS & GP17 (Pin 22) & Chip Select SPI \\ \hline
+        TFT ILI9341 & RESET & GP21 (Pin 27) & Reset de display \\ \hline
+        TFT ILI9341 & DC & GP20 (Pin 26) & Dato / Comando \\ \hline
+        TFT ILI9341 & MOSI & GP19 (Pin 25) & Datos SPI (salida) \\ \hline
+        TFT ILI9341 & SCK & GP18 (Pin 24) & Reloj SPI (40 MHz) \\ \hline
+        TFT ILI9341 & LED & 3V3 (Pin 36) & Backlight (compartido) \\ \hline
+        TFT ILI9341 & MISO & GP16 (Pin 21) & Datos SPI (entrada) \\ \hline
+        Buzzer & SIG & GP15 (Pin 20) & Señal PWM de audio \\ \hline
+        Buzzer & GND & GND (Pin 38) & Tierra \\ \hline
+    \end{tabular}%
+    }
+\end{table}
+
+El bus SPI se configura a 40 MHz de frecuencia de reloj con polaridad y fase en 0 (modo SPI 0). La clase \texttt{Display} del driver ILI9341 maneja internamente los comandos de inicialización de la pantalla y expone los métodos \texttt{draw\_sprite()}, \texttt{fill\_hrect()}, \texttt{draw\_pixel()} y \texttt{draw\_text8x8()} que utiliza el motor de juego.
+
+
+
+
+
+
+
+
+
+
+
 \section{Diagrama de conexiones del mando}
 
 \resizebox{\textwidth}{!}{
@@ -147,3 +515,36 @@
 
 \end{tikzpicture}
 }
+
+
+El mando integra el sensor IMU MPU-6050 para la detección de movimiento por inclinación y dos botones físicos con resistencias de \textit{pull-up} internas habilitadas por software. El MPU-6050 se conecta al bus I2C0 de la Pico utilizando los pines GP8 (SDA) y GP9 (SCL) a una frecuencia de 400 kHz. Los botones se conectan directamente entre el pin GPIO y GND, aprovechando las resistencias de \textit{pull-up} internas del RP2350. La alimentación del MPU-6050 se toma del pin 3V3 de la Pico y se enruta externamente por debajo del circuito para evitar cruces con las señales de datos.
+
+\begin{table}[H]
+    \centering
+    \caption{Conexiones del módulo del mando}
+    \label{tab:conexiones_mando}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        \textbf{Periférico} & \textbf{Pin Periférico} & \textbf{Pin Pico 2W} & \textbf{Descripción} \\ \hline
+        MPU-6050 & VCC & 3V3 (Pin 36) & Alimentación 3.3 V \\ \hline
+        MPU-6050 & GND & GND (Pin 38) & Tierra \\ \hline
+        MPU-6050 & SDA & GP8 (Pin 11) & Dato I2C (400 kHz) \\ \hline
+        MPU-6050 & SCL & GP9 (Pin 12) & Reloj I2C (400 kHz) \\ \hline
+        Botón Disparo & SIG & GP4 (Pin 6) & Entrada con Pull-up interno \\ \hline
+        Botón Disparo & GND & GND (común) & Tierra \\ \hline
+        Botón Pausa & SIG & GP5 (Pin 7) & Entrada con Pull-up interno \\ \hline
+        Botón Pausa & GND & GND (común) & Tierra \\ \hline
+    \end{tabular}%
+    }
+\end{table}
+
+El software del mando (\texttt{main.py} del mando) lee las aceleraciones del MPU-6050 utilizando la librería \texttt{imu} (clase \texttt{MPU6050} sobre I2C), muestrea el estado de los botones en cada iteración del bucle asíncrono y construye la trama BLE de 10 bytes que se transmite vía notificación GATT cada 10 ms. La gestión de memoria se optimiza con llamadas periódicas a \texttt{gc.collect()} para evitar fragmentación en el heap de MicroPython durante la ejecución continua.
+
+\subsection{Protocolo BLE}
+Ambos microcontroladores utilizan el módulo \texttt{aioble} sobre el stack Bluetooth integrado del chip RP2350 de la Pico 2W. El servicio GATT se define con UUIDs de 128 bits personalizados para evitar conflictos con servicios estándar. La característica de datos se configura con permisos de lectura y notificación en el periférico. La Consola realiza un escaneo activo de 5 segundos buscando el nombre de dispositivo \texttt{'PicoMando'}; al encontrarlo, establece la conexión, descubre el servicio y se suscribe a las notificaciones. Ante cualquier desconexión o error, el task BLE espera 2 segundos y reintenta automáticamente, garantizando la reconexión sin intervenir la lógica de juego.
+
+\begin{lstlisting}[language=Python]
+_SERVICE_UUID = bluetooth.UUID('12345678-1234-1234-1234-123456789abc')
+_CHAR_UUID    = bluetooth.UUID('87654321-4321-4321-4321-cba987654321')
+\end{lstlisting}

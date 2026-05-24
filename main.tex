@@ -23,6 +23,14 @@
 \usepackage{caption}
 \usepackage{tikz}
 \usepackage{circuitikz}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
 \usetikzlibrary{shapes.geometric, shapes.multipart, shapes.symbols, positioning, arrows.meta, calc, shadows, decorations.pathreplacing,babel}
 
 
@@ -43,6 +51,10 @@
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.96}
 
 % Definición de colores para los LEDs
 \definecolor{led0}{HTML}{FF0000} % Rojo
@@ -61,32 +73,43 @@
 \definecolor{btnpause}{rgb}{0.8, 0.1, 0.6} % Magenta para botón Pause
 
 \lstset{
-  backgroundcolor=\color{backcolour},
-  basicstyle=\ttfamily\small,
-  keywordstyle=\color{blue}\bfseries,
-  stringstyle=\color{codepurple},
-  commentstyle=\color{codegray}\itshape,
-  numbers=left,
-  numberstyle=\tiny\color{codegray},
-  frame=single,
-  rulecolor=\color{black},
-  breaklines=true,
-  tabsize=4,
-  showstringspaces=false,
-  literate={á}{{\'a}}1
-           {é}{{\'e}}1
-           {í}{{\'i}}1
-           {ó}{{\'o}}1
-           {ú}{{\'u}}1
-           {Á}{{\'A}}1
-           {É}{{\'E}}1
-           {Í}{{\'I}}1
-           {Ó}{{\'O}}1
-           {Ú}{{\'U}}1
-           {ñ}{{\~n}}1
-           {Ñ}{{\~N}}1
-           {¿}{{\textquestiondown}}1
-           {¡}{{\textexclamdown}}1
+    language=Python,
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen}\itshape, % Comentarios en verde
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=10pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4,
+    frame=lines, % Líneas solo arriba y abajo. Cambiar a 'single' para un recuadro completo.
+    rulecolor=\color{black!40},
+    linewidth=\linewidth,
+    xleftmargin=10pt,
+    xrightmargin=10pt,
+    % --- Soporte para caracteres en español ---
+    literate={á}{{\'a}}1
+             {é}{{\'e}}1
+             {í}{{\'i}}1
+             {ó}{{\'o}}1
+             {ú}{{\'u}}1
+             {Á}{{\'A}}1
+             {É}{{\'E}}1
+             {Í}{{\'I}}1
+             {Ó}{{\'O}}1
+             {Ú}{{\'U}}1
+             {ñ}{{\~n}}1
+             {Ñ}{{\~N}}1
+             {¿}{{\textquestiondown}}1
+             {¡}{{\textexclamdown}}1
 }
 
 % Definición del lenguaje Python para listings
@@ -225,6 +248,17 @@
 
     \section{Objetivo:}
 
+    Diseñar e implementar un videojuego estilo Galaga completamente funcional sobre una Raspberry Pi Pico 2W programada en MicroPython, capaz de ejecutarse en tiempo real sobre una pantalla 
+    TFT ILI9341 de 320x240 pixeles, siendo controlado de forma inalambrica mediante un segundo microcontrolador Pico 2W que actua como mando Bluetooth Low Energy (BLE) equipado con una unidad de medicion inercial (IMU) MPU-6050 
+    y dos botones fisicos uno para disparar y otro para poner pausa. El sistema combina varios componentes de hardware y software para 
+    aprovechar al máximo las capacidades del microcontrolador. 
+    Utiliza comunicación SPI para mostrar gráficos rápidamente en la pantalla, 
+    protocolo I2C para leer datos del sensor inercial, 
+    Bluetooth Low Energy para la conexión inalámbrica, y 
+    PWM para generar sonidos con un buzzer. 
+    Además, emplea programación asíncrona con uasyncio para que 
+    todas las funciones del juego trabajen al mismo tiempo de manera 
+    organizada y eficiente.
 
     \section{Desarrollo:}
     \input{desarrollo.tex}
