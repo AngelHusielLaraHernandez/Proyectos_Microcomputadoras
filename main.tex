@@ -53,6 +53,12 @@
 \definecolor{led5}{HTML}{4B0082} % Índigo
 \definecolor{led6}{HTML}{9400D3} % Violeta
 \definecolor{led7}{HTML}{FF1493} % Rosa Intenso
+\definecolor{mosicolor}{rgb}{0.1, 0.6, 0.1} % Verde oscuro para visibilidad
+\definecolor{miso}{rgb}{0.5, 0, 0.5}       % Morado
+\definecolor{sdacolor}{rgb}{0.0, 0.4, 0.8} % Azul para I2C SDA
+\definecolor{sclcolor}{rgb}{0.9, 0.5, 0.0} % Naranja para I2C SCL
+\definecolor{btnfire}{rgb}{0.1, 0.7, 0.2}  % Verde para botón Fire
+\definecolor{btnpause}{rgb}{0.8, 0.1, 0.6} % Magenta para botón Pause
 
 \lstset{
   backgroundcolor=\color{backcolour},
@@ -108,7 +114,7 @@
 % Macro para dibujar la Raspberry Pi Pico y sus nodos
 \newcommand{\picoboard}{
     \draw[thick] (0,0.5) rectangle (4,-9.5);
-    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico};
+    \node[align=center, font=\small\sffamily] at (2, -1.5) {Raspberry PI\\[0.1cm]Pico\\[0.1cm]2W};
 
     % Pines Superiores
     \draw[red, thick] (0.8, 0.5) -- (0.8, 0.8) coordinate (P41); \node[above, font=\tiny\sffamily, inner sep=1pt] at (P41) {41};

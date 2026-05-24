@@ -1,0 +1,149 @@
+\section{Diagrama de conexiones del modulo principal}
+
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=latex, font=\sffamily]
+
+% ---------------- Dibujar Pico 2W ----------------
+\picoboard
+
+% ---------------- TFT ILI9341 Display ----------------
+\draw[thick, fill=blue!10, rounded corners=2pt] (10, -0.5) rectangle (14.5, -7.5);
+\draw[thick, fill=black] (10.3, -1) rectangle (14.2, -7);
+\node[align=center, font=\sffamily\bfseries\color{white}] at (12.25, -4) {ILI9341 \\ TFT Display};
+
+% Pines del TFT (Corregido para que el texto sea blanco y esté dentro del marco negro)
+\foreach \y/\text in {
+    -1.6/VCC, -2.2/GND, -2.8/CS, -3.4/RESET, -4.0/DC,
+    -4.6/MOSI, -5.2/SCK, -5.8/LED, -6.4/MISO
+} {
+    \draw[thick] (9.6, \y) -- (10.3, \y);
+    \node[right, font=\tiny\sffamily\bfseries, text=white] at (10.4, \y) {\text};
+}
+
+% ---------------- Módulo Buzzer ----------------
+\draw[thick, fill=gray!20] (-5, -8.5) circle (1.2);
+\draw[thick, fill=gray!50] (-5, -8.5) circle (0.4);
+\node[align=center, font=\sffamily\bfseries, above] at (-5, -7.1) {Buzzer};
+
+% Pines del Buzzer
+\draw[thick] (-4.3, -8.2) -- (-3.8, -8.2);
+\node[left, font=\tiny\sffamily] at (-4.3, -8.2) {SIG};
+\draw[thick] (-4.3, -8.8) -- (-3.8, -8.8);
+\node[left, font=\tiny\sffamily] at (-4.3, -8.8) {GND};
+
+
+% ---------------- Conexiones de Enrutado ----------------
+% Para evitar cualquier error de renderizado, se utilizan rutas de 
+% coordenadas matemáticas absolutas sin depender de nodos variables.
+
+% --- Energía y Tierra ---
+% 3V3 (Pin 36, Y = -2.25) -> VCC & LED
+\draw[red, thick] (4.4, -2.25) -- (8.5, -2.25) -- (8.5, -1.6) -- (9.6, -1.6);
+\draw[red, thick, fill=red] (8.5, -2.25) circle (1.5pt); % Punto de unión
+\draw[red, thick] (8.5, -2.25) -- (8.5, -5.8) -- (9.6, -5.8);
+
+% GND Pico Inferior -> TFT GND y Buzzer GND
+\draw[black, thick] (2, -10.2) -- (2, -10.6) -- (8.0, -10.6) -- (8.0, -2.2) -- (9.6, -2.2);
+\draw[black, thick, fill=black] (2, -10.6) circle (1.5pt); % Punto de unión central
+\draw[black, thick] (2, -10.6) -- (-3.8, -10.6) -- (-3.8, -8.8);
+
+
+% --- Pines SPI hacia TFT (Lado Derecho) ---
+% RST -> GP21 (Pin 27, Y = -6.30)
+\draw[orange, thick] (4.4, -6.30) -- (5.0, -6.30) -- (5.0, -3.4) -- (9.6, -3.4);
+
+% DC -> GP20 (Pin 26, Y = -6.75)
+\draw[olive, thick] (4.4, -6.75) -- (5.5, -6.75) -- (5.5, -4.0) -- (9.6, -4.0);
+
+% MOSI -> GP19 (Pin 25, Y = -7.20)
+\draw[mosicolor, thick] (4.4, -7.20) -- (6.0, -7.20) -- (6.0, -4.6) -- (9.6, -4.6);
+
+% SCK -> GP18 (Pin 24, Y = -7.65)
+\draw[cyan, thick] (4.4, -7.65) -- (6.5, -7.65) -- (6.5, -5.2) -- (9.6, -5.2);
+
+% CS -> GP17 (Pin 22, Y = -8.55)
+\draw[blue, thick] (4.4, -8.55) -- (7.0, -8.55) -- (7.0, -2.8) -- (9.6, -2.8);
+
+% MISO -> GP16 (Pin 21, Y = -9.00) (CORREGIDO CON COORDENADAS EXACTAS)
+\draw[miso, thick] (4.4, -9.00) -- (7.5, -9.00) -- (7.5, -6.4) -- (9.6, -6.4);
+
+
+% --- Pin del Buzzer (Lado Izquierdo) ---
+% BUZ SIG -> GP15 (Pin 20, Y = -9.00)
+\draw[magenta, thick] (-0.4, -9.00) -- (-2, -9.00) -- (-2, -8.2) -- (-3.8, -8.2);
+
+\end{tikzpicture}
+}
+
+\section{Diagrama de conexiones del mando}
+
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[>=latex, font=\sffamily]
+
+% ---------------- 1. Dibujar Pico 2W ----------------
+\picoboard
+
+% ---------------- 2. Módulos y Componentes Periféricos ----------------
+
+% Módulo MPU6050 (Alineado con los pines I2C de la Pico)
+\draw[thick, fill=blue!10, rounded corners=2pt] (-8, -4.0) rectangle (-5.0, -6.5);
+\draw[thick, fill=black] (-7.5, -4.2) rectangle (-5.5, -5.8);
+\node[align=center, font=\sffamily\bfseries\tiny, text=white] at (-6.5, -5.0) {MPU6050 \\ IMU};
+
+% Etiquetas de pines del MPU6050
+\node[right, font=\tiny\sffamily, text=white] at (-7.5, -5.40) {SCL};
+\node[right, font=\tiny\sffamily, text=white] at (-7.5, -4.95) {SDA};
+\node[right, font=\tiny\sffamily] at (-7.5, -4.40) {VCC};
+\node[right, font=\tiny\sffamily] at (-7.5, -6.10) {GND};
+
+% Botón FIRE (Alineado con GP4)
+\draw[thick, fill=gray!20, rounded corners=2pt] (-8, -2.5) rectangle (-5.0, -2.9);
+\node[font=\sffamily\tiny\bfseries] at (-6.5, -2.7) {Boton disparo};
+\node[right, font=\tiny\sffamily] at (-8.0, -2.7) {GND};
+\node[left, font=\tiny\sffamily] at (-5.0, -2.7) {SIG};
+
+% Botón PAUSE (Alineado con GP5)
+\draw[thick, fill=gray!20, rounded corners=2pt] (-8, -2.95) rectangle (-5.0, -3.35);
+\node[font=\sffamily\tiny\bfseries] at (-6.5, -3.15) {Boton Pausa};
+\node[right, font=\tiny\sffamily] at (-8.0, -3.15) {GND};
+\node[left, font=\tiny\sffamily] at (-5.0, -3.15) {SIG};
+
+
+% ---------------- 3. Conexiones de Enrutado ----------------
+
+% --- A. Señales de Datos (Trazos 100% horizontales sin cruces) ---
+% GP4 (Pin 6, Y = -2.70) -> BTN FIRE
+\draw[btnfire, thick] (-5.0, -2.70) -- (-0.4, -2.70);
+
+% GP5 (Pin 7, Y = -3.15) -> BTN PAUSE
+\draw[btnpause, thick] (-5.0, -3.15) -- (-0.4, -3.15);
+
+% GP8 SDA (Pin 11, Y = -4.95) -> MPU6050 SDA
+\draw[sdacolor, thick] (-5.0, -4.95) -- (-0.4, -4.95);
+
+% GP9 SCL (Pin 12, Y = -5.40) -> MPU6050 SCL
+\draw[sclcolor, thick] (-5.0, -5.40) -- (-0.4, -5.40);
+
+
+% --- B. Alimentación (VCC / 3V3) ---
+% 3V3 (Pin 36, Y = -2.25) -> MPU6050 VCC
+% Enrutado externo que abraza el circuito por debajo para evitar los datos.
+\draw[red, thick] (-8.0, -4.40) -- (-10.0, -4.40) -- (-10.0, -11.5) -- (5.0, -11.5) -- (5.0, -2.25) -- (4.4, -2.25);
+
+
+% --- C. Tierra (GND común) ---
+% Las tierras se unen en una barra vertical a la izquierda y bajan hacia el PGND.
+\draw[black, thick] (-8.0, -2.70) -- (-9.0, -2.70);
+\draw[black, thick, fill=black] (-9.0, -2.70) circle (1.5pt); % Punto unión Fire
+
+\draw[black, thick] (-8.0, -3.15) -- (-9.0, -3.15);
+\draw[black, thick, fill=black] (-9.0, -3.15) circle (1.5pt); % Punto unión Pause
+
+\draw[black, thick] (-8.0, -6.10) -- (-9.0, -6.10);
+\draw[black, thick, fill=black] (-9.0, -6.10) circle (1.5pt); % Punto unión MPU
+
+% Barra principal de GND que baja y cruza hacia el pin central de la Pico
+\draw[black, thick] (-9.0, -2.70) -- (-9.0, -10.8) -- (2.0, -10.8) -- (2.0, -10.2);
+
+\end{tikzpicture}
+}
