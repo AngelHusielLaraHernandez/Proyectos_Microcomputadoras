@@ -277,7 +277,40 @@
         
  
         \item \textbf{García Cortés Adolfo de Jesús:}
+        El desarrollo de este proyecto me permitió aplicar de manera 
+        práctica los conocimientos adquiridos durante el curso de 
+        microcomputadoras haciendo  un videojuego estilo Galaga 
+        completamente funcional utilizando 
+        microcontroladores Raspberry Pi Pico 2W. 
+        Recrear la experiencia y las mecánicas 
+        principales de este clásico implicó integrar correctamente 
+        tanto el hardware como el software.
+
+        En la parte de conectividad, se logró establecer una comunicación 
+        estable mediante Bluetooth Low Energy (BLE) 
+        usando una arquitectura cliente-servidor. 
+        Gracias a esto, una segunda tarjeta pudo 
+        funcionar como control inalámbrico, enviando en 
+        tiempo real los datos del sensor MPU-6050 mediante I2C y 
+        las señales de los botones físicos. Esto permitió 
+        que el movimiento de la nave se sintiera rápido y
+        preciso durante la partida.
+
+        En el apartado de software, uno de los aprendizajes más 
+        importantes fue el uso de programación asíncrona con uasyncio. 
+        Esta estructura permitió que diferentes tareas 
+        funcionaran al mismo tiempo sin interferirse entre sí,
+        como la comunicación BLE, el movimiento de los enemigos,
+        la detección de colisiones y la generación de sonido mediante PWM. 
+        Además, se optimizó el rendimiento gráfico usando renderizado
+        diferencial por SPI, redibujando únicamente las partes de la 
+        pantalla TFT que cambiaban. Gracias a esto, se eliminó el parpadeo 
+        visual y se mantuvo una experiencia de juego fluida.
         
+        En conclusión, la construcción de este Galaga representó un reto . El proyecto me 
+        permitió aplicar y reforzar conocimientos sobre programación de bajo nivel,
+         manejo de protocolos de comunicación como SPI, I2C y BLE, 
+         así como el manejo eficiente de los recursos del microcontrolador.
 
         \item \textbf{Lara Hernandez Angel Husiel:}
 
