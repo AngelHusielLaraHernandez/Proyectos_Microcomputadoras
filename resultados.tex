@@ -1,0 +1,96 @@
+\subsection{Prueba de Comunicación y Enlace BLE}
+
+El primer resultado del sistema fue validar que se estableció correctamente la comunicación inalámbrica entre los dos microcontroladores. Para comprobar la correcta ejecución de las tareas, se monitoreó la salida de los dispositivos a través de la terminal del entorno de desarrollo Thonny.
+
+En la siguiente imagen se presenta la captura de los registros generados durante la prueba de emparejamiento. Se ve el momento en que el escaneo activo de la consola esta buscando el mando y cuando lo localiza, establece la conexión.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{img/consola/Consola.png}
+    \caption{Terminal de Thonny confirmando el establecimiento exitoso de la conexión Bluetooth.}
+    \label{fig:res_consola}
+\end{figure}
+
+
+
+
+\subsection{Experiencia en el juego}
+
+\subsubsection{Pantalla de inicio}
+Una vez que la conexión Bluetooth se establecio correctamente, la pantalla de la consola muestra la interfaz de inicio. En la siguiente imagen se aprecia la portada del juego, donde incluimos el nombre de la universidad, la materia y los integrantes del equipo. El sistema se queda a la espera de que el jugador presione el botón de disparo en el mando para comenzar la partida.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/game/inicio.jpg}
+    \caption{Pantalla principal de inicio esperando la interacción del jugador.}
+\end{figure}
+
+\subsubsection{Pantalla de información}
+Inmediatamente después de la pantalla de inicio y antes de arrancar a jugar como tal la partida, el sistema muestra una pantalla con información del juego. En la siguiente imagen se observan los distintos tipos de enemigos junto con la puntuación que otorgan al ser destruidos: 50, 30, 20 y 10 dependiendo de la nave. También se muestran los obstáculos, como el meteorito cuyo valor aparece como ``??'' ya que te penaliza quitando de 1 a 2 puntos dependiendo de si le disparas o lo dejas pasar, y la nave aliada que te otorga una vida extra (+1).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/game/segundafase.jpg}
+    \caption{Pantalla de información con los puntajes de cada enemigo y obstáculo.}
+\end{figure}
+
+
+\subsubsection{Inicio del desarrollo de la partida}
+
+Al iniciar el juego, en la siguiente imagen podemos ver cómo se despliega los enemigos en la parte superior y la nave de jugador en la inferior. También se ve el fondo dinámico de estrellas y los marcadores de puntuación, nivel y vidas restantes en los bordes superiores de la pantalla. Durante las pruebas notamos que el movimiento de la nave se siente muy fluido y la rapidez va de acuedo al grado de inclinación del control y la pantalla no presenta parpadeos molestos gracias a la optimización de borrado que implementamos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/game/iniciojuego.jpg}
+    \caption{Primera fase del juego con la formación de enemigos y la interfaz en pantalla.}
+\end{figure}
+
+\subsubsection{Menú de pausa}
+Si el jugador presiona el botón de pausa durante el juego, el sistema detiene la acción y despliega dicho menú. En la foto se muestra esta pantalla, donde el jugador puede elegir entre continuar la partida, cambiar la dificultad o salir al menú principal. Comprobamos que la navegación por las opciones usando la inclinación del mando funciona a la perfección.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/game/menupausa.jpg}
+    \caption{Menú de pausa interactivo controlado por el movimiento del mando.}
+\end{figure}
+
+\subsubsection{Colisiones y pérdida de vidas}
+La detección de colisiones fue otro punto clave que evaluamos. En la siguiente secuencia de dos imágenes capturamos el momento exacto en que la nave del jugador es impactada. Primero se ve la explosión generada por el choque, y en la segunda imagen se observa cómo la nave reaparece en el centro (parpedeando), para indicar un breve periodo de invulnerabilidad, mientras el contador de vidas disminuye correctamente.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/game/perdidadevida1.jpg}
+    \caption{Momento exacto del impacto mostrando la animación de explosión de la nave.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/game/perdidadevida2.jpg}
+    \caption{Reaparición del jugador con invulnerabilidad temporal y la actualización del contador de vidas.}
+\end{figure}
+
+\subsubsection{Progresión de niveles}
+Conforme el jugador elimina a todos los enemigos de la pantalla, el sistema avanza al siguiente nivel. En las siguientes tres imágenes se ve esta transición. Primero se muestra el nivel completado sin enemigos, luego el mensaje de preparación para el siguiente asalto, donde la velocidad y la dificultad aumentan.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{img/game/nextlevel1.jpg}
+    \caption{Nivel sin enemigos.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{img/game/nextlevel2.jpg}
+    \caption{Mensaje de transición hacia el siguiente nivel.}
+\end{figure}
+
+\subsubsection{Fin del juego}
+Finalmente, cuando el jugador pierde todas sus vidas, se detecta el final de la partida. En la siguiente imagen se ve la pantalla de fin de juego, la cual muestra la puntuación final obtenida y el nivel máximo alcanzado. Desde aquí, el sistema espera nuevamente a que se presione el botón de disparo para reiniciar todo el ciclo de juego.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/game/gameover.jpg}
+    \caption{Pantalla de fin de juego con el resumen de la puntuación.}
+\end{figure}
+
+
+
