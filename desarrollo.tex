@@ -51,263 +51,562 @@ El software de la Consola se organiza en módulos independientes que encapsulan 
 \end{table}
 
 
-\subsubsection{Módulo \texttt{main.py}: Orquestación y Conectividad}
-El archivo principal coordina la inicialización de periféricos (I2C, SPI) y administra el ciclo de vida de la aplicación mediante programación asíncrona (\texttt{uasyncio}).
+\subsubsection{Módulo \texttt{main.py}: Control Principal y Conexión}
+El archivo main.py se encarga de encender todas las partes del hardware y controlar cómo funciona la aplicación usando tareas simultáneas (programación asíncrona) con uasyncio. Su trabajo principal es preparar los componentes físicos, crear dos tareas que funcionan al mismo tiempo y arrancarlas juntas con asyncio.gather(). Esto asegura que la comunicación por Bluetooth (BLE) y el juego operen en equipo sin estorbarse mutuamente.
 
-\subsubsection{Inicialización de Periféricos y Sensores}
-El Mando requiere inicializar el bus I2C para comunicarse con la Unidad de Medición Inercial (IMU) MPU-6050.
-\begin{lstlisting}[caption={Configuración del bus I2C y pines de entrada}]
+\subsubsection{Preparación del Hardware}
+La consola prepara la pantalla para que actualice rápido (a 40 MHz) y configura la pequeña bocina (buzzer) en el pin GP15. También crea un objeto llamado \texttt{ControllerState} que funciona como una memoria compartida: la tarea de Bluetooth guarda ahí los datos que recibe del mando, y el juego los lee constantemente sin tener problemas, ya que MicroPython organiza muy bien las tareas.
+
+\begin{lstlisting}[language=Python, caption={Inicialización de hardware SPI y display en la Consola}]
+from machine import Pin, SPI
+from ili9341 import Display
+
+SPI_ID, PIN_SCK, PIN_MOSI, PIN_MISO = 0, 18, 19, 16
+PIN_CS, PIN_DC, PIN_RST, BUZZER_PIN  = 17, 20, 21, 15
+
+spi = SPI(SPI_ID, baudrate=40_000_000, polarity=0, phase=0,
+          sck=Pin(PIN_SCK), mosi=Pin(PIN_MOSI), miso=Pin(PIN_MISO))
+
+display = Display(spi,
+                  cs=Pin(PIN_CS,  Pin.OUT),
+                  dc=Pin(PIN_DC,  Pin.OUT),
+                  rst=Pin(PIN_RST, Pin.OUT),
+                  width=320, height=240, rotation=270)
+display.clear()
+\end{lstlisting}
+
+En el mando de juego, se configura la conexión I2C0 de forma rápida (400 kHz) para comunicarse con el sensor de movimiento (MPU-6050) y se preparan los botones aprovechando las conexiones internas del RP2350. Hacer esto rápido evita que leer el sensor haga lento el programa, sobre todo porque esta lectura se hace cada 10 milisegundos.
+
+\begin{lstlisting}[language=Python, caption={Inicialización del bus I2C y los botones en el Mando}]
+from machine import Pin, I2C
+from imu import MPU6050
+
+# Bus I2C0: SDA=GP8, SCL=GP9, frecuencia 400 kHz (Fast Mode)
 i2c = I2C(0, sda=Pin(8), scl=Pin(9), freq=400000)
 imu = MPU6050(i2c)
 
-btn_fire = Pin(4, Pin.IN, Pin.PULL_UP)
+# Pull-up interno: Pin.value() == 0 significa presionado
+btn_fire  = Pin(4, Pin.IN, Pin.PULL_UP)
 btn_pause = Pin(5, Pin.IN, Pin.PULL_UP)
 \end{lstlisting}
-La frecuencia de 400 kHz (Fast Mode) asegura que la lectura de los acelerómetros no se convierta en un cuello de botella. Los botones utilizan resistencias \textit{Pull-Up} internas, evitando componentes externos adicionales.
 
-\subsubsection{Empaquetado de Datos Bluetooth (BLE)}
-Para transmitir la telemetría del mando a la consola, se empaquetan los datos en una estructura binaria ligera.
-\begin{lstlisting}[caption={Estructuración y transmisión de la trama de control}]
-ax = imu.accel.x
-ay = imu.accel.y
+\subsubsection{Empaquetado y Envío de Datos por Bluetooth}
+Para enviar los datos del control a la consola de forma rápida, se comprimen en un paquete muy pequeño de 10 bytes usando \texttt{struct.pack}. Ahí se guardan dos números con decimales (inclinación X e Y) y dos números enteros (para saber si se apretaron los botones). Hacer esto ocupa muy poco espacio, mucho menos que usar formatos de texto largos. Esta información se manda unas 100 veces por segundo, y además el programa limpia la memoria periódicamente con \texttt{gc.collect()} para que la tarjeta no se trabe tras un rato de uso.
 
-fire_pressed = (btn_fire.value() == 0)
-pause_pressed = (btn_pause.value() == 0)
+\begin{lstlisting}[language=Python, caption={Lectura del IMU, empaquetado y notificación BLE en el Mando}]
+import struct, gc
 
-payload = struct.pack('<ffbb', ax, ay, int(fire_pressed), int(pause_pressed))
-_char.write(payload)
+async def peripheral_task():
+    while True:
+        connection = await aioble.advertise(
+            250_000, name='PicoMando', services=[_SERVICE_UUID]
+        )
+        while connection.is_connected():
+            ax = imu.accel.x   # Inclinacion lateral
+            ay = imu.accel.y   # Inclinacion frontal
+            fire_pressed  = (btn_fire.value()  == 0)
+            pause_pressed = (btn_pause.value() == 0)
+
+            # '<ffbb': 2 float32 (8 bytes) + 2 uint8 (2 bytes) = 10 bytes
+            payload = struct.pack('<ffbb', ax, ay,
+                                  int(fire_pressed), int(pause_pressed))
+            _char.write(payload)
+            await _char.notify(connection)
+
+            gc.collect()               # Liberar heap: evita fragmentacion
+            await asyncio.sleep_ms(10) # Tasa de envio: 100 Hz
 \end{lstlisting}
-La función \texttt{struct.pack('<ffbb', ...)} codifica dos valores de punto flotante de 32 bits (aceleración X e Y) y dos bytes enteros (estado de los botones) en formato \textit{Little-Endian}. Esta trama de 10 bytes minimiza el ancho de banda consumido por el enlace BLE.
 
-\subsection{Módulo \texttt{game.py}: Motor Principal del Videojuego}
-Con más de 600 líneas, este script concentra la máquina de estados, renderizado SPI y detección matemática de colisiones.
+\subsubsection{Recepción de Datos en la Consola}
+La tarea \texttt{ble\_central\_task()} busca el control llamado 'PicoMando' durante 5 segundos. Cuando lo encuentra, se conecta y se queda atenta. Cada vez que llega información, la desempaqueta y actualiza las acciones en el juego. Si por algún motivo se pierde la conexión, el programa espera 2 segundos y se vuelve a conectar solo, sin interrumpir tu partida.
 
-\subsection{Renderizado Diferencial (Optimización SPI)}
-Para evitar parpadeos (\textit{flickering}) y saturación del bus SPI, el juego solo redibuja los píxeles estrictamente necesarios.
-\begin{lstlisting}[caption={Algoritmo de renderizado por deltas de posición}]
+\begin{lstlisting}[language=Python, caption={Tarea BLE de la Consola: escaneo, conexión y deserialización}]
+async def ble_central_task():
+    while True:
+        try:
+            async with aioble.scan(5000, interval_us=30000,
+                                   window_us=30000, active=True) as scanner:
+                async for result in scanner:
+                    if result.name() == 'PicoMando':
+                        device = result.device
+                        break
+                else:
+                    continue
+            connection = await device.connect(timeout_ms=2000)
+            service    = await connection.service(_SERVICE_UUID)
+            char       = await service.characteristic(_CHAR_UUID)
+            await char.subscribe(notify=True)
+            while True:
+                data = await char.notified()
+                # Deserializar: '<ffbb' -> ax, ay, fire, pause
+                x, y, fire_val, pause_val = struct.unpack('<ffbb', data)
+                ctrl_state.x         = x
+                ctrl_state.y         = y
+                ctrl_state.fire_raw  = bool(fire_val)
+                ctrl_state.pause_raw = bool(pause_val)
+        except Exception:
+            await asyncio.sleep_ms(2000)  # Reintentar tras desconexion
+\end{lstlisting}
+
+\subsection{Módulo \texttt{game.py}: Corazón del Juego}
+Este archivo tiene más de 600 líneas porque es la parte principal. Aquí se controla todo: cómo dibujan los gráficos, cómo se mueven los enemigos, los choques entre naves y los menús. La clase \texttt{Game} agrupa todas las piezas físicas (pantalla, botones y sonido) para manejarlas en un solo lugar.
+
+\subsubsection{Preparación y Estado del Juego}
+Al empezar, se crean todos los personajes y objetos, además de preparar las reglas: dónde empiezan los enemigos, cuántas vidas tienes, los puntos, el nivel y la dificultad. La función \texttt{setup\_game()} acomoda a los 24 enemigos en sus posiciones iniciales de 3x8 y reinicia el fondo cada vez que empiezas una nueva partida.
+
+\begin{lstlisting}[language=Python, caption={Constructor de la clase Game: instanciación de entidades y estado inicial}]
+class Game:
+    def __init__(self, display, buzzer, btn_fire, btn_pause, ctrl_state):
+        self.display    = display
+        self.buzzer     = buzzer
+        self.btn_fire   = btn_fire
+        self.btn_pause  = btn_pause
+        self.ctrl_state = ctrl_state
+
+        self.player      = Player(WIDTH, HEIGHT)
+        self.asteroid    = Asteroid(WIDTH, HEIGHT)
+        self.guardian    = Guardian(WIDTH, HEIGHT)
+        self.dive_bomber = DiveBomber(WIDTH, HEIGHT)
+
+        self.enemies        = []   # Lista de 24 instancias Enemy
+        self.player_bullets = []   # Proyectiles del jugador activos
+        self.enemy_bullets  = []   # Proyectiles enemigos activos
+        self.stars          = []   # Campo de 30 estrellas
+
+        self.player_lives       = 3
+        self.total_score        = 0
+        self.level              = 1
+        self.difficulty_mode    = 1    # 0=Facil, 1=Normal, 2=Dificil
+        self.enemy_dir          = 1    # 1=derecha, -1=izquierda
+        self.current_row        = 0    # Fila activa del movimiento rotativo
+\end{lstlisting}
+
+\subsubsection{Ciclo Principal del Juego}
+La función \texttt{run()} es el ciclo infinito que mantiene el juego vivo. Se encarga de mostrar las diferentes pantallas: inicio, puntuaciones, la partida en sí, pausa y "Fin de juego". Cuando estás jugando, la pantalla se actualiza unas 30 veces por segundo. En cada paso mueve al jugador, procesa los disparos, mueve a los enemigos, revisa choques y hace los sonidos. Si logras derrotar a todos, te avanza al siguiente nivel.
+
+\begin{lstlisting}[language=Python, caption={Estructura del bucle principal de juego en run()}]
+async def run(self):
+    while True:                      # Ciclo externo: reinicia la partida
+        self.setup_game()
+        await self._splash_screen()      # Pantalla de creditos
+        await self._info_screen()        # Tabla de puntuaciones
+        self.buzzer.play_start()
+        self.display.clear(BLACK)
+        self._save_positions()           # Inicializar dirty-rect
+
+        while True:                      # Ciclo interno: partida activa
+            self.btn_fire.update_state(self.ctrl_state.fire_raw)
+            self.btn_pause.update_state(self.ctrl_state.pause_raw)
+
+            if self.btn_pause.is_pressed():
+                await self._pause()      # Menu de pausa
+
+            self._save_positions()       # Guardar para dirty-rect
+            self.player.move_analog(-self.ctrl_state.x, -self.ctrl_state.y)
+
+            # Disparar: pulsacion simple o automatico al mantener
+            if self.btn_fire.is_pressed():
+                self.player_bullets.append(
+                    Bullet(self.player.x + PLAYER_W//2, self.player.y, -5, CYAN, HEIGHT))
+                self.buzzer.play_shoot()
+
+            self._update_bullets()
+            self._collision_detection()
+            self._maybe_enemy_shoot()
+            self.asteroid.update(self.frame_count, self.asteroid_interval, self.asteroid_speed)
+            self.guardian.update(self.frame_count)
+            self.dive_bomber.update(self.frame_count, self.dive_bomber_interval,
+                                    self.dive_bomber_speed, self.enemies)
+            self._move_enemies()
+            self._render()               # Renderizado diferencial
+
+            # Limpiar proyectiles inactivos para liberar memoria
+            self.player_bullets = [b for b in self.player_bullets if b.active]
+            self.enemy_bullets  = [b for b in self.enemy_bullets  if b.active]
+
+            self.buzzer.update()         # Avanzar cola de audio
+            self.frame_count += 1
+
+            if self._count_alive() == 0: await self._next_level()
+            if self._is_game_over():     break
+            await asyncio.sleep_ms(33)   # ~30 fps
+\end{lstlisting}
+
+\subsubsection{Dibujado Inteligente de Pantalla}
+Para que la pantalla no parpadee ni se ponga lenta, el juego no borra y dibuja toda la pantalla en cada paso. En vez de eso, recuerda dónde estaban los personajes, calcula cuánto se movieron, y solo borra la pequeña estela que dejaron atrás con \texttt{fill\_hrect()}. Esto ahorra mucha memoria y esfuerzo al procesador de la pantalla.
+
+\begin{lstlisting}[language=Python, caption={Renderizado diferencial del jugador: borrado de estela por delta de posición}]
 def _render(self):
     fh = self.display.fill_hrect
-    # Diferencia horizontal
-    dx = self.player.x - self.player._px
+    fc = self.frame_count
+
+    self._update_and_draw_stars()  # Actualizar fondo en primer plano
+
+    # Calcular desplazamiento del jugador respecto al frame anterior
+    dx = self.player.x - self.player._px   # Delta horizontal
+    dy = self.player.y - self.player._py   # Delta vertical
+
+    # Borrar solo la estela horizontal expuesta
     if dx > 0:
         fh(self.player._px, self.player._py, dx, PLAYER_H, BLACK)
     elif dx < 0:
         fh(self.player.x + PLAYER_W, self.player._py, -dx, PLAYER_H, BLACK)
-    
-    # Dibujar la nueva posicion
-    self.player.draw(self.display)
-\end{lstlisting}
-En lugar de limpiar toda la pantalla, el motor calcula la diferencia matemática (\texttt{dx}) entre el fotograma actual y el anterior. Luego, rellena con un rectángulo negro (\texttt{fill\_hrect}) únicamente la estela dejada por el movimiento del sprite.
 
-\subsection{Efecto Parallax Dinámico (Estrellas)}
-El fondo se genera algorítmicamente sin cargar imágenes estáticas.
-\begin{lstlisting}[caption={Generación de estrellas y efecto de titileo (\textit{Flicker})}]
+    # Borrar solo la estela vertical expuesta
+    if dy > 0:
+        fh(self.player._px, self.player._py, PLAYER_W, dy, BLACK)
+    elif dy < 0:
+        fh(self.player._px, self.player.y + PLAYER_H, PLAYER_W, -dy, BLACK)
+
+    self.player.draw(self.display)  # Redibujar sprite en nueva posicion
+\end{lstlisting}
+
+\subsubsection{Fondo de Estrellas Movible y Brillante}
+El fondo tiene 30 estrellas que caen a diferentes velocidades, lo que da una ilusión de profundidad (como si unas estuvieran más lejos que otras). Para darle un toque realista, usan operaciones matemáticas rápidas para hacer que el brillo de algunas estrellas cambie de repente, haciendo que parezcan titilar sin gastar recursos de la tarjeta.
+
+\begin{lstlisting}[language=Python, caption={Actualización y dibujo del campo de estrellas con titileo aleatorio}]
 def _update_and_draw_stars(self):
-    dp = self.display.draw_pixel
+    dp = self.display.draw_pixel  # Referencia local: 4x mas rapido que global
     for s in self.stars:
-        dp(s[0], s[1], BLACK) # Borrar anterior
-        s[1] += s[2]          # Desplazar verticalmente
-        
-        # Efecto aleatorio de titileo usando operaciones de bits
+        dp(s[0], s[1], BLACK)     # 1. Borrar posicion anterior
+        s[1] += s[2]              # 2. Desplazar verticalmente (paralaje)
+        if s[1] >= HEIGHT:        # 3. Si sale de pantalla, reiniciar arriba
+            s[1] = 0
+            s[0] = randint(0, WIDTH - 1)
+            s[3] = 8 + (getrandbits(5) % 24)
+
+        # 4. Efecto de titileo: cambio aleatorio de brillo (prob. 1/64)
         if getrandbits(6) == 0:
-            flicker = (getrandbits(3) % 7) - 3
-            b = s[3] + flicker
-            s[4] = self._gray565(max(0, min(b * 8, 31)))
-        dp(s[0], s[1], s[4])
+            flicker = (getrandbits(3) % 7) - 3  # Rango: -3 a +3
+            b = max(0, min(s[3] + flicker, 31))  # Clampear 0-31
+            s[4] = self._gray565(b * 8)          # Recalcular RGB565
+
+        dp(s[0], s[1], s[4])      # 5. Dibujar en nueva posicion
 \end{lstlisting}
-El arreglo de estrellas se procesa de forma vectorial. El uso de \texttt{getrandbits} agiliza el cálculo aleatorio.
 
+\subsubsection{Movimiento de los Enemigos}
+El grupo de 24 enemigos se mueve por filas. En vez de mover a todos al mismo tiempo, mueve una sola fila por turno. Conforme vas destruyendo enemigos, el resto se empieza a mover más y más rápido (igual que en los juegos clásicos de maquinita). Si un enemigo toca el borde de la pantalla, todo el grupo baja un poco y empiezan a moverse hacia el lado contrario.
 
-\subsection{Módulo \texttt{player.py}: Cinemática del Jugador}
-Administra la física de la nave controlada por el usuario.
+\begin{lstlisting}[language=Python, caption={Movimiento rotativo por filas y descenso al alcanzar el borde}]
+def _move_enemies(self):
+    total = len(self.enemies)
+    alive = self._count_alive()
+    # Delay inversamente proporcional a enemigos vivos: la formacion acelera
+    delay = max(1, alive * 4 // total)
+    if self.frame_count - self.last_enemy_move < delay:
+        return
+    self.last_enemy_move = self.frame_count
 
-\subsubsection{Filtro de Ruido Mecánico (Zona Muerta)}
-\begin{lstlisting}[caption={Conversión analógico-digital de los vectores de aceleración}]
+    # Verificar si la fila activa alcanza el borde de la pantalla
+    can_move = True
+    for e in self.enemies:
+        if e.alive and e.row == self.current_row:
+            if self.enemy_dir > 0 and e.x + ALIEN_W + self.enemy_speed >= WIDTH:
+                can_move = False
+            elif self.enemy_dir < 0 and e.x - self.enemy_speed < 0:
+                can_move = False
+
+    if not can_move:             # Invertir direccion y descender toda la formacion
+        self.enemy_dir *= -1
+        for e in self.enemies:
+            if e.alive: e.y += ENEMY_DROP   # ENEMY_DROP = 10 pixeles
+
+    for e in self.enemies:       # Mover solo la fila activa
+        if e.alive and e.row == self.current_row:
+            e.x += self.enemy_dir * self.enemy_speed
+
+    self.current_row = (self.current_row + 1) % NUM_ROWS
+\end{lstlisting}
+
+\subsubsection{Choques entre Objetos}
+El juego sabe cuando dos cosas chocan al revisar si sus coordenadas se enciman al mismo tiempo. Todo el tiempo revisa si tus disparos le dan a los enemigos, o si los disparos de ellos te dan a ti. Como un detalle extra, hay un enemigo llamado "Guardian" que si chocas con él no te hace daño, sino que te regala una vida extra.
+
+\begin{lstlisting}[language=Python, caption={Detección AABB: proyectiles del jugador contra formación enemiga}]
+def _collision_detection(self):
+    # 1. Proyectiles del jugador vs formacion de enemigos
+    for e in self.enemies:
+        for b in self.player_bullets:
+            if (b.active and e.alive and
+                b.x >= e.x         and b.x <= e.x + ALIEN_W and
+                b.y >= e.y         and b.y <= e.y + ALIEN_H):
+                e.alive = False
+                e.explode()                   # Activar animacion de explosion
+                self.total_score += e.score   # 30, 20 o 10 segun fila
+                self.buzzer.play_explosion()
+                b.active = False
+
+    # 2. Guardian vs jugador: power-up (+1 vida, max 3)
+    if (self.guardian.active and
+        self.guardian.x >= self.player.x and
+        self.guardian.x <= self.player.x + PLAYER_W and
+        self.guardian.y >= self.player.y and
+        self.guardian.y <= self.player.y + PLAYER_H):
+        self.guardian.active = False
+        if self.player_lives < 3:
+            self.player_lives += 1
+        self.buzzer.play_powerup()
+
+    # 3. Proyectiles enemigos vs jugador
+    for b in self.enemy_bullets:
+        if (b.active and
+            b.x >= self.player.x and b.x <= self.player.x + PLAYER_W and
+            b.y >= self.player.y and b.y <= self.player.y + PLAYER_H):
+            b.active = False
+            self.player_lives -= 1
+            self.player.explode()
+            self.buzzer.play_killed()
+\end{lstlisting}
+
+\subsubsection{Disparos Sorpresa de los Enemigos}
+Cada cierto tiempo, el juego escoge a un enemigo vivo al azar para que te lance un disparo naranja hacia abajo. Conforme avanzas de nivel, este tiempo de espera se hace más corto, haciendo que tengas que esquivar más cosas.
+
+\begin{lstlisting}[language=Python, caption={Disparo aleatorio de los enemigos de la formación}]
+def _maybe_enemy_shoot(self):
+    alive = self._count_alive()
+    if alive == 0: return
+    # Esperar el intervalo de cadencia antes del siguiente disparo
+    if self.frame_count - self.last_enemy_shot < self.enemy_rate_of_fire:
+        return
+    self.last_enemy_shot = self.frame_count
+
+    alive_list = [e for e in self.enemies if e.alive]
+    e = alive_list[randint(0, len(alive_list) - 1)]  # Enemigo aleatorio
+    # Proyectil desde el centro inferior del sprite del enemigo
+    self.enemy_bullets.append(
+        Bullet(e.x + ALIEN_W // 2, e.y + ALIEN_H, 4, ORANGE, HEIGHT))
+    self.buzzer.play_enemy_shoot()
+\end{lstlisting}
+
+\subsubsection{Pantallas y Menús}
+El juego maneja cinco pantallas diferentes. Tienes una de créditos y una donde te enseñan cuántos puntos vale cada enemigo. El menú de pausa es bastante interactivo: te puedes mover por las opciones inclinando tu control (leyendo el sensor) e incluso puedes cambiar la dificultad sin tener que reiniciar la partida.
+
+\begin{lstlisting}[language=Python, caption={Menú de pausa: navegación por inclinación del mando}]
+async def _pause(self):
+    options    = ['Continuar', 'Modo', 'Salir al menu']
+    mode_names = ['Facil', 'Normal', 'Dificil']
+    selected, last_move_time = 0, 0
+
+    while True:
+        now = time.ticks_ms()
+        self.btn_fire.update_state(self.ctrl_state.fire_raw)
+        fuerza_x = -self.ctrl_state.x  # Eje X del acelerometro
+
+        # Navegar con inclinacion: umbral 0.4g, debounce de 300 ms
+        if time.ticks_diff(now, last_move_time) > 300:
+            if fuerza_x > 0.4:
+                selected = (selected + 1) % len(options)
+                last_move_time = now
+            elif fuerza_x < -0.4:
+                selected = (selected - 1) % len(options)
+                last_move_time = now
+
+        if self.btn_fire.is_pressed():
+            if   selected == 0: break                      # Continuar
+            elif selected == 1:                            # Cambiar dificultad
+                self.difficulty_mode = (self.difficulty_mode + 1) % 3
+                self._set_difficulty()                     # Aplicar en caliente
+            elif selected == 2:                            # Salir al menu
+                self.exit_to_menu = True
+                break
+        await asyncio.sleep_ms(50)
+\end{lstlisting}
+
+\subsubsection{Barra de Información}
+La pantalla siempre muestra tus puntos y en qué nivel vas en la parte de arriba. Dependiendo del nivel, los colores de los textos cambian para que se vea diferente. Arriba a la derecha aparecen dibujadas tus vidas como pequeñas naves. Para que la pantalla funcione más rápido, esa parte solo se actualiza cuando te quitan una vida.
+
+\begin{lstlisting}[language=Python, caption={Actualización del HUD: puntaje, nivel y vidas}]
+def _update_status(self):
+    score_text = '{:05d} LVL {:2d}'.format(self.total_score, self.level)
+    color = LEVEL_COLOURS[(self.level - 1) % 10]  # Color cambia por nivel
+    self.display.draw_text8x8(5, 5, score_text, color, BLACK)
+
+    # Borrar area de vidas solo si el conteo bajo (evita residuos SPI)
+    if self.player_lives < self._prev_lives:
+        self.display.fill_hrect(WIDTH - 100, 0, 100, 35, BLACK)
+    self._prev_lives = self.player_lives
+
+    # Dibujar sprite de nave por cada vida restante (de derecha a izquierda)
+    for idx in range(self.player_lives):
+        x_pos = WIDTH - ((idx + 1) * (PLAYER_W + 5))
+        self.display.draw_sprite(player_sprite, x_pos, 5, PLAYER_W, PLAYER_H)
+\end{lstlisting}
+
+\subsection{Módulo \texttt{player.py}: Movimiento del Jugador}
+Aquí se maneja la posición y el movimiento de tu nave. Te mueves dependiendo de cómo inclines el control: inclinarlo adelante o atrás te mueve de forma horizontal, y a los lados de forma vertical (solo en la mitad inferior de la pantalla). Hay un pequeño "filtro" del 15\% para ignorar movimientos muy leves, así no te mueves por accidente si te tiembla la mano.
+
+\begin{lstlisting}[language=Python, caption={Movimiento analógico del jugador con zona muerta}]
 def move_analog(self, force_x, force_y):
-    mov_x = int(force_x * 15)
+    mov_x = int(force_x * 15)   # Escala: 1g -> 15 pixeles de desplazamiento
     mov_y = int(force_y * 15)
-    
-    if abs(force_y) > 0.15: # Filtro de Zona Muerta
+
+    if abs(force_y) > 0.15:     # Zona muerta del 15%: ignorar deriva
         self.x -= mov_y
-        if self.x < 0:
-            self.x = 0
-        if self.x > self._width - PLAYER_W:
-            self.x = self._width - PLAYER_W
+        if self.x < 0:                      self.x = 0
+        if self.x > self._width - PLAYER_W: self.x = self._width - PLAYER_W
+
+    if abs(force_x) > 0.15:
+        self.y -= mov_x
+        if self.y < self._width // 2 - 40:  # Limite superior: mitad de pantalla
+            self.y = self._width // 2 - 40
+        if self.y > 240 - PLAYER_H:         # Limite inferior: borde de pantalla
+            self.y = 240 - PLAYER_H
 \end{lstlisting}
-El umbral de \texttt{0.15 G} permite ignorar pequeñas vibraciones o movimientos involuntarios de la mano del usuario que podrían generar lecturas incorrectas en la IMU.
 
-\subsection{Módulo \texttt{asteroid.py}: IA Numérica y Trayectorias}
-Controla enemigos con patrones de vuelo no estandarizados.
+\subsection{Módulo \texttt{enemy.py}: Animación de los Enemigos}
+Este archivo maneja a cada enemigo del juego. Para que parezca que están vivos, alternan entre dos imágenes diferentes muy rápido. Usan un truco matemático muy eficiente para hacerlo sin que el microcontrolador gaste energía de más. También controlan que los enemigos de hasta arriba valgan 30 puntos, y los de más abajo valgan 10, tal como en los juegos viejos.
 
-\subsubsection{Generación de Rutas Sinusoidales}
-\begin{lstlisting}[caption={Vuelo paramétrico del DiveBomber basado en funciones trigonométricas}]
+\begin{lstlisting}[language=Python, caption={Animación de sprite por enmascaramiento de bits y puntuación por fila}]
+_ALIEN_PAIRS = ((alien1, alien2), (alien3, alien4), (alien5, alien6))
+_SCORES = (30, 20, 10)   # Puntuacion segun fila
+
+class Enemy:
+    def __init__(self, start_x, start_y, row):
+        self.x     = start_x
+        self.y     = start_y
+        self.alive = True
+        self.row   = row
+        self.score = _SCORES[row % 3]
+        self.explode_count = 0
+
+    def draw(self, display, frame_count):
+        if self.alive:
+            pair   = _ALIEN_PAIRS[self.row % 3]
+            # frame_count & 0x8: alterna cada 8 frames sin division ni modulo
+            sprite = pair[0] if frame_count & 0x8 else pair[1]
+            display.draw_sprite(sprite, self.x, self.y, ALIEN_W, ALIEN_H)
+        elif self.explode_count:
+            explosion = (explode2, explode2, explode1, explode1)
+            display.draw_sprite(explosion[self.explode_count - 1],
+                                self.x, self.y, EXPLODE_W, EXPLODE_H)
+            self.explode_count -= 1
+\end{lstlisting}
+
+\subsection{Módulo \texttt{asteroid.py}: Enemigos Especiales}
+Aquí se definen tres enemigos extra con formas de moverse muy distintas al resto. El "Asteroid" baja casi en línea recta, el "Guardian" también baja pero es bueno porque te regala vidas, y el "DiveBomber" baja haciendo curvas hacia los lados, lo que lo hace muy difícil de esquivar.
+
+\begin{lstlisting}[language=Python, caption={Trayectoria sinusoidal del DiveBomber}]
+import math
+
 def update(self, frame_count, interval, speed, enemies):
-    ...
-    self.y += speed
-    # Movimiento oscilatorio armónico acoplado al eje Y
-    self.x = self._width // 2 + int(20 * math.sin(3 * 2 * math.pi * self.y / self._height))
-\end{lstlisting}
-El enemigo especial no desciende en línea recta. Calcula su componente \texttt{x} evaluando la función \texttt{math.sin()} con base en su progreso vertical (\texttt{y}), generando un patrón ondulante difícil de evadir.
+    if not self.active and frame_count - self.last_spawn > interval:
+        # Escoger un enemigo vivo de la fila 2 como punto de lanzamiento
+        row2 = [e for e in enemies if e.alive and e.row == 2]
+        if row2:
+            e = row2[randint(0, len(row2) - 1)]
+            self.x = e.x
+            self.y = e.y
+            self.active    = True
+            self.last_spawn = frame_count
 
-\subsection{Módulo \texttt{enemy.py}: Animación y Gestión del Enjambre}
-Optimiza el consumo de memoria en la representación visual de decenas de alienígenas.
-
-\subsection{Alternancia de Texturas por Enmascaramiento de Bits}
-\begin{lstlisting}[caption={Lógica de cambio de \textit{Sprite} usando operaciones lógicas a nivel de bits}]
-def draw(self, display, frame_count):
-    if self.alive:
-        pair = _ALIEN_PAIRS[self.row % 3]
-        sprite = pair[0] if frame_count & 0x8 else pair[1]
-        display.draw_sprite(sprite, self.x, self.y, ALIEN_W, ALIEN_H)
-\end{lstlisting}
-En vez de utilizar variables booleanas de alternancia que requieren ciclos de RAM, la instrucción evalúa el octavo bit del contador de frames general (\texttt{frame\_count \& 0x8}). Cada 8 cuadros, el resultado de la compuerta AND cambia de 0 a 1, intercalando el sprite de forma natural y ultra eficiente.
-
-\subsection{Módulo \texttt{bullet.py}: Manejo Dinámico de Proyectiles}
-Define las reglas de existencia y destrucción balística.
-
-\begin{lstlisting}[caption={Gestión del ciclo de vida del proyectil}]
-def update(self):
-    self.y += self.dy
-    # Desactivar si supera las fronteras del framebuffer
-    if self.y < 0 or self.y > self._height:
+    self.y += speed   # Descender verticalmente
+    # Componente X sinusoidal: 3 ciclos completos a lo largo de la altura
+    self.x = self._width // 2 + int(
+        20 * math.sin(3 * 2 * math.pi * self.y / self._height)
+    )
+    if self.y > self._height:
         self.active = False
 \end{lstlisting}
-El proyectil se vuelve inactivo tan pronto como abandona la geometría de la pantalla. Esto indica al bucle en \texttt{game.py} que debe eliminar la instancia de la lista principal para liberar la asignación dinámica de memoria (Previene memory leaks).
 
+\subsection{Módulo \texttt{bullet.py}: Disparos}
+Esta parte maneja los disparos. Básicamente son iguales para todos, solo que los tuyos son azules y van para arriba, y los de los enemigos son naranjas y van para abajo. El programa los borra en cuanto salen de la pantalla para mantener todo limpio y no saturar la memoria.
 
-\subsection{Módulo \texttt{buzzer.py}: Subsistema Acústico (PWM)}
-Opera el actuador piezoeléctrico mediante Modulación por Ancho de Pulso de forma no bloqueante.
+\begin{lstlisting}[language=Python, caption={Ciclo de vida del proyectil: movimiento y desactivación por límites}]
+class Bullet:
+    def __init__(self, x, y, dy, color, height):
+        self.x      = x
+        self.y      = y
+        self.dy     = dy      # Negativo: sube (jugador); Positivo: baja (enemigo)
+        self.active = True
+        self.color  = color   # CYAN=jugador, ORANGE=enemigo
+        self._height = height
 
-\begin{lstlisting}[caption={Encolamiento asíncrono y control del temporizador de hardware}]
+    def update(self):
+        self.y += self.dy
+        # Desactivar al salir de pantalla: el bucle lo eliminara de la lista
+        if self.y < 0 or self.y > self._height:
+            self.active = False
+
+    def draw(self, display):
+        if self.active:
+            display.fill_hrect(self.x, self.y, 2, 4, self.color)
+\end{lstlisting}
+
+\subsection{Módulo \texttt{buzzer.py}: Sonidos y Música}
+Este archivo hace sonar a la pequeña bocina que está conectada. En vez de pausar el juego para que suene algo, funciona como una "fila de espera": puedes decirle que haga varios ruidos seguidos y los va a hacer en orden, uno tras otro. Siempre está configurado para sonar al máximo volumen posible para que se escuche bien claro.
+
+\begin{lstlisting}[language=Python, caption={Método update(): gestión de cola no bloqueante y control de duración}]
+def update(self):
+    now = time.ticks_ms()
+    if self._current is not None:
+        freq, dur = self._current
+        # Verificar si la nota activa cumplio su duracion
+        if time.ticks_diff(now, self._start_time) >= dur:
+            self._stop_pwm()
+            self._current = None
+        return   # Esperar a que termine antes de pasar a la siguiente
+
+    if self._queue:   # Iniciar la siguiente nota de la cola
+        self._current    = self._queue.pop(0)
+        freq, dur        = self._current
+        self._start_time = now
+        if freq > 0:
+            self._start_pwm(freq)
+
 def _start_pwm(self, freq):
-    if self.pwm is not None:
-        self.pwm.deinit()
-    if freq > 0:
-        self.pwm = PWM(Pin(self.pin_num))
-        self.pwm.freq(freq)
-        self.pwm.duty_u16(512) # Ciclo de trabajo del 50%
-\end{lstlisting}
-Al enviar \texttt{duty\_u16(512)} a un PWM con resolución típica de 10 bits ($2^{10}=1024$), se genera una onda cuadrada simétrica perfecta (50\% High, 50\% Low) maximizando el volumen de salida acústico.
+    if self.pwm is not None: self.pwm.deinit()
+    self.pwm = PWM(Pin(self.pin_num))
+    self.pwm.freq(freq)
+    self.pwm.duty_u16(512)  # Ciclo de trabajo del 50%: maximo volumen
 
-
-\subsection{Módulo \texttt{virtual\_button.py}: Filtro Lógico de Entradas}
-Protección contra el rebote eléctrico de los microinterruptores.
-
-\begin{lstlisting}[caption={Detección de flanco ascendente (Debounce por Software)}]
-def is_pressed(self):
-    pressed_event = self._is_pressed and not self._was_pressed
-    if pressed_event:
-        self._was_pressed = True 
-    return pressed_event
-\end{lstlisting}
-Garantiza que una pulsación sostenida del usuario solo dispare una única acción lógica de lectura evaluando el estado del fotograma previo (\texttt{\_was\_pressed}).
-
-
-\subsection{Módulo \texttt{colours.py}: Perfiles de Renderizado}
-Codificación cromática directa para bus SPI.
-
-\begin{lstlisting}[caption={Declaración de paleta RGB565}]
-BLACK   = 0x0000
-RED     = 0xF800
-LIME    = 0x07E0
-BLUE    = 0x001F
-WHITE   = 0xFFFF
-\end{lstlisting}
-El estándar \texttt{ILI9341} lee colores de 16 bits (5 bits rojo, 6 bits verde, 5 bits azul). Predefinirlos como constantes hexadecimales ahorra la ejecución de la fórmula analítica en el microcontrolador.
-
-
-\subsection{Comunicación BLE}
-La comunicación entre el Mando y la Consola se implementa mediante Bluetooth Low Energy usando la biblioteca \texttt{aioble} de MicroPython. El Mando opera como periférico GATT y publica un servicio personalizado con UUID \texttt{12345678-1234-1234-1234-123456789abc}. Dentro de este servicio expone una característica de notificación con UUID complementario que transmite una estructura de 10 bytes empaquetados con \texttt{struct} a una tasa de 100 Hz (cada 10 ms).
-
-La trama BLE contiene: dos valores \texttt{float32} en \textit{little-endian} con las aceleraciones $ax$ y $ay$ del MPU-6050 (que corresponden a los ejes de inclinación del mando), y dos bytes con el estado booleano de los botones de disparo y pausa. La Consola, al recibir una notificación, deserializa la trama y actualiza un objeto \texttt{ControllerState} compartido que el bucle de juego lee en cada frame para actualizar el movimiento del jugador y los eventos de botón.
-
-\begin{lstlisting}[language=Python]
-# Trama BLE: '<ffbb' -> ax (float), ay (float), fire (byte), pause (byte)
-payload = struct.pack('<ffbb', ax, ay, int(fire_pressed), int(pause_pressed))
-_char.write(payload)
-await _char.notify(connection)
+# Melodia de muerte del jugador: escala descendente
+def play_killed(self):
+    for f in [1046, 988, 880, 784, 698, 659, 587]:
+        self.tone(f, 80)
 \end{lstlisting}
 
-\subsection{Motor de Juego}
+\subsection{Módulo \texttt{virtual\_button.py}: Control de Botones}
+Esto es un pequeño filtro que le ayuda al programa a saber exactamente qué quieres hacer con los botones. Puede notar la diferencia entre apretarlo rápido una vez, o dejarlo presionado mucho tiempo (por ejemplo para que la nave dispare de forma automática). Esto es súper útil porque evita tener que poner más componentes físicos y hace que se sienta más natural jugarlo.
 
-\subsubsection{Bucle Principal y Renderizado}
-El bucle de juego se ejecuta a aproximadamente 30 fps (\textit{sleep} de 33 ms por iteración). En cada frame: se actualizan los estados de los botones virtuales, se aplica el movimiento analógico al jugador a partir de las aceleraciones del IMU, se procesan disparos, se actualizan todos los objetos activos, se detectan colisiones y finalmente se renderiza la escena. Para evitar parpadeo y minimizar la escritura SPI, el renderizado usa una estrategia de actualización diferencial: antes de cada frame se guardan las posiciones previas (\texttt{\_save\_positions}) y al dibujar solo se borra el rectángulo exacto del área anterior de cada sprite, pintándolo de negro antes de redibujar en la nueva posición.
+\begin{lstlisting}[language=Python, caption={Detección de flanco ascendente y estado mantenido en VirtualButton}]
+class VirtualButton:
+    def __init__(self):
+        self._is_pressed   = False
+        self._was_pressed  = False
+        self._held_counter = 0
 
-\subsubsection{Fondo Estrellado}
-El fondo del juego simula un campo de 30 estrellas con velocidades de desplazamiento vertical distintas (1, 2 o 3 píxeles por frame) y brillo variable, creando un efecto de paralaje y destello. Cada estrella almacena su posición, velocidad, brillo base y color en formato RGB565. Con una probabilidad de 1/64 por frame, el brillo de una estrella fluctúa aleatoriamente en $\pm 3$ unidades para simular el centelleo. Al salir de la pantalla por la parte inferior, la estrella se reinicia en la parte superior con una posición horizontal aleatoria.
+    def update_state(self, is_pressed_bool):
+        self._was_pressed  = self._is_pressed
+        self._is_pressed   = is_pressed_bool
+        if self._is_pressed: self._held_counter += 1
+        else:                self._held_counter  = 0
 
-\subsubsection{Enemigos y Formación}
-La formación inicial consta de 24 enemigos distribuidos en 3 filas de 8 columnas, con separación de 24 píxeles horizontales y 20 píxeles verticales. El movimiento de la formación es por filas rotativas: en cada tick de movimiento se desplaza una fila, avanzando a la siguiente en el ciclo. Cuando cualquier enemigo vivo de la fila activa alcanza el borde de la pantalla, toda la formación desciende \texttt{ENEMY\_DROP} (10 px) y el sentido horizontal se invierte. La velocidad del tick de movimiento es inversamente proporcional al número de enemigos vivos, acelerando la formación conforme se eliminan enemigos.
+    def is_pressed(self):   # True solo en el frame del flanco ascendente
+        event = self._is_pressed and not self._was_pressed
+        if event: self._was_pressed = True
+        return event
 
-\subsubsection{Enemigos Especiales}
-El juego incluye tres tipos de enemigos especiales que aparecen periódicamente:
-\begin{itemize}
-    \item \textbf{Asteroid} (bola de fuego): cae en línea recta con leve deriva horizontal. Destruye enemigos de la formación al impactarlos. Al colisionar con el jugador le quita una vida.
-    \item \textbf{Guardian}: cae con movimiento descendente y deriva horizontal. Su efecto especial al colisionar con el jugador es sumar una vida (hasta el máximo de 3) en lugar de restarla, funcionando como power-up.
-    \item \textbf{DiveBomber}: se lanza desde la posición de un enemigo vivo de la fila 2 y sigue una trayectoria sinusoidal hacia abajo usando la función \texttt{math.sin}. Vale 50 puntos al ser destruido.
-\end{itemize}
+    def is_held(self):      # True si lleva mas de 5 frames presionado
+        return self._is_pressed and self._held_counter > 5
+\end{lstlisting}
 
-\subsubsection{Sistema de Disparos}
-El jugador puede disparar de dos formas: pulsación rápida (\texttt{is\_pressed}), que genera un proyectil por evento, y disparo automático sostenido (\texttt{is\_held}), que genera un proyectil cada 3 frames mientras el botón permanece presionado. Los proyectiles del jugador viajan hacia arriba a 5 píxeles por frame en color cyan, y los proyectiles enemigos viajan hacia abajo a 4 píxeles por frame en color naranja. La cadencia de disparo enemigo está controlada por \texttt{enemy\_rate\_of\_fire}, que disminuye con cada nivel para incrementar la dificultad.
+\subsection{Módulo \texttt{colours.py}: Colores}
+Aquí están guardados todos los colores que se pueden usar. Están en un formato numérico especial que la pantalla lee de golpe, lo que le ahorra cálculos difíciles al procesador mientras juegas. También hay una paleta con 10 colores listos para que la información del juego cambie de color a medida que pasas de nivel.
 
-\subsubsection{Detección de Colisiones}
-Las colisiones se calculan por AABB (\textit{Axis-Aligned Bounding Box}) en cada frame sobre los siguientes pares de entidades: proyectiles del jugador contra enemigos de formación, proyectiles del jugador contra Guardian y DiveBomber, proyectiles enemigos contra el jugador, Asteroid y DiveBomber contra el jugador, Guardian contra el jugador (power-up), y Asteroid contra enemigos de formación. Una colisión jugador-enemigo directo también es posible si la formación desciende hasta la posición del jugador.
+\begin{lstlisting}[language=Python, caption={Constantes de color RGB565 y paleta por nivel}]
+# Formato RGB565: 5 bits rojo | 6 bits verde | 5 bits azul
+BLACK   = 0x0000   # 0000 0000 0000 0000
+RED     = 0xF800   # 1111 1000 0000 0000
+LIME    = 0x07E0   # 0000 0111 1110 0000
+BLUE    = 0x001F   # 0000 0000 0001 1111
+WHITE   = 0xFFFF   # 1111 1111 1111 1111
+CYAN    = 0x07FF   # Color proyectiles del jugador
+ORANGE  = 0xFD20   # Color proyectiles enemigos
+YELLOW  = 0xFFE0   # Texto de interfaz
 
-\subsection{Sistema de Audio}
-El módulo Buzzer implementa una cola de reproducción no bloqueante para el buzzer piezoeléctrico conectado al pin GP15. En lugar de usar delays bloqueantes, el método \texttt{update()} es invocado en cada iteración del bucle de juego y del bucle del menú. Si hay una nota activa y su duración ha transcurrido, detiene el PWM e inicia la siguiente nota de la cola. Las melodías están predefinidas como secuencias de frecuencias y duraciones, cubriendo eventos como: disparo del jugador, explosión, disparo enemigo, impacto, recogida de power-up, muerte del jugador, cambio de nivel, inicio de partida y notas del menú.
-
-\subsection{Dificultad Progresiva}
-El juego implementa un sistema de 10 niveles de dificultad que se aplican cíclicamente (nivel 11 usa la configuración del nivel 1, etc.). Además, el jugador puede seleccionar uno de tres modos de dificultad desde el menú de pausa:
-\begin{itemize}
-    \item \textbf{Fácil:} velocidad de enemigos reducida al 60\%, intervalos de aparición y cadencia de disparo aumentados 50\%.
-    \item \textbf{Normal:} parámetros base definidos por la tabla de niveles.
-    \item \textbf{Difícil:} velocidad de enemigos aumentada 50\%, intervalos reducidos al 60\%, velocidades de asteroides y dive bombers incrementadas 50\%.
-\end{itemize}
-
-\begin{table}[H]
-    \centering
-    \caption{Parámetros de dificultad por nivel (modo Normal)}
-    \label{tab:dificultad}
-    \resizebox{\textwidth}{!}{
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        \textbf{Nivel} & \textbf{Vel. Enemigo (frames)} & \textbf{Intervalo Asteroide} & \textbf{Vel. Asteroide} & \textbf{Int. DiveBomber} & \textbf{Vel. DiveBomber} \\ \hline
-        1 & 60 & 600 & 2 & 500 & 2 \\ \hline
-        2 & 50 & 400 & 3 & 480 & 3 \\ \hline
-        3 & 40 & 300 & 4 & 460 & 4 \\ \hline
-        4 & 30 & 200 & 5 & 440 & 5 \\ \hline
-        5 & 20 & 100 & 6 & 260 & 5 \\ \hline
-        6 & 10 & 80 & 7 & 240 & 6 \\ \hline
-        7 & 5 & 60 & 8 & 220 & 7 \\ \hline
-        8 & 3 & 60 & 9 & 60 & 8 \\ \hline
-        9 & 3 & 60 & 10 & 60 & 8 \\ \hline
-        10 & 3 & 60 & 11 & 60 & 9 \\ \hline
-    \end{tabular}%
-    }
-\end{table}
-
-\subsection{Menús y Pantallas}
-El flujo de pantallas del juego sigue la siguiente secuencia:
-\begin{itemize}
-    \item \textbf{Pantalla de inicio (Splash Screen):} muestra el nombre de la institución, la materia y los integrantes del equipo. Espera a que el jugador presione el botón de disparo para continuar.
-    \item \textbf{Pantalla de información:} muestra los sprites de todos los tipos de enemigos con su valor en puntos. El Guardian aparece con el indicador '+1 vida'.
-    \item \textbf{Bucle de juego:} la partida en sí. El botón de pausa abre el menú de pausa en cualquier momento.
-    \item \textbf{Menú de pausa:} permite continuar la partida, cambiar el modo de dificultad (cíclicamente entre Fácil, Normal y Difícil) o salir al menú principal. La navegación usa la inclinación del mando sobre el eje X.
-    \item \textbf{Pantalla de Game Over:} muestra el puntaje final y el nivel alcanzado. Espera a que el jugador presione disparo para reiniciar.
-\end{itemize}
-
-\subsection{Control Analógico por IMU}
-El movimiento del jugador se controla inclinando el mando físico. El MPU-6050 mide la aceleración en los ejes X e Y, que corresponden a la inclinación lateral y frontal del mando respectivamente. Estos valores se transmiten como \texttt{floats} por BLE y se aplican en el método \texttt{move\_analog()} del jugador, donde se multiplican por un factor de 15 píxeles para obtener el desplazamiento por frame. Se aplica una zona muerta del 15\% ($|\text{fuerza}| > 0.15$) para evitar deriva con el mando en reposo. El movimiento sobre el eje Y de la Pico controla la posición horizontal en pantalla, y el eje X controla la profundidad vertical (dentro de la mitad inferior de la pantalla).
-
-
-A continuación se presentan los diagramas de conexión de los dos módulos del sistema. Cada diagrama muestra el cableado completo entre la Raspberry Pi Pico 2W y sus periféricos, incluyendo los pines de alimentación, tierra y señales de datos. Las conexiones siguen un código de color para facilitar su identificación: rojo para 3.3 V, negro para GND, y colores distintos para cada señal de datos.
-
-
-
-
-
-
-
+# Paleta de 10 colores: el HUD cambia de color en cada nivel
+LEVEL_COLOURS = [MAROON, RED, ORANGE, YELLOW, GREEN,
+                 LIME, AQUA, BLUE, NAVY, PURPLE]
+\end{lstlisting}
 
 
 
