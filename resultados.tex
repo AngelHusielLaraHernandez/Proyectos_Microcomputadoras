@@ -2,18 +2,103 @@
 
 El primer resultado del sistema fue validar que se estableció correctamente la comunicación inalámbrica entre los dos microcontroladores. Para comprobar la correcta ejecución de las tareas, se monitoreó la salida de los dispositivos a través de la terminal del entorno de desarrollo Thonny.
 
-En la siguiente imagen se presenta la captura de los registros generados durante la prueba de emparejamiento. Se ve el momento en que el escaneo activo de la consola esta buscando el mando y cuando lo localiza, establece la conexión.
+\subsubsection{Consola}
+El escaneo activo de la consola busca de manera continua la señal del periférico. En la siguiente imagen se presenta la captura de los registros generados durante la prueba de emparejamiento. Se observa el momento exacto en que la consola localiza el mando y establece exitosamente la conexión inalámbrica de datos.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{img/consola/Consola.png}
-    \caption{Terminal de Thonny confirmando el establecimiento exitoso de la conexión Bluetooth.}
+    \includegraphics[width=0.9\textwidth]{img/consola/Consola.png}
+    \caption{Terminal de Thonny confirmando el escaneo y establecimiento exitoso de la conexión Bluetooth desde la Consola.}
     \label{fig:res_consola}
 \end{figure}
 
+\subsubsection{Mando}
+De manera consecutiva y ahora desde el mando, se pudo verificar el correcto establecimiento del enlace desde el extremo del transmisor, se monitorizó la salida estándar del Mando. Como se observa en la Figura \ref{fig:log_mando}, el flujo de ejecución inicializa correctamente el hardware periférico (el bus I2C para el MPU-6050 y los pines GPIO para los botones). Posteriormente, se arranca el transmisor Bluetooth bajo el nombre de dispositivo \texttt{PicoMando} y luego el sistema entra en un estado de espera activa hasta que la Consola lo encuentra y lo vincula y por último la consola confirma la conexión exitosa y el inicio de la transmisión continua de la telemetría a la alta velocidad configurada de 100 Hz.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/mando/Mando.png}
+    \caption{Registro de inicialización y conexión BLE en la consola del entorno de desarrollo del Mando.}
+    \label{fig:log_mando}
+\end{figure}
 
+\subsection{Implementación Física y Funcionamiento de Periféricos}
 
+El ensamblaje físico del sistema se realizó sobre dos (\textit{breadboards}), una para el mando y otra para la consola, para distinguir más fácilemente cada parte de la implementación. Esta implementación validó nuestro diagrama de conexiones y el correcto funcionamiento físico de los buses de comunicación SPI e I2C implementados en las tarjetas Raspberry Pi Pico 2W.
+
+\subsubsection{Validación Visual y Despliegue de la Consola}
+En el módulo de la consola se analizó el rendimiento de la pantalla TFT ILI9341 conectada mediante la interfaz SPI. En la Figura \ref{fig:proto_splash1} se muestra la inicialización física del display desplegando la pantalla de presentación del proyecto final. Esta prueba mostró la correcta configuración de la interfaz gráfica incluyendo la retroalimentación LED y la correcta distribución de los datos en la pantalla.
+
+\begin{figure}[H]
+    \centering
+        \centering
+        \includegraphics[width=0.85\textwidth, angle =-90]{img/proto/20260522_123200.jpg}
+        \caption{Vista frontal de la pantalla de inicio montada en la protoboard.}
+        \label{fig:proto_splash1}
+\end{figure}
+
+Posteriormente, la Figura \ref{fig:proto_info} se muestra la correcta representación de la matriz de caracteres y símbolos de la pantalla de información de puntajes, además se comprobó la alta nitidez de los colores codificados en formato RGB565 antes de comenzar la partida.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/proto/20260522_123848.jpg}
+    \caption{Despliegue físico de la tabla de puntuaciones y enemigos en el display TFT.}
+    \label{fig:proto_info}
+\end{figure}
+
+La Figura \ref{fig:proto_gameplay} evidencia la ejecución en tiempo real del motor gráfico durante una partida. Además sirvió para corroborar que la frecuencia de reloj del bus SPI es óptima para redibujar los múltiples proyectiles y las naves enemigas de forma fluida, eliminando por completo cualquier parpadeo u artefacto visual en el panel físico.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{img/proto/20260522_123908.jpg}
+    \caption{Verificación de renderizado de elementos móviles y fondo dinámico en la Consola.}
+    \label{fig:proto_gameplay}
+\end{figure}
+
+\subsubsection{Montaje del Mando y Calibración Inercial}
+En el Mando se validaron las entradas digitales y las lecturas del bus I2C, ya que como se aprecia en la Figura \ref{fig:mando_completo}, el circuito integra de forma compacta la tarjeta Raspberry Pi Pico 2W, dos botones con tapas y un módulo acelerómetro/giroscopio MPU-6050, para poder mover la nave en los ejes x, y dependiendo de la inclinación del mando y además se corroboró el correcto filtrado de rebotes de los botones (\textit{debouncing}) por software en los componentes físicos de entrada, para evitar comportameintos inesperados.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img/proto/20260522_124057.jpg}
+    \caption{Disposición física de los componentes del Mando sobre la placa de pruebas.}
+    \label{fig:mando_completo}
+\end{figure}
+
+En la Figura \ref{fig:mando_closeup} podemos ver mas de cerca al al sensor inercial MPU-6050. El encendido continuo de su LED rojo nos indica el correcto direccionamiento y suministro eléctrico a través de las líneas del bus I2C, para asegurar lecturas estables de inclinación en los ejes X, Y para el control posicional de la nave.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{img/proto/20260522_124109.jpg}
+    \caption{Acercamiento al sensor MPU-6050 acoplado mediante el bus I2C.}
+    \label{fig:mando_closeup}
+\end{figure}
+
+\subsubsection{Pruebas de Integración Inalámbrica del Sistema}
+En las Figuras \ref{fig:sistema_vertical} y \ref{fig:sistema_horizontal} podemos apreciar el sistema completo el cual consta del mando y consola y se exhibe al sistema completo operando en paralelo bajo distintas orientaciones en el espacio de trabajo. Se constató la total independencia eléctrica y física de datos entre los dos módulos; cada bloque se alimenta de forma aislada mediante su propio cable USB, confiando exclusivamente en el protocolo BLE para la sincronización de las acciones del juego.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/proto/20260522_124131.jpg}
+        \caption{Disposición paralela vertical de los módulos.}
+        \label{fig:sistema_vertical}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/proto/20260522_124145.jpg}
+        \caption{Disposición horizontal del entorno de pruebas.}
+        \label{fig:sistema_horizontal}
+    \end{subfigure}
+    \caption{Vistas generales de los módulos integrados y listos para la interacción inalámbrica.}
+\end{figure}
+
+En la Figura \ref{fig:sistema_operativo} se demuestra el corrcto funcionamiento e interacción de ambos subsistemas sin importar la posición en la que se encuentren y aun con una separación física considerable.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/proto/20260522_124202.jpg}
+    \caption{Demostración funcional del ecosistema completo en comunicación activa de alta velocidad.}
+    \label{fig:sistema_operativo}
+\end{figure}
 \subsection{Experiencia en el juego}
 
 \subsubsection{Pantalla de inicio}

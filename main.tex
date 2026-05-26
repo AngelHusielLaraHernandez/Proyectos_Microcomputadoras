@@ -274,7 +274,12 @@
         \item \textbf{Espinoza Matamoros Percival Ulises:}
         
         \item \textbf{Flores Colin Victor Jaziel:}
+        A partir de los resultados obtenidos en este proyecto final de microcomputadoras pude concluir que el diseño e implementación del videojuego estilo \textit{Galaga} se realizó de manera exitosa,ya que en conjunto logramos completar cada uno de los objetivos técnicos planteados al demostrar la viabilidad de utilizar microcontroladores en este caso la Raspberry Pi Pico 2W bajo el lenguaje MicroPython para aplicaciones en tiempo real haciendo uso de nuestros conocimientos adquiridos en este curso. 
         
+        En el ámbito del hardware, se validó la integración de múltiples protocolos de comunicación, donde el bus SPI permitió una tasa de refresco óptima en la pantalla TFT ILI9341 de 320x240 píxeles eliminando el parpadeo visual, el protocolo I2C aseguró una lectura precisa y de baja latencia de la unidad de medición inercial MPU-6050 para el control de la nave por la inclinación, y los módulos PWM lograron una generación acústica efectiva para Ala ambientación del juego a través del buzzer.
+        
+        El protocolo Bluetooth Low Energy (BLE) fue de gran ayuda para la implementación bluetooth ya que tuvo una gran estabilidad y ancho de banda, transmitiendo la telemetría del mando a una tasa constante de 100 Hz sin introducir latencias perceptibles por la naturaleza de estas teconologías.
+        Por ultimo el uso de la biblioteca de programación asíncrona \texttt{uasyncio} nos ayudó a maximizar el aprovechamiento de los recursos del microcontrolador para que la consola procesara simultáneamente la física de los proyectiles, el mapeo de \textit{sprites}, la detección de colisiones complejas, los efectos de sonido y la escucha continua del puerto BLE.
  
         \item \textbf{García Cortés Adolfo de Jesús:}
         
