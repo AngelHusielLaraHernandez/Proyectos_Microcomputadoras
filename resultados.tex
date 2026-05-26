@@ -17,7 +17,7 @@ De manera consecutiva y ahora desde el mando, se pudo verificar el correcto esta
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/mando/Mando.png}
+    \includegraphics[width=1\textwidth]{img/mando/Mando.png}
     \caption{Registro de inicialización y conexión BLE en la consola del entorno de desarrollo del Mando.}
     \label{fig:log_mando}
 \end{figure}
@@ -32,7 +32,7 @@ En el módulo de la consola se analizó el rendimiento de la pantalla TFT ILI934
 \begin{figure}[H]
     \centering
         \centering
-        \includegraphics[width=0.85\textwidth, angle =-90]{img/proto/20260522_123200.jpg}
+        \includegraphics[width=0.9\textwidth, angle =-90]{img/proto/20260522_123200.jpg}
         \caption{Vista frontal de la pantalla de inicio montada en la protoboard.}
         \label{fig:proto_splash1}
 \end{figure}
@@ -41,7 +41,7 @@ Posteriormente, la Figura \ref{fig:proto_info} se muestra la correcta representa
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{img/proto/20260522_123848.jpg}
+    \includegraphics[width=0.62\textwidth]{img/proto/20260522_123848.jpg}
     \caption{Despliegue físico de la tabla de puntuaciones y enemigos en el display TFT.}
     \label{fig:proto_info}
 \end{figure}
@@ -49,7 +49,7 @@ Posteriormente, la Figura \ref{fig:proto_info} se muestra la correcta representa
 La Figura \ref{fig:proto_gameplay} evidencia la ejecución en tiempo real del motor gráfico durante una partida. Además sirvió para corroborar que la frecuencia de reloj del bus SPI es óptima para redibujar los múltiples proyectiles y las naves enemigas de forma fluida, eliminando por completo cualquier parpadeo u artefacto visual en el panel físico.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{img/proto/20260522_123908.jpg}
+    \includegraphics[width=0.62\textwidth]{img/proto/20260522_123908.jpg}
     \caption{Verificación de renderizado de elementos móviles y fondo dinámico en la Consola.}
     \label{fig:proto_gameplay}
 \end{figure}
@@ -59,7 +59,7 @@ En el Mando se validaron las entradas digitales y las lecturas del bus I2C, ya q
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.65\textwidth]{img/proto/20260522_124057.jpg}
+    \includegraphics[width=0.75\textwidth]{img/proto/20260522_124057.jpg}
     \caption{Disposición física de los componentes del Mando sobre la placa de pruebas.}
     \label{fig:mando_completo}
 \end{figure}
@@ -67,7 +67,7 @@ En el Mando se validaron las entradas digitales y las lecturas del bus I2C, ya q
 En la Figura \ref{fig:mando_closeup} podemos ver mas de cerca al al sensor inercial MPU-6050. El encendido continuo de su LED rojo nos indica el correcto direccionamiento y suministro eléctrico a través de las líneas del bus I2C, para asegurar lecturas estables de inclinación en los ejes X, Y para el control posicional de la nave.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.45\textwidth]{img/proto/20260522_124109.jpg}
+    \includegraphics[width=0.55\textwidth]{img/proto/20260522_124109.jpg}
     \caption{Acercamiento al sensor MPU-6050 acoplado mediante el bus I2C.}
     \label{fig:mando_closeup}
 \end{figure}
@@ -95,18 +95,19 @@ En las Figuras \ref{fig:sistema_vertical} y \ref{fig:sistema_horizontal} podemos
 En la Figura \ref{fig:sistema_operativo} se demuestra el corrcto funcionamiento e interacción de ambos subsistemas sin importar la posición en la que se encuentren y aun con una separación física considerable.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/proto/20260522_124202.jpg}
+    \includegraphics[width=1\textwidth]{img/proto/20260522_124202.jpg}
     \caption{Demostración funcional del ecosistema completo en comunicación activa de alta velocidad.}
     \label{fig:sistema_operativo}
 \end{figure}
-\subsection{Experiencia en el juego}
 
+\newpage
+\subsection{Experiencia en el juego}
 \subsubsection{Pantalla de inicio}
 Una vez que la conexión Bluetooth se establecio correctamente, la pantalla de la consola muestra la interfaz de inicio. En la siguiente imagen se aprecia la portada del juego, donde incluimos el nombre de la universidad, la materia y los integrantes del equipo. El sistema se queda a la espera de que el jugador presione el botón de disparo en el mando para comenzar la partida.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/game/inicio.jpg}
+    \includegraphics[width=1\textwidth]{img/game/inicio.jpg}
     \caption{Pantalla principal de inicio esperando la interacción del jugador.}
 \end{figure}
 
@@ -126,7 +127,7 @@ Al iniciar el juego, en la siguiente imagen podemos ver cómo se despliega los e
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{img/game/iniciojuego.jpg}
+    \includegraphics[width=0.8\textwidth]{img/game/iniciojuego.jpg}
     \caption{Primera fase del juego con la formación de enemigos y la interfaz en pantalla.}
 \end{figure}
 
@@ -144,13 +145,13 @@ La detección de colisiones fue otro punto clave que evaluamos. En la siguiente 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/game/perdidadevida1.jpg}
+    \includegraphics[width=0.75\textwidth]{img/game/perdidadevida1.jpg}
     \caption{Momento exacto del impacto mostrando la animación de explosión de la nave.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/game/perdidadevida2.jpg}
+    \includegraphics[width=0.75\textwidth]{img/game/perdidadevida2.jpg}
     \caption{Reaparición del jugador con invulnerabilidad temporal y la actualización del contador de vidas.}
 \end{figure}
 
@@ -173,7 +174,7 @@ Conforme el jugador elimina a todos los enemigos de la pantalla, el sistema avan
 Finalmente, cuando el jugador pierde todas sus vidas, se detecta el final de la partida. En la siguiente imagen se ve la pantalla de fin de juego, la cual muestra la puntuación final obtenida y el nivel máximo alcanzado. Desde aquí, el sistema espera nuevamente a que se presione el botón de disparo para reiniciar todo el ciclo de juego.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{img/game/gameover.jpg}
+    \includegraphics[width=0.85\textwidth]{img/game/gameover.jpg}
     \caption{Pantalla de fin de juego con el resumen de la puntuación.}
 \end{figure}
 

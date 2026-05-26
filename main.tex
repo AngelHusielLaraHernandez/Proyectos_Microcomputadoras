@@ -271,7 +271,9 @@
     \section{Conclusiones:}
 
     \begin{itemize}
-        \item \textbf{Espinoza Matamoros Percival Ulises:} Al realizar como proyecto final de microcomputadoras el desarrollo de un videojuego estilo \textit{Galaga} utilizando la Raspberry Pi Pico 2W, pude aplicar y consolidar los conocimientos adquiridos durante el curso así como conocimientos previos en programación. Ya que al plantear el diseño e implementación de proyecto se tuvo que tener una perspectiva más amplia, considerando tanto el hardware como el software para lograr una integración exitosa de ambos aspectos, pensando en el hardware que se iba a ocupar para implementar el juego y a su vez el modulo de software que se iba a desarrollar para que el juego funcionara de manera fluida y en tiempo real.
+        \item \textbf{Espinoza Matamoros Percival Ulises:} 
+        
+        Al realizar como proyecto final de microcomputadoras el desarrollo de un videojuego estilo \textit{Galaga} utilizando la Raspberry Pi Pico 2W, pude aplicar y consolidar los conocimientos adquiridos durante el curso así como conocimientos previos en programación. Ya que al plantear el diseño e implementación de proyecto se tuvo que tener una perspectiva más amplia, considerando tanto el hardware como el software para lograr una integración exitosa de ambos aspectos, pensando en el hardware que se iba a ocupar para implementar el juego y a su vez el modulo de software que se iba a desarrollar para que el juego funcionara de manera fluida y en tiempo real.
         
         Al utilizar una gran diversidad de componentes como el sensor MPU-6050, la pantalla TFT ILI9341, el buzzer, y la comunicación Bluetooth Low Energy (BLE), se logró implementar un sistema de videojuego completo y funcional. Para integrar de forma integra estos componentes fue necesario comprender y aplicar correctamente los protocolos de comunicación como SPI para la pantalla, I2C para el sensor, y BLE para la conexión inalámbrica. Por otro lado el
         uso de programación asíncrona con uasyncio permitió que todas las tareas del juego se ejecutaran simultáneamente sin interferencias, obteniendo así una experiencia de juego fluida y sin retardos.
@@ -279,6 +281,7 @@
         De forma que este proyecto final me permitió no solo aplicar los conocimientos técnicos adquiridos a lo largo del  curso, sino también desarrollar habilidades de diseño de sistemas integrados para la resolución de problemas y optimización de recursos en un entorno de microcomputadoras.
 
         \item \textbf{Flores Colin Victor Jaziel:}
+        
         A partir de los resultados obtenidos en este proyecto final de microcomputadoras pude concluir que el diseño e implementación del videojuego estilo \textit{Galaga} se realizó de manera exitosa,ya que en conjunto logramos completar cada uno de los objetivos técnicos planteados al demostrar la viabilidad de utilizar microcontroladores en este caso la Raspberry Pi Pico 2W bajo el lenguaje MicroPython para aplicaciones en tiempo real haciendo uso de nuestros conocimientos adquiridos en este curso. 
         
         En el ámbito del hardware, se validó la integración de múltiples protocolos de comunicación, donde el bus SPI permitió una tasa de refresco óptima en la pantalla TFT ILI9341 de 320x240 píxeles eliminando el parpadeo visual, el protocolo I2C aseguró una lectura precisa y de baja latencia de la unidad de medición inercial MPU-6050 para el control de la nave por la inclinación, y los módulos PWM lograron una generación acústica efectiva para Ala ambientación del juego a través del buzzer.
@@ -287,6 +290,7 @@
         Por ultimo el uso de la biblioteca de programación asíncrona \texttt{uasyncio} nos ayudó a maximizar el aprovechamiento de los recursos del microcontrolador para que la consola procesara simultáneamente la física de los proyectiles, el mapeo de \textit{sprites}, la detección de colisiones complejas, los efectos de sonido y la escucha continua del puerto BLE.
  
         \item \textbf{García Cortés Adolfo de Jesús:}
+        
         El desarrollo de este proyecto me permitió aplicar de manera 
         práctica los conocimientos adquiridos durante el curso de 
         microcomputadoras haciendo  un videojuego estilo Galaga 
@@ -322,13 +326,20 @@
          manejo de protocolos de comunicación como SPI, I2C y BLE, 
          así como el manejo eficiente de los recursos del microcontrolador.
 
-        \item \textbf{Lara Hernandez Angel Husiel:} El desarrollo de este proyecto consistió en integrar hardware y software para construir un sistema funcional utilizando la Raspberry Pi Pico 2W. Durante el armado físico, fue muy importante configurar correctamente los buses de comunicación para cada componente. Por un lado, se utilizó el bus SPI a 40 MHz para mandar los gráficos a la pantalla TFT ILI9341 de forma rápida, y por otro, el bus I2C a 400 kHz para leer los datos del sensor MPU-6050 en el mando. Además, se configuró una salida PWM para generar los sonidos del juego utilizando el buzzer.
+        \item \textbf{Lara Hernandez Angel Husiel:}
+        
+        El desarrollo de este proyecto consistió en integrar hardware y software para construir un sistema funcional utilizando la Raspberry Pi Pico 2W. Durante el armado físico, fue muy importante configurar correctamente los buses de comunicación para cada componente. Por un lado, se utilizó el bus SPI a 40 MHz para mandar los gráficos a la pantalla TFT ILI9341 de forma rápida, y por otro, el bus I2C a 400 kHz para leer los datos del sensor MPU-6050 en el mando. Además, se configuró una salida PWM para generar los sonidos del juego utilizando el buzzer.
 
         En cuanto al código, la base de todo el funcionamiento fue la programación asíncrona con la librería uasyncio de MicroPython. Escribir el programa de esta forma permitió que el microcontrolador hiciera varias tareas al mismo tiempo, como calcular la posición de los enemigos, hacer sonar el buzzer y mantener la conexión Bluetooth, todo sin que el juego se quedara pasmado. Otra parte clave del software fue el método de dibujado en la pantalla. En lugar de borrar y redibujar todo el fondo en cada cuadro, el código solo borra la pequeña estela que dejan las naves al moverse. Esto fue lo que solucionó el problema del parpadeo y ayudó a no saturar la memoria del dispositivo.
 
         La comunicación inalámbrica por Bluetooth Low Energy (BLE) funcionó de manera muy estable. El mando logró enviar los datos de inclinación del control y el estado de los botones a la consola unas 100 veces por segundo. Gracias a esto y a la optimización del código gráfico, el movimiento de la nave no tuvo retrasos notorios y el juego en general se ejecutó de forma fluida y en tiempo real.
         \item \textbf{Lugo Manzano Rodrigo:}
         
+        El desarrollo de este proyecto final consistió en juntar todos nuestros conocimientos teóricos y prácticos adquiridos a lo largo de todo el curso, ya que en este integramos diferentes formas de comunicación y optimizamos al máximo los recursos del microcontrolador. Aprendí que actualizar una pantalla por medio de SPI a alta velocidad no es suficiente si no se gestiona bien la memoria, por lo que aplicar la técnica de borrado diferencial para redibujar únicamente las partes de la pantalla que cambiaban fue importante para eliminar el parpadeo y lograr que el juego se viera completamente fluido.
+
+        Además, la construcción del mando inalámbrico fue una parte muy interesante para entender la interacción entre diferentes componentes de hardware, logramos configurar exitosamente el bus I2C para extraer los datos precisos del sensor de movimiento y luego empaquetar esa información para transmitirla de forma inalámbrica mediante Bluetooth Low Energy. Un logro importante también aquí fue implementar la programación asíncrona con la herramienta uasyncio, lo cual nos permitió que la consola recibiera todas estas instrucciones del jugador sin pausar ni un solo momento la música del buzzer, el movimiento de los enemigos o el cálculo de las colisiones.
+
+        Considero que este proyecto además que juntar todo lo aprendido a lo largo del semestre, me hizo reforzar mi idea de que el manejo eficiente de la memoria, la recolección de datos oportuna y la sincronización correcta de las tareas son una de las partes más importantes para crear proyectos tecnológicos e interactivos que sean rápidos, estables y completos.
 
 
     \end{itemize}
