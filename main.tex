@@ -317,8 +317,11 @@
          manejo de protocolos de comunicación como SPI, I2C y BLE, 
          así como el manejo eficiente de los recursos del microcontrolador.
 
-        \item \textbf{Lara Hernandez Angel Husiel:}
+        \item \textbf{Lara Hernandez Angel Husiel:} El desarrollo de este proyecto consistió en integrar hardware y software para construir un sistema funcional utilizando la Raspberry Pi Pico 2W. Durante el armado físico, fue muy importante configurar correctamente los buses de comunicación para cada componente. Por un lado, se utilizó el bus SPI a 40 MHz para mandar los gráficos a la pantalla TFT ILI9341 de forma rápida, y por otro, el bus I2C a 400 kHz para leer los datos del sensor MPU-6050 en el mando. Además, se configuró una salida PWM para generar los sonidos del juego utilizando el buzzer.
 
+        En cuanto al código, la base de todo el funcionamiento fue la programación asíncrona con la librería uasyncio de MicroPython. Escribir el programa de esta forma permitió que el microcontrolador hiciera varias tareas al mismo tiempo, como calcular la posición de los enemigos, hacer sonar el buzzer y mantener la conexión Bluetooth, todo sin que el juego se quedara pasmado. Otra parte clave del software fue el método de dibujado en la pantalla. En lugar de borrar y redibujar todo el fondo en cada cuadro, el código solo borra la pequeña estela que dejan las naves al moverse. Esto fue lo que solucionó el problema del parpadeo y ayudó a no saturar la memoria del dispositivo.
+
+        La comunicación inalámbrica por Bluetooth Low Energy (BLE) funcionó de manera muy estable. El mando logró enviar los datos de inclinación del control y el estado de los botones a la consola unas 100 veces por segundo. Gracias a esto y a la optimización del código gráfico, el movimiento de la nave no tuvo retrasos notorios y el juego en general se ejecutó de forma fluida y en tiempo real.
         \item \textbf{Lugo Manzano Rodrigo:}
         
 
